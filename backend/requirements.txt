@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+bcrypt
+python-jose[cryptography]
+python-multipart
+pydantic[email]
+python-dotenv
+pdfplumber
+python-docx
+groq
+google-generativeai
