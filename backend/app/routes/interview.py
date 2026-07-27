@@ -3,12 +3,11 @@ import os
 
 from fastapi import APIRouter, Depends, HTTPException, Header, status
 from groq import Groq
-from sqlalchemy.orm import Session
+from pymongo.database import Database
 
 from app.auth import decode_access_token
 from app.database import get_db
-from app.models import InterviewSession, Resume
-from app.schemas import AnswerRequest, AnswerResponse, FeedbackResponse, StartInterviewResponse
+from app.schemas import AnswerRequest, AnswerSimpleResponse, InterviewFeedbackResponse, StartInterviewResponse
 
 router = APIRouter(prefix="/interview", tags=["interview"])
 
@@ -17,7 +16,7 @@ GROQ_MODEL = "openai/gpt-oss-20b"
 GEMINI_MODEL = "gemini-2.0-flash"
 
 
-def require_token(authorization: str = Header(...)) -> int:
+def require_token(authorization: str = Header(...)) -> str:
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authorization header")
     token = authorization.removeprefix("Bearer ")
@@ -66,11 +65,13 @@ def build_followup_system_prompt(interview_type: str) -> str:
 
 
 def _extract_json(text: str) -> str:
+    if isinstance(text, dict):
+        return json.dumps(text, indent=2)
     try:
         parsed = json.loads(text)
         return json.dumps(parsed, indent=2)
-    except json.JSONDecodeError:
-        return text
+    except (json.JSONDecodeError, TypeError):
+        return str(text)
 
 
 def _count_questions(messages: list) -> int:
@@ -133,23 +134,25 @@ def generate_response(messages: list) -> str:
 @router.post("/start", status_code=status.HTTP_201_CREATED)
 def start_interview(
     body: dict,
-    db: Session = Depends(get_db),
-    user_id: int = Depends(require_token),
+    db: Database = Depends(get_db),
+    user_id: str = Depends(require_token),
 ):
     interview_type = body.get("interview_type")
     if interview_type not in ("hr", "technical"):
         raise HTTPException(status_code=400, detail="interview_type must be 'hr' or 'technical'")
 
     resume = (
-        db.query(Resume)
-        .filter(Resume.user_id == user_id)
-        .order_by(Resume.uploaded_at.desc())
-        .first()
+        db.resumes
+        .find({"user_id": user_id})
+        .sort("_id", -1)
+        .limit(1)
     )
-    if not resume:
+    try:
+        r = next(resume)
+    except StopIteration:
         raise HTTPException(status_code=400, detail="Upload a resume before starting an interview")
 
-    resume_data = resume.parsed_data or resume.raw_text
+    resume_data = r.get("parsed_data") or r.get("raw_text", "")
     system_prompt = build_start_system_prompt(interview_type, resume_data)
 
     messages = [{"role": "system", "content": system_prompt}]
@@ -159,84 +162,93 @@ def start_interview(
         {"role": "assistant", "content": question},
     ]
 
-    session = InterviewSession(
-        user_id=user_id,
-        interview_type=interview_type,
-        resume_data=resume_data,
-        messages=json.dumps(conversation),
-        status="active",
-    )
-    db.add(session)
-    db.commit()
-    db.refresh(session)
+    session = {
+        "user_id": user_id,
+        "interview_type": interview_type,
+        "resume_data": resume_data if isinstance(resume_data, str) else json.dumps(resume_data),
+        "messages": conversation,
+        "status": "active",
+        "feedback": None,
+    }
+    result = db.interview_sessions.insert_one(session)
 
-    return StartInterviewResponse(session_id=session.id, question=question)
+    return StartInterviewResponse(session_id=str(result.inserted_id), question=question)
 
 
 @router.post("/answer")
 def answer_question(
     body: AnswerRequest,
-    db: Session = Depends(get_db),
-    user_id: int = Depends(require_token),
+    db: Database = Depends(get_db),
+    user_id: str = Depends(require_token),
 ):
-    session = (
-        db.query(InterviewSession)
-        .filter(
-            InterviewSession.id == body.session_id,
-            InterviewSession.user_id == user_id,
-        )
-        .first()
+    from bson.objectid import ObjectId
+
+    session = db.interview_sessions.find_one(
+        {"_id": ObjectId(body.session_id), "user_id": user_id}
     )
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    if session.status != "active":
+    if session["status"] != "active":
         raise HTTPException(status_code=400, detail="Session is already completed")
 
-    messages: list = json.loads(session.messages)
+    messages: list = session.get("messages", [])
     messages.append({"role": "user", "content": body.answer})
 
     questions_so_far = _count_questions(messages)
 
-    if questions_so_far >= MAX_QUESTIONS:
-        session.status = "completed"
-        session.messages = json.dumps(messages)
-        db.commit()
-        return AnswerResponse(question=None, status="completed")
+    words = body.answer.split()
+    confidence_score = min(95, max(20, len(words) * 2 + 30 +
+        (10 if any(w in body.answer.lower() for w in ("i believe", "i think", "confident", "sure")) else 0) -
+        (15 if any(w in body.answer.lower() for w in ("maybe", "not sure", "i don't know", "unsure")) else 0)))
+    fluency_score = round(max(0.3, min(1.0, 1.0 - (body.answer.lower().count("um") + body.answer.lower().count("uh")) * 0.05 - len(words) * 0.001)), 2)
 
-    system_prompt = build_followup_system_prompt(session.interview_type)
+    if questions_so_far >= MAX_QUESTIONS:
+        db.interview_sessions.update_one(
+            {"_id": ObjectId(body.session_id)},
+            {"$set": {"status": "completed", "messages": messages}}
+        )
+        return AnswerSimpleResponse(question=None, status="completed",
+            confidence_score=confidence_score, fluency_score=fluency_score)
+
+    system_prompt = build_followup_system_prompt(session["interview_type"])
     api_messages = [{"role": "system", "content": system_prompt}, *messages]
     next_question = generate_response(api_messages)
 
     messages.append({"role": "assistant", "content": next_question})
-    session.messages = json.dumps(messages)
-    db.commit()
 
     questions_after = _count_questions(messages)
     if questions_after >= MAX_QUESTIONS:
-        session.status = "completed"
-        db.commit()
-        return AnswerResponse(question=None, status="completed")
+        db.interview_sessions.update_one(
+            {"_id": ObjectId(body.session_id)},
+            {"$set": {"status": "completed", "messages": messages}}
+        )
+        return AnswerSimpleResponse(question=None, status="completed",
+            confidence_score=confidence_score, fluency_score=fluency_score)
 
-    return AnswerResponse(question=next_question, status="active")
+    db.interview_sessions.update_one(
+        {"_id": ObjectId(body.session_id)},
+        {"$set": {"messages": messages}}
+    )
+    return AnswerSimpleResponse(question=next_question, status="active",
+        confidence_score=confidence_score, fluency_score=fluency_score)
 
 
 @router.get("/sessions")
 def list_sessions(
-    db: Session = Depends(get_db),
-    user_id: int = Depends(require_token),
+    db: Database = Depends(get_db),
+    user_id: str = Depends(require_token),
 ):
     sessions = (
-        db.query(InterviewSession)
-        .filter(InterviewSession.user_id == user_id)
-        .order_by(InterviewSession.created_at.desc())
-        .all()
+        db.interview_sessions
+        .find({"user_id": user_id})
+        .sort("_id", -1)
     )
     return [
         {
-            "id": s.id,
-            "interview_type": s.interview_type,
-            "status": s.status,
-            "created_at": s.created_at.isoformat(),
+            "id": str(s["_id"]),
+            "interview_type": s["interview_type"],
+            "status": s["status"],
+            "created_at": str(s["_id"].generation_time),
         }
         for s in sessions
     ]
@@ -281,37 +293,48 @@ def generate_feedback(messages: list) -> dict:
 
 @router.get("/{session_id}/feedback")
 def get_feedback(
-    session_id: int,
-    db: Session = Depends(get_db),
-    user_id: int = Depends(require_token),
+    session_id: str,
+    db: Database = Depends(get_db),
+    user_id: str = Depends(require_token),
 ):
-    session = (
-        db.query(InterviewSession)
-        .filter(
-            InterviewSession.id == session_id,
-            InterviewSession.user_id == user_id,
-        )
-        .first()
+    from bson.objectid import ObjectId
+
+    session = db.interview_sessions.find_one(
+        {"_id": ObjectId(session_id), "user_id": user_id}
     )
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    if session.feedback:
-        return json.loads(session.feedback)
+    if session.get("feedback"):
+        return session["feedback"]
 
-    if session.status != "completed":
+    if session["status"] != "completed":
         raise HTTPException(status_code=400, detail="Session is not yet completed")
 
-    messages = json.loads(session.messages)
+    messages: list = session.get("messages", [])
+    qa_pairs = []
+    for i, m in enumerate(messages):
+        if m["role"] == "assistant":
+            answer_text = ""
+            if i + 1 < len(messages) and messages[i + 1]["role"] == "user":
+                answer_text = messages[i + 1]["content"]
+            qa_pairs.append({
+                "question_number": len(qa_pairs) + 1,
+                "question": m["content"],
+                "answer": answer_text,
+            })
+
     try:
         feedback = generate_feedback(messages)
-        FeedbackResponse(**feedback)
+        feedback["qa_pairs"] = qa_pairs
+        InterviewFeedbackResponse(**feedback)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to generate feedback: {str(e)}"
         )
 
-    session.feedback = json.dumps(feedback)
-    db.commit()
-
+    db.interview_sessions.update_one(
+        {"_id": ObjectId(session_id)},
+        {"$set": {"feedback": feedback}}
+    )
     return feedback

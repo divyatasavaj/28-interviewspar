@@ -1,13 +1,13 @@
 import json
 import os
 
+from bson.objectid import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, status
 from groq import Groq
-from sqlalchemy.orm import Session
+from pymongo.database import Database
 
 from app.auth import decode_access_token
 from app.database import get_db
-from app.models import Resume
 
 router = APIRouter(prefix="/resume", tags=["resume"])
 
@@ -15,7 +15,7 @@ ALLOWED_EXTENSIONS = {".pdf", ".docx"}
 MAX_SIZE = 10 * 1024 * 1024
 
 
-def require_token(authorization: str = Header(...)) -> int:
+def require_token(authorization: str = Header(...)) -> str:
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authorization header")
     token = authorization.removeprefix("Bearer ")
@@ -83,32 +83,90 @@ def parse_with_groq(raw_text: str) -> dict:
     return json.loads(text)
 
 
+def extract_resume_summary(raw_text: str) -> str:
+    client = Groq(api_key=os.environ["GROQ_API_KEY"])
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-20b",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Condense the following resume into a concise structured summary "
+                    "suitable for an AI interviewer to reference. Include key skills, "
+                    "notable achievements, years of experience, and education. "
+                    "Keep it under 250 words. Return plain text, no JSON."
+                ),
+            },
+            {"role": "user", "content": raw_text},
+        ],
+        temperature=0.3,
+    )
+    content = response.choices[0].message.content
+    return (content or "").strip()
+
+
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
-def upload_resume(file: UploadFile, db: Session = Depends(get_db), user_id: int = Depends(require_token)):
+def upload_resume(file: UploadFile, db: Database = Depends(get_db), user_id: str = Depends(require_token)):
     raw_text = extract_text(file)
     try:
         parsed = parse_with_groq(raw_text)
-        parsed_json = json.dumps(parsed)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to parse resume with AI: {str(e)}")
 
-    resume = Resume(user_id=user_id, raw_text=raw_text, parsed_data=parsed_json)
-    db.add(resume)
-    db.commit()
-    db.refresh(resume)
+    summary = extract_resume_summary(raw_text)
 
-    return {"id": resume.id, "parsed_data": parsed}
+    resume_data = {
+        "file_url": None,
+        "raw_text": raw_text,
+        "summary": summary,
+    }
+
+    db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"resume": resume_data}},
+    )
+
+    result = db.resumes.insert_one({
+        "user_id": user_id,
+        "raw_text": raw_text,
+        "parsed_data": parsed,
+    })
+
+    return {"id": str(result.inserted_id), "parsed_data": parsed, "summary": summary}
 
 
 @router.get("/latest")
-def get_latest_resume(db: Session = Depends(get_db), user_id: int = Depends(require_token)):
+def get_latest_resume(db: Database = Depends(get_db), user_id: str = Depends(require_token)):
     resume = (
-        db.query(Resume)
-        .filter(Resume.user_id == user_id)
-        .order_by(Resume.uploaded_at.desc())
-        .first()
+        db.resumes
+        .find({"user_id": user_id})
+        .sort("_id", -1)
+        .limit(1)
     )
-    if not resume:
+    try:
+        r = next(resume)
+    except StopIteration:
         raise HTTPException(status_code=404, detail="No resume found")
-    parsed = json.loads(resume.parsed_data) if resume.parsed_data else None
-    return {"id": resume.id, "raw_text": resume.raw_text, "parsed_data": parsed, "uploaded_at": resume.uploaded_at.isoformat()}
+
+    user = db.users.find_one({"_id": ObjectId(user_id)})
+    summary = (user.get("resume") or {}).get("summary", "") if user else ""
+
+    return {
+        "id": str(r["_id"]),
+        "raw_text": r["raw_text"],
+        "parsed_data": r.get("parsed_data"),
+        "summary": summary,
+        "uploaded_at": str(r["_id"].generation_time),
+    }
+
+
+@router.get("/summary")
+def get_resume_summary(db: Database = Depends(get_db), user_id: str = Depends(require_token)):
+    user = db.users.find_one({"_id": ObjectId(user_id)})
+    if not user or not user.get("resume") or not user["resume"].get("raw_text"):
+        raise HTTPException(status_code=404, detail="No resume found")
+    resume = user["resume"]
+    return {
+        "summary": resume.get("summary", ""),
+        "parsed_data": resume.get("parsed_data"),
+    }

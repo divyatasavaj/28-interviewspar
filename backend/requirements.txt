@@ -1,7 +1,6 @@
 fastapi
 uvicorn
-sqlalchemy
-psycopg2-binary
+pymongo[srv]
 bcrypt
 python-jose[cryptography]
 python-multipart
@@ -11,3 +10,5 @@ pdfplumber
 python-docx
 groq
 google-generativeai
+dnspython
+python-socketio
