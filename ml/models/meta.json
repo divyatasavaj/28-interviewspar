@@ -1,0 +1,79 @@
+{
+  "model": "logreg",
+  "features": [
+    "star_present",
+    "hedge_word_freq",
+    "filler_word_count",
+    "answer_length",
+    "response_latency",
+    "code_correct"
+  ],
+  "labels": [
+    "good-answer",
+    "rambling",
+    "no-structure",
+    "resume-gap",
+    "silent-coding",
+    "underselling"
+  ],
+  "accuracy": 1.0,
+  "confusion_matrix": [
+    [
+      7,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      7,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      7,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      7,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      7,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      7
+    ]
+  ],
+  "feature_importance": {
+    "star_present": 0.182304931693222,
+    "hedge_word_freq": 0.4096415698755848,
+    "filler_word_count": 0.03912151127342254,
+    "answer_length": 0.5602661548802822,
+    "response_latency": 0.17962433004899359,
+    "code_correct": 0.14247355933298436
+  },
+  "n_samples": 210
+}
