@@ -1,6 +1,8 @@
 export default function InterviewAnalytics({
   faceCount = 0,
   faceDetected = false,
+  bodyCount = 0,
+  handCount = 0,
   attentionScore = 0,
   confidenceScore = 0,
   integrityFlags = [],
@@ -8,21 +10,18 @@ export default function InterviewAnalytics({
   isActive = false,
   fdDebug = null,
 }) {
-  const faceOk = faceDetected && faceCount === 1
   const multiFace = faceCount > 1
   const attentionLevel = attentionScore >= 70 ? "high" : attentionScore >= 40 ? "medium" : "low"
   const confLevel = confidenceScore >= 70 ? "high" : confidenceScore >= 40 ? "medium" : "low"
+
+  const faceLabel = !faceDetected ? "None" : faceCount === 1 ? "Single" : "Multiple"
+  const bodyLabel = bodyCount === 0 ? "None" : bodyCount === 1 ? "Single person" : "Multiple persons"
+  const handLabel = handCount === 0 ? "None" : handCount === 1 ? "Hand in frame" : "Multiple hands"
 
   const colorMap = {
     high: "text-green-400",
     medium: "text-yellow-400",
     low: "text-red-400",
-  }
-
-  const bgMap = {
-    high: "bg-green-500/20 border-green-500/30",
-    medium: "bg-yellow-500/20 border-yellow-500/30",
-    low: "bg-red-500/20 border-red-500/30",
   }
 
   if (!isActive) return null
@@ -40,7 +39,7 @@ export default function InterviewAnalytics({
           <div className="flex items-center gap-1.5">
             <span className={`w-1.5 h-1.5 rounded-full ${faceDetected ? "bg-green-400" : "bg-red-400"}`} />
             <span className={`font-semibold ${faceDetected ? "text-green-400" : "text-red-400"}`}>
-              {faceDetected ? `${faceCount} detected` : "None"}
+              {faceLabel}
             </span>
           </div>
         </div>
@@ -53,6 +52,20 @@ export default function InterviewAnalytics({
             <span className="text-red-400 font-semibold text-[10px]">Multiple faces detected</span>
           </div>
         )}
+
+        <div className="flex items-center justify-between">
+          <span className="text-white/60">Body</span>
+          <span className={`font-semibold ${bodyCount === 0 ? "text-red-400" : bodyCount === 1 ? "text-green-400" : "text-red-400"}`}>
+            {bodyLabel}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-white/60">Hands</span>
+          <span className={`font-semibold ${handCount === 0 ? "text-white/40" : handCount === 1 ? "text-yellow-400" : "text-red-400"}`}>
+            {handLabel}
+          </span>
+        </div>
 
         <div className="flex items-center justify-between">
           <span className="text-white/60">Attention</span>
@@ -132,6 +145,11 @@ export default function InterviewAnalytics({
               </span>
               <span>c:{fdDebug.confidence?.toFixed(2) ?? "?"}</span>
               <span>v:{fdDebug.variance}</span>
+              {fdDebug.stats && fdDebug.stats.rawBodies > 0 && (
+                <span className={fdDebug.stats.rawBodies === fdDebug.stats.bodies ? "text-green-400" : "text-yellow-400"}>
+                  b:{fdDebug.stats.rawBodies}→{fdDebug.stats.bodies}
+                </span>
+              )}
             </div>
           </div>
         )}

@@ -16,6 +16,7 @@ from app.schemas import (
     CaptureCodeAnswerRequest,
     CaptureTextAnswerRequest,
 )
+from app.services import anticheat
 from app.verification import (
     classify_mistake_type,
     keyword_precheck,
@@ -212,7 +213,21 @@ def record_response_latency(
         {"session_id": session_id, "question_id": question_id, "user_id": user_id},
         {"$set": {"response_latency_ms": latency_ms}},
     )
-    return {"message": "Latency recorded"}
+
+    question = db.questions.find_one({"_id": ObjectId(question_id)})
+    baseline = anticheat.baseline_for_difficulty((question or {}).get("difficulty", "medium"))
+    anomaly = anticheat.flag_latency_anomaly(latency_ms, baseline)
+    if anomaly["flagged"]:
+        anticheat._push(db, session_id, {
+            "type": "latency_anomaly",
+            "question_id": question_id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "response_latency_ms": latency_ms,
+            "expected_ms": anomaly["expected_ms"],
+            "ratio": anomaly["ratio"],
+        })
+
+    return {"message": "Latency recorded", "latency_anomaly": anomaly}
 
 
 @router.get("/session/{session_id}")

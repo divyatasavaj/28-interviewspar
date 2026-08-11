@@ -1,9 +1,12 @@
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
-import { getMe, clearToken, startInterview, answerInterview, getToken } from "../api/auth"
+import { getMe, clearToken, startInterview, submitCalibration, sendInterviewMessage, endInterview, getToken, logIntegrity, logCopyPaste } from "../api/auth"
 import FaceDetection from "../components/FaceDetection"
+import IntegrityMonitor from "../components/IntegrityMonitor"
 import InterviewerAvatar from "../components/InterviewerAvatar"
 import InterviewAnalytics from "../components/InterviewAnalytics"
+import CodePanel from "../components/CodePanel"
+import VoicePanel from "../components/VoicePanel"
 
 const STT = window.SpeechRecognition || window.webkitSpeechRecognition
 const API = "http://localhost:8000"
@@ -24,21 +27,35 @@ export default function Interview() {
   const [cameraStream, setCameraStream] = useState(null)
   const [cameraActive, setCameraActive] = useState(false)
   const [muted, setMuted] = useState(false)
+  const [phase, setPhase] = useState("calibration")
+  const [calibrationQuestions, setCalibrationQuestions] = useState([])
+  const [calibrationIndex, setCalibrationIndex] = useState(0)
+  const [history, setHistory] = useState([])
+  const [provider, setProvider] = useState("")
+  const [showCode, setShowCode] = useState(false)
+  const [showVoice, setShowVoice] = useState(false)
 
   const [analytics, setAnalytics] = useState({
     faceCount: 0,
+    bodyCount: 0,
+    handCount: 0,
     faceDetected: false,
     attentionScore: 0,
     confidenceScore: 0,
     fluencyScore: 0,
     integrityFlags: [],
+    poseKeypoints: null,
+    handLandmarks: null,
   })
 
   const [fdDebug, setFdDebug] = useState(null)
+  const [calibStatus, setCalibStatus] = useState("idle")
 
   useEffect(() => {
     if (fdDebug) tierRef.current = fdDebug.tier
   }, [fdDebug])
+
+  const [textAnswer, setTextAnswer] = useState("")
 
   const recognitionRef = useRef(null)
   const listeningResolveRef = useRef(null)
@@ -47,8 +64,9 @@ export default function Interview() {
   const sessionIdRef = useRef(null)
   const tierRef = useRef(null)
   const prevFaceCountRef = useRef(0)
-  const multiFaceStreakRef = useRef(0)
-  const type = searchParams.get("type")
+  const attentionCalibRef = useRef({ status: "pending", samples: [], baseline: null })
+  const poseBufferRef = useRef({ yaw: [], pitch: [] })
+  const type = searchParams.get("type") || "hr"
 
   useEffect(() => {
     getMe()
@@ -60,17 +78,28 @@ export default function Interview() {
   }, [navigate])
 
   useEffect(() => {
-    if (!type || !user) return
+    if (!user) return
+    let isSubscribed = true
+    setStatus("loading")
     startInterview(type)
       .then((data) => {
+        if (!isSubscribed) return
         setSessionId(data.session_id)
         sessionIdRef.current = data.session_id
-        setQuestion(data.question)
+        const questions = Array.isArray(data.calibration_questions) ? data.calibration_questions : []
+        setCalibrationQuestions(questions)
+        setPhase(data.phase || "calibration")
+        setCalibrationIndex(0)
+        const initialQ = questions.length ? questions[0].question : (data.question || "Tell me about yourself and your background.")
+        setQuestion(initialQ)
+        setStatus("idle")
       })
       .catch((err) => {
+        if (!isSubscribed) return
         setError(err.message)
         setStatus("error")
       })
+    return () => { isSubscribed = false }
   }, [type, user])
 
   useEffect(() => {
@@ -127,27 +156,54 @@ export default function Interview() {
           frame_data: dataUrl,
           face_detected: analytics.faceDetected,
           face_count: analytics.faceCount,
+          pose_keypoints: analytics.poseKeypoints,
+          hand_landmarks: analytics.handLandmarks,
         }),
       }).catch(() => {})
     }, 5000)
     return () => clearInterval(interval)
-  }, [videoSessionId, cameraActive, analytics.faceDetected, analytics.faceCount])
+  }, [videoSessionId, cameraActive, analytics.faceDetected, analytics.faceCount, analytics.poseKeypoints, analytics.handLandmarks])
 
   const speakQuestion = useCallback((text) => {
     return new Promise((resolve) => {
+      if (!text) { setStatus("listening"); resolve(); return }
       const synth = synthRef.current
-      synth.cancel()
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.rate = 0.95
-      utterance.pitch = 1.0
-      utterance.volume = 1
-      utterance.onstart = () => setStatus("speaking")
-      utterance.onend = () => {
-        setStatus("listening")
+      if (!synth) { setStatus("listening"); resolve(); return }
+
+      let done = false
+      const finish = (nextStatus = "listening") => {
+        if (done) return
+        done = true
+        setStatus(nextStatus)
         setTimeout(() => resolve(), 300)
       }
-      utterance.onerror = () => resolve()
-      synth.speak(utterance)
+
+      const timeout = setTimeout(() => {
+        finish("listening")
+      }, 2500)
+
+      try {
+        synth.cancel()
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.rate = 0.95
+        utterance.pitch = 1.0
+        utterance.volume = 1
+        utterance.onstart = () => {
+          setStatus("speaking")
+        }
+        utterance.onend = () => {
+          clearTimeout(timeout)
+          finish("listening")
+        }
+        utterance.onerror = () => {
+          clearTimeout(timeout)
+          finish("listening")
+        }
+        synth.speak(utterance)
+      } catch {
+        clearTimeout(timeout)
+        finish("listening")
+      }
     })
   }, [])
 
@@ -213,29 +269,37 @@ export default function Interview() {
     if (!answerText || !sessionId) return
     setStatus("thinking")
     try {
-      const data = await answerInterview(sessionId, answerText)
-      if (data.confidence_score != null || data.fluency_score != null) {
-        setAnalytics((prev) => ({
-          ...prev,
-          confidenceScore: data.confidence_score ?? prev.confidenceScore,
-          fluencyScore: data.fluency_score ?? prev.fluencyScore,
-        }))
-      }
-      if (data.status === "completed") {
-        setStatus("idle")
-        navigate(`/interview-complete?session_id=${sessionId}`)
-        return
-      }
-      if (data.question) {
+      if (phase === "calibration") {
+        await submitCalibration(sessionId, question, answerText)
         setTranscript("")
         setInterimTranscript("")
-        setQuestion(data.question)
+        const nextIndex = calibrationIndex + 1
+        if (nextIndex < calibrationQuestions.length) {
+          setCalibrationIndex(nextIndex)
+          setQuestion(calibrationQuestions[nextIndex].question)
+        } else {
+          const seed = [{ role: "user", content: "I have completed the calibration questions. Let's begin the interview." }]
+          const res = await sendInterviewMessage(sessionId, seed)
+          setHistory([...seed, { role: "assistant", content: res.reply }])
+          setProvider(res.provider || "")
+          setPhase("interview")
+          setQuestion(res.reply)
+        }
+        return
       }
+
+      const nextHistory = [...history, { role: "user", content: answerText }]
+      const res = await sendInterviewMessage(sessionId, nextHistory)
+      setHistory([...nextHistory, { role: "assistant", content: res.reply }])
+      setProvider(res.provider || "")
+      setTranscript("")
+      setInterimTranscript("")
+      setQuestion(res.reply)
     } catch (err) {
       setError(err.message)
       setStatus("error")
     }
-  }, [sessionId, navigate])
+  }, [sessionId, phase, question, calibrationIndex, calibrationQuestions, history])
 
   useEffect(() => {
     if (!question || status === "error") return
@@ -259,124 +323,93 @@ export default function Interview() {
     return () => { cancelled = true; stopListening(); synthRef.current.cancel() }
   }, [question, retryKey])
 
-  const handleFacesDetected = useCallback((faces) => {
-    const currentTier = tierRef.current
-
+  const handleFacesDetected = useCallback((faces, poseKeypoints, handLandmarks, bodyCount = 0, handCount = 0, faceMeta = null) => {
     setAnalytics((prev) => {
       const faceDetected = faces.length > 0
       const faceCount = faces.length
-      const prevCount = prevFaceCountRef.current
-      const isMulti = faceCount >= 2
-      const wasMulti = prevCount >= 2
+      prevFaceCountRef.current = faceCount
 
-      // Primary face: largest bounding box when multiple faces are present
-      let primaryBox = null
-      if (faceDetected) {
-        if (faceCount === 1) {
-          primaryBox = faces[0].box
-        } else {
-          let maxArea = 0
-          for (const f of faces) {
-            const area = f.box.width * f.box.height
-            if (area > maxArea) {
-              maxArea = area
-              primaryBox = f.box
-            }
-          }
+      // Collect neutral head-pose samples while attention calibration is running
+      if (faceMeta && faceMeta.yaw != null && !attentionCalibRef.current.done) {
+        if (attentionCalibRef.current.samples.length < 60) {
+          attentionCalibRef.current.samples.push({ yaw: faceMeta.yaw, pitch: faceMeta.pitch })
         }
       }
 
-      // Persistence streak for multi-face (avoid single-frame false positives)
-      if (isMulti) {
-        multiFaceStreakRef.current += 1
-      } else {
-        multiFaceStreakRef.current = 0
-      }
-
-      // Edge-triggered integrity events — Tier 1/2 only, never Tier 3
-      const canFireMulti = currentTier === "native" || currentTier === "human"
-
-      if (isMulti && canFireMulti && multiFaceStreakRef.current === 3) {
-        logIntegrity("multi_face_detected", { timestamp: new Date().toISOString(), extra: { count: faceCount } })
-      }
-      if (!isMulti && wasMulti && canFireMulti && prevCount > 0) {
-        logIntegrity("single_face_restored", { timestamp: new Date().toISOString(), extra: { previous_count: prevCount } })
-      }
-
-      if (!faceDetected && prev.faceDetected) {
-        logIntegrity("face_not_detected", { timestamp: new Date().toISOString() })
-      }
-
-      prevFaceCountRef.current = faceCount
-
-      // Attention scoring (on primary face only)
       let attention = prev.attentionScore
-      let cx = 0.5, cy = 0.5, dx = 0, dy = 0
-      if (primaryBox && videoRef.current) {
-        const vw = videoRef.current.videoWidth || 640
-        const vh = videoRef.current.videoHeight || 480
-        cx = (primaryBox.x + primaryBox.width / 2) / vw
-        cy = (primaryBox.y + primaryBox.height / 2) / vh
-        dx = Math.abs(cx - 0.5)
-        dy = Math.abs(cy - 0.5)
-        const offCenter = Math.max(dx, dy)
-        const lookingDown = cy > 0.68
-        const lookingAway = dx > 0.35
+      let lookingDown = false
+      let lookingAway = null
+      const calibDone = attentionCalibRef.current.done && attentionCalibRef.current.baseline
 
-        attention = Math.round(Math.max(0, 100 - offCenter * 300))
+      if (faceDetected && faceMeta && faceMeta.yaw != null && calibDone) {
+        // Rolling smooth of head pose to reduce jitter
+        poseBufferRef.current.yaw.push(faceMeta.yaw)
+        poseBufferRef.current.pitch.push(faceMeta.pitch)
+        if (poseBufferRef.current.yaw.length > 4) {
+          poseBufferRef.current.yaw.shift()
+          poseBufferRef.current.pitch.shift()
+        }
+        const avgYaw = poseBufferRef.current.yaw.reduce((a, b) => a + b, 0) / poseBufferRef.current.yaw.length
+        const avgPitch = poseBufferRef.current.pitch.reduce((a, b) => a + b, 0) / poseBufferRef.current.pitch.length
+        const baseline = attentionCalibRef.current.baseline
+        const dyaw = Math.abs(avgYaw - baseline.yaw)
+        const dpitch = avgPitch - baseline.pitch
+
+        // Attention % decreases as the head turns (yaw) or tilts up/down (pitch) away from neutral
+        const penalty = Math.max(0, dyaw - 8) * 2.2 + Math.max(0, Math.abs(dpitch) - 8) * 2.2
+        attention = Math.round(Math.max(0, 100 - penalty))
+
+        lookingDown = dpitch > 10
+        lookingAway = dyaw > 14 ? (avgYaw - baseline.yaw > 0 ? "right" : "left") : null
 
         if (lookingDown && !prev._lookingDown) {
-          logIntegrity("looking_away", { timestamp: new Date().toISOString(), extra: { direction: "down" } })
+          logIntegrity(sessionIdRef.current, "looking_away", { extra: { direction: "down" } })
           prev.integrityFlags = [...prev.integrityFlags, { type: "looking_away", detail: "Looking down (possible device)", timestamp: Date.now() }]
         }
         if (lookingAway && !prev._lookingAway) {
-          logIntegrity("looking_away", { timestamp: new Date().toISOString(), extra: { direction: cx < 0.5 ? "left" : "right" } })
-          prev.integrityFlags = [...prev.integrityFlags, { type: "looking_away", detail: `Looking ${cx < 0.5 ? "left" : "right"}`, timestamp: Date.now() }]
+          logIntegrity(sessionIdRef.current, "looking_away", { extra: { direction: lookingAway } })
+          prev.integrityFlags = [...prev.integrityFlags, { type: "looking_away", detail: `Looking ${lookingAway}`, timestamp: Date.now() }]
         }
-      } else {
+      } else if (!faceDetected) {
         attention = Math.max(0, prev.attentionScore - 5)
       }
-      return { ...prev, faceDetected, faceCount, attentionScore: attention, _lookingDown: faceDetected && cy > 0.68, _lookingAway: faceDetected && dx > 0.35 }
+      return { ...prev, faceDetected, faceCount, bodyCount, handCount, attentionScore: attention, _lookingDown: lookingDown, _lookingAway: !!lookingAway, poseKeypoints, handLandmarks }
     })
   }, [])
 
-  async function logIntegrity(type, extra = {}) {
-    const sid = sessionIdRef.current
-    if (!sid) return
-    try {
-      await fetch(`${API}/integrity/event`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ session_id: sid, type, ...extra }),
-      })
-    } catch {}
-  }
+  useEffect(() => {
+    if (!cameraActive || !sessionId || attentionCalibRef.current.done) return
+    setCalibStatus("active")
+    const t = setTimeout(() => {
+      const samples = attentionCalibRef.current.samples
+      if (samples.length) {
+        attentionCalibRef.current.baseline = {
+          yaw: samples.reduce((a, s) => a + s.yaw, 0) / samples.length,
+          pitch: samples.reduce((a, s) => a + s.pitch, 0) / samples.length,
+        }
+      } else {
+        attentionCalibRef.current.baseline = { yaw: 0, pitch: 0 }
+      }
+      attentionCalibRef.current.done = true
+      setCalibStatus("done")
+    }, 3000)
+    return () => clearTimeout(t)
+  }, [cameraActive, sessionId])
 
   useEffect(() => {
     if (!sessionId) return
-    function handleVisibility() {
-      if (document.hidden) {
-        logIntegrity("tab_switch", { timestamp: new Date().toISOString() })
-        setAnalytics((prev) => ({
-          ...prev,
-          integrityFlags: [...prev.integrityFlags, { type: "tab_switch", timestamp: Date.now() }],
-        }))
-      }
-    }
     function handleCopy() {
       const selected = window.getSelection()?.toString()
       if (selected && selected.length > 20) {
-        logIntegrity("copy_paste", { timestamp: new Date().toISOString(), extra: { length: selected.length } })
+        logCopyPaste(sessionId, { pasted_content_length: selected.length })
         setAnalytics((prev) => ({
           ...prev,
           integrityFlags: [...prev.integrityFlags, { type: "copy_paste", timestamp: Date.now() }],
         }))
       }
     }
-    document.addEventListener("visibilitychange", handleVisibility)
     document.addEventListener("copy", handleCopy)
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibility)
       document.removeEventListener("copy", handleCopy)
     }
   }, [sessionId])
@@ -397,7 +430,10 @@ export default function Interview() {
     synthRef.current.cancel()
     stopListening()
     if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop())
-    navigate("/dashboard")
+    if (sessionId) {
+      endInterview(sessionId).catch(() => {})
+    }
+    navigate(`/interview-complete?session_id=${sessionId}`)
   }
 
   if (!user) return null
@@ -412,53 +448,75 @@ export default function Interview() {
             </div>
           </div>
 
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-lg z-20">
-            {status === "speaking" && question && (
-              <div className="bg-black/70 backdrop-blur-md rounded-xl px-4 py-3 border border-white/10 text-center">
-                <p className="text-white/90 text-sm leading-relaxed">{question}</p>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-lg z-20 space-y-2">
+            {question && (
+              <div className="bg-black/80 backdrop-blur-md rounded-xl p-4 border border-white/10 text-center shadow-2xl">
+                <p className="text-white/90 text-sm md:text-base font-medium leading-relaxed mb-2">{question}</p>
+                <button
+                  onClick={() => speakQuestion(question)}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-white/10 hover:bg-white/20 text-white/80 px-4 py-1 rounded-full transition-all"
+                >
+                  <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {status === "speaking" ? "Speaking..." : "Play / Replay Audio"}
+                </button>
               </div>
             )}
 
-            {(status === "listening" || status === "thinking") && (
-              <div className="bg-black/70 backdrop-blur-md rounded-xl px-4 py-3 border border-green-500/20">
+            {(status === "idle" || status === "listening" || status === "thinking" || status === "speaking") && (
+              <div className="bg-black/80 backdrop-blur-md rounded-xl px-4 py-3 border border-purple-500/20 shadow-xl">
                 {status === "thinking" ? (
-                  <div className="flex items-center gap-2 text-yellow-400/70 text-sm">
+                  <div className="flex items-center justify-center gap-2 text-yellow-400 text-sm py-1">
                     <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Evaluating your answer...
+                    Interviewer is evaluating your response...
                   </div>
                 ) : (
-                  <>
+                  <div className="space-y-2">
                     {transcript && (
-                      <p className="text-white text-sm mb-1">{transcript}</p>
+                      <p className="text-green-300 text-xs bg-green-950/40 p-2 rounded border border-green-500/20">{transcript}</p>
                     )}
                     {interimTranscript && (
-                      <p className="text-white/50 text-sm italic">{interimTranscript}</p>
+                      <p className="text-white/50 text-xs italic">{interimTranscript}</p>
                     )}
-                    {!transcript && !interimTranscript && (
-                      <div className="flex items-center gap-2 text-white/50 text-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                        Listening for your answer...
-                      </div>
-                    )}
-                    {transcript && (
+
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        const val = textAnswer.trim() || transcript.trim()
+                        if (!val) return
+                        setTextAnswer("")
+                        submitAndAdvance(val)
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <input
+                        type="text"
+                        value={textAnswer}
+                        onChange={(e) => setTextAnswer(e.target.value)}
+                        placeholder={transcript ? "Voice captured. Press Send or type to edit..." : "Type your answer or speak into microphone..."}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-primary"
+                      />
                       <button
-                        onClick={finishSpeaking}
-                        className="mt-2 text-[11px] font-semibold bg-green-500/20 hover:bg-green-500/30 text-green-400 px-4 py-1.5 rounded-full transition-all"
+                        type="submit"
+                        disabled={!textAnswer.trim() && !transcript.trim()}
+                        className="bg-primary hover:bg-violet-700 text-white font-semibold text-xs px-4 py-1.5 rounded-lg transition-all disabled:opacity-40"
                       >
-                        Done speaking
+                        Submit
                       </button>
-                    )}
-                  </>
+                    </form>
+                  </div>
                 )}
               </div>
             )}
           </div>
 
-          {status === "loading" && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-30">
+          {status === "loading" && !question && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-30">
               <div className="text-center">
                 <svg className="animate-spin w-8 h-8 text-primary mx-auto mb-3" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -466,6 +524,33 @@ export default function Interview() {
                 </svg>
                 <p className="text-white/60 text-sm">Starting your interview...</p>
               </div>
+            </div>
+          )}
+
+          {showCode && (
+            <div className="absolute inset-0 z-40 bg-gray-950/95 backdrop-blur-sm">
+              <div className="absolute top-3 right-3 z-50">
+                <button
+                  onClick={() => setShowCode(false)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/70 flex items-center justify-center transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <CodePanel sessionId={sessionId} />
+            </div>
+          )}
+
+          {showVoice && (
+            <div className="absolute top-4 left-4 z-40 w-80 max-w-full">
+              <VoicePanel
+                onUseTranscript={(t) => {
+                  setShowVoice(false)
+                  submitAndAdvance(t)
+                }}
+              />
             </div>
           )}
         </div>
@@ -482,6 +567,7 @@ export default function Interview() {
               />
               <FaceDetection
                 videoRef={videoRef}
+                sessionId={sessionId}
                 active={cameraActive}
                 onFacesDetected={handleFacesDetected}
                 onDebug={setFdDebug}
@@ -490,6 +576,15 @@ export default function Interview() {
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 <span className="text-[10px] font-semibold text-white/60 tracking-wider">LIVE</span>
               </div>
+              {calibStatus === "active" && (
+                <div className="absolute inset-0 z-30 bg-gray-950/70 flex items-center justify-center">
+                  <div className="text-center px-6">
+                    <div className="w-10 h-10 mx-auto mb-3 rounded-full border-2 border-blue-400/40 border-t-blue-400 animate-spin" />
+                    <p className="text-sm font-semibold text-white">Calibrating attention…</p>
+                    <p className="text-xs text-white/50 mt-1">Look at your screen for a few seconds</p>
+                  </div>
+                </div>
+              )}
               <div className="absolute top-3 right-3 z-20 flex gap-1.5">
                 <button
                   onClick={toggleMute}
@@ -540,18 +635,25 @@ export default function Interview() {
             </div>
           )}
 
+          <IntegrityMonitor
+            sessionId={sessionId}
+            active={!!cameraActive}
+          />
+
           {analytics.faceDetected && analytics.faceCount > 1 && (
             <div className="absolute top-12 left-3 z-20 bg-red-500/80 text-white text-[10px] font-semibold px-2 py-1 rounded-md flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
-              {analytics.faceCount} faces detected
+              Multiple faces detected
             </div>
           )}
 
           <InterviewAnalytics
             faceCount={analytics.faceCount}
             faceDetected={analytics.faceDetected}
+            bodyCount={analytics.bodyCount}
+            handCount={analytics.handCount}
             attentionScore={analytics.attentionScore}
             confidenceScore={analytics.confidenceScore}
             fluencyScore={analytics.fluencyScore}
@@ -579,6 +681,19 @@ export default function Interview() {
            status === "speaking" ? "AI speaking" :
            status === "thinking" ? "Evaluating" :
            status === "loading" ? "Starting" : "Ready"}
+          {phase === "calibration" && (
+            <span className="text-white/30 ml-2">
+              Calibration {calibrationIndex + 1}/{calibrationQuestions.length}
+            </span>
+          )}
+          {provider && (
+            <span className="ml-2 inline-flex items-center gap-1 text-white/40 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              {provider}
+            </span>
+          )}
           {analytics.faceDetected && (
             <span className="text-white/30 ml-2">
               Attention: {analytics.attentionScore}%
@@ -594,13 +709,38 @@ export default function Interview() {
           )}
 
           <button
+            onClick={() => setShowVoice((v) => !v)}
+            className={`font-semibold text-xs px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${
+              showVoice
+                ? "bg-violet-600 text-white shadow-lg shadow-violet-600/25"
+                : "bg-white/10 hover:bg-white/20 text-white/80"
+            }`}
+          >
+            🎙️ Voice Panel
+          </button>
+
+          <button
+            onClick={() => setShowCode((v) => !v)}
+            className={`font-semibold text-xs px-5 py-2 rounded-full transition-all flex items-center gap-2 ${
+              showCode
+                ? "bg-violet-600 text-white shadow-lg shadow-violet-600/25"
+                : "bg-white/10 hover:bg-white/20 text-white/80"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+            Code
+          </button>
+
+          <button
             onClick={handleEndCall}
             className="bg-red-500 hover:bg-red-600 text-white font-semibold text-xs px-5 py-2 rounded-full transition-all shadow-lg shadow-red-500/25 flex items-center gap-2"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            End Interview
+            End & Report
           </button>
         </div>
       </div>

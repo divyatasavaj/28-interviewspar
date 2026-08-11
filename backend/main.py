@@ -7,6 +7,7 @@ from app.routes.interview import router as interview_router
 from app.routes.questions import router as questions_router
 from app.routes.sessions import router as sessions_router
 from app.routes.answers import router as answers_router
+from app.routes.code import router as code_router
 from app.routes.reports import router as reports_router
 from app.routes.feedback import router as feedback_router
 from app.routes.integrity import router as integrity_router
@@ -25,7 +26,12 @@ app = FastAPI(title="InterviewSpar API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,6 +43,7 @@ app.include_router(interview_router)
 app.include_router(questions_router)
 app.include_router(sessions_router)
 app.include_router(answers_router)
+app.include_router(code_router)
 app.include_router(reports_router)
 app.include_router(feedback_router)
 app.include_router(integrity_router)

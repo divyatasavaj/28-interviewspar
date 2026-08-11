@@ -103,9 +103,14 @@ All SQLAlchemy/PostgreSQL code replaced with PyMongo + MongoDB Atlas.
 ### Integrity
 | Method | Path | Description |
 |---|---|---|
-| POST | /integrity/event | Log anti-cheat event |
-| GET | /integrity/summary/{id} | Get integrity summary |
-| POST | /integrity/check-code-similarity | Check code similarity |
+| POST | /integrity/event | Log generic anti-cheat event |
+| POST | /integrity/face-event | Log no_face / multi_face / face_left_frame |
+| POST | /integrity/tab-switch | Log tab switch |
+| POST | /integrity/fullscreen-exit | Log fullscreen exit |
+| POST | /integrity/copy-paste | Log copy/paste with pasted length |
+| POST | /integrity/latency-anomaly | Flag + log latency anomaly vs baseline |
+| GET | /integrity/summary/{id} | Get aggregated integrity summary |
+| POST | /integrity/check-code-similarity | Check code similarity vs known solutions |
 
 ### Legacy Interview (existing UI)
 | Method | Path | Description |

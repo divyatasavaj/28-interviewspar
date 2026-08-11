@@ -1,12 +1,19 @@
 from datetime import datetime, timezone
 
-from bson.objectid import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Header
 from pymongo.database import Database
 
 from app.auth import decode_access_token
 from app.database import get_db
-from app.schemas import IntegrityEvent, IntegritySummaryResponse
+from app.schemas import (
+    CopyPasteRequest,
+    FaceEventRequest,
+    FullscreenExitRequest,
+    IntegrityEvent,
+    LatencyAnomalyRequest,
+    TabSwitchRequest,
+)
+from app.services import anticheat
 
 router = APIRouter(prefix="/integrity", tags=["integrity"])
 
@@ -21,15 +28,55 @@ def require_user_id(authorization: str = Header(...)) -> str:
     return user_id
 
 
-def _get_log(session_id: str, db: Database):
-    log = db.integrity_logs.find_one({"session_id": session_id})
-    if not log:
-        log_id = db.integrity_logs.insert_one({
-            "session_id": session_id,
-            "events": [],
-        }).inserted_id
-        log = db.integrity_logs.find_one({"_id": log_id})
-    return log
+@router.post("/face-event")
+def log_face_event(body: FaceEventRequest, db: Database = Depends(get_db), user_id: str = Depends(require_user_id)):
+    try:
+        event = anticheat.log_face_event(db, body.session_id, body.event_type, body.timestamp)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"message": "Face event logged", "event": event}
+
+
+@router.post("/tab-switch")
+def log_tab_switch(body: TabSwitchRequest, db: Database = Depends(get_db), user_id: str = Depends(require_user_id)):
+    event = anticheat.log_tab_switch(db, body.session_id, body.timestamp)
+    return {"message": "Tab switch logged", "event": event}
+
+
+@router.post("/fullscreen-exit")
+def log_fullscreen_exit(body: FullscreenExitRequest, db: Database = Depends(get_db), user_id: str = Depends(require_user_id)):
+    event = anticheat.log_fullscreen_exit(db, body.session_id, body.timestamp)
+    return {"message": "Fullscreen exit logged", "event": event}
+
+
+@router.post("/copy-paste")
+def log_copy_paste(body: CopyPasteRequest, db: Database = Depends(get_db), user_id: str = Depends(require_user_id)):
+    event = anticheat.log_copy_paste(
+        db,
+        body.session_id,
+        question_id=body.question_id,
+        pasted_content_length=body.pasted_content_length,
+        timestamp=body.timestamp,
+    )
+    return {"message": "Copy/paste logged", "event": event}
+
+
+@router.post("/latency-anomaly")
+def log_latency_anomaly(body: LatencyAnomalyRequest, db: Database = Depends(get_db), user_id: str = Depends(require_user_id)):
+    result = anticheat.flag_latency_anomaly(body.response_latency_ms, body.baseline)
+    if result["flagged"]:
+        event = {
+            "type": "latency_anomaly",
+            "timestamp": body.timestamp or datetime.now(timezone.utc).isoformat(),
+            "response_latency_ms": body.response_latency_ms,
+            "expected_ms": result["expected_ms"],
+            "ratio": result["ratio"],
+        }
+        if body.question_id:
+            event["question_id"] = body.question_id
+        anticheat._push(db, body.session_id, event)
+        result["event"] = event
+    return result
 
 
 @router.post("/event")
@@ -43,34 +90,13 @@ def log_event(body: IntegrityEvent, db: Database = Depends(get_db), user_id: str
     if body.extra:
         event.update(body.extra)
 
-    log = _get_log(body.session_id, db)
-    db.integrity_logs.update_one(
-        {"_id": log["_id"]},
-        {"$push": {"events": event}},
-    )
+    anticheat._push(db, body.session_id, event)
     return {"message": "Event logged"}
 
 
 @router.get("/summary/{session_id}")
 def compile_integrity_summary(session_id: str, db: Database = Depends(get_db), user_id: str = Depends(require_user_id)):
-    log = db.integrity_logs.find_one({"session_id": session_id})
-    if not log:
-        return IntegritySummaryResponse(session_id=session_id, events=[])
-
-    events = log.get("events", [])
-    flags = []
-    for e in events:
-        etype = e.get("type", "")
-        if etype in ("face_not_detected", "multi_face_detected", "face_left_frame"):
-            flags.append(e)
-        elif etype == "tab_switch":
-            flags.append(e)
-        elif etype == "copy_paste":
-            flags.append(e)
-        elif etype == "code_similarity_flag":
-            flags.append(e)
-
-    return IntegritySummaryResponse(session_id=session_id, events=flags)
+    return anticheat.compile_integrity_summary(db, session_id)
 
 
 @router.post("/check-code-similarity")
@@ -80,25 +106,15 @@ def check_code_similarity(body: dict, db: Database = Depends(get_db), user_id: s
     question_id = body.get("question_id")
 
     known_answers = list(db.answers.find({"question_id": question_id}).limit(10))
-    max_similarity = 0
-    for ka in known_answers:
-        stored_code = ka.get("code_submission", "")
-        if stored_code and code:
-            common = len(set(code.split()) & set(stored_code.split()))
-            total = max(len(set(code.split())), 1)
-            similarity = common / total
-            max_similarity = max(max_similarity, similarity)
+    bank = [ka.get("code_submission", "") for ka in known_answers if ka.get("code_submission")]
 
-    if max_similarity > 0.7:
-        log = _get_log(session_id, db)
-        db.integrity_logs.update_one(
-            {"_id": log["_id"]},
-            {"$push": {"events": {
-                "type": "code_similarity_flag",
-                "question_id": question_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "similarity_score": max_similarity,
-            }}},
-        )
+    result = anticheat.check_code_similarity(code, bank)
+    if session_id and result["flag"] in ("high", "medium"):
+        anticheat._push(db, session_id, {
+            "type": "code_similarity_flag",
+            "question_id": question_id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "similarity_score": result["score"],
+        })
 
-    return {"similarity_score": max_similarity, "flagged": max_similarity > 0.7}
+    return {"similarity_score": result["score"], "flag": result["flag"], "flagged": result["flag"] == "high"}
