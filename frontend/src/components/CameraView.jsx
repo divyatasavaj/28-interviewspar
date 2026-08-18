@@ -1,28 +1,34 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import { getToken } from "../api/auth"
 
-const API = "http://localhost:8000"
+const API = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
-export default function CameraView({ interviewSessionId, onFaceEvent }) {
+export default function CameraView({ interviewSessionId, stream, faceDetected = true }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
-  const canvasRef = useRef(null)
-  const frameIntervalRef = useRef(null)
   const [cameraActive, setCameraActive] = useState(false)
   const [videoSessionId, setVideoSessionId] = useState(null)
   const [muted, setMuted] = useState(false)
   const [minimized, setMinimized] = useState(false)
-  const [faceDetected, setFaceDetected] = useState(true)
 
   const startCamera = useCallback(async (sid) => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 320, height: 240, facingMode: "user" },
-        audio: true,
-      })
+    if (stream) {
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
+      }
+      setCameraActive(true)
+      return
+    }
+
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 320, height: 240, facingMode: "user" },
+        audio: true,
+      })
+      streamRef.current = mediaStream
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream
       }
       setCameraActive(true)
 
@@ -39,16 +45,20 @@ export default function CameraView({ interviewSessionId, onFaceEvent }) {
     } catch (err) {
       console.warn("Camera access denied:", err.message)
     }
-  }, [interviewSessionId])
+  }, [interviewSessionId, stream])
 
   useEffect(() => {
-    if (interviewSessionId && !cameraActive && !streamRef.current) {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream
+      streamRef.current = stream
+      setCameraActive(true)
+    } else if (interviewSessionId && !cameraActive && !streamRef.current) {
       startCamera(interviewSessionId)
     }
-  }, [interviewSessionId, cameraActive, startCamera])
+  }, [interviewSessionId, cameraActive, startCamera, stream])
 
   const stopCamera = useCallback(async () => {
-    if (streamRef.current) {
+    if (streamRef.current && !stream) {
       streamRef.current.getTracks().forEach((t) => t.stop())
       streamRef.current = null
     }
@@ -61,68 +71,17 @@ export default function CameraView({ interviewSessionId, onFaceEvent }) {
           Authorization: `Bearer ${getToken()}`,
         },
         body: JSON.stringify({ video_session_id: videoSessionId }),
-      })
+      }).catch(() => {})
     }
-  }, [videoSessionId])
-
-  const captureAndAnalyze = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || !videoSessionId) return
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    canvas.width = video.videoWidth || 320
-    canvas.height = video.videoHeight || 240
-    const ctx = canvas.getContext("2d")
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-    canvas.toBlob(async (blob) => {
-      if (!blob) return
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        const base64data = reader.result
-        try {
-          const res = await fetch(`${API}/video/analyze-frame`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${getToken()}`,
-            },
-            body: JSON.stringify({
-              video_session_id: videoSessionId,
-              frame_data: base64data,
-              face_detected: faceDetected,
-              face_count: faceDetected ? 1 : 0,
-            }),
-          })
-          if (res.ok) {
-            const data = await res.json()
-            if (!data.face_detected && onFaceEvent) {
-              onFaceEvent("face_not_detected")
-            }
-          }
-        } catch (e) {
-          // silent
-        }
-      }
-      reader.readAsDataURL(blob)
-    }, "image/jpeg", 0.3)
-  }, [videoSessionId, faceDetected, onFaceEvent])
-
-  useEffect(() => {
-    if (cameraActive && videoSessionId) {
-      frameIntervalRef.current = setInterval(captureAndAnalyze, 5000)
-    }
-    return () => {
-      if (frameIntervalRef.current) clearInterval(frameIntervalRef.current)
-    }
-  }, [cameraActive, videoSessionId, captureAndAnalyze])
+  }, [videoSessionId, stream])
 
   useEffect(() => {
     return () => {
-      if (streamRef.current) {
+      if (streamRef.current && !stream) {
         streamRef.current.getTracks().forEach((t) => t.stop())
       }
     }
-  }, [])
+  }, [stream])
 
   function toggleMute() {
     if (streamRef.current) {
@@ -136,8 +95,6 @@ export default function CameraView({ interviewSessionId, onFaceEvent }) {
 
   return (
     <>
-      <canvas ref={canvasRef} className="hidden" />
-
       {cameraActive && (
         <div
           className={`fixed z-40 transition-all duration-300 shadow-2xl border-2 border-white/10 rounded-xl overflow-hidden ${

@@ -23,7 +23,7 @@ def initialize_ability_estimate(user_id: str, calibration_results: list[dict], d
         delta = 0.05 * difficulty if correct else -0.05 * difficulty
         profile[topic] = max(0.0, min(1.0, profile.get(topic, 0.5) + delta))
     db.sessions.update_one(
-        {"_id": user_id},
+        {"user_id": user_id, "status": "in_progress"},
         {"$set": {"ability_profile": profile}},
     )
     return profile

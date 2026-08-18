@@ -1,6 +1,9 @@
 export default function InterviewAnalytics({
   faceCount = 0,
   faceDetected = false,
+  bodyCount = 0,
+  handCount = 0,
+  phoneDetected = false,
   attentionScore = 0,
   confidenceScore = 0,
   integrityFlags = [],
@@ -8,21 +11,18 @@ export default function InterviewAnalytics({
   isActive = false,
   fdDebug = null,
 }) {
-  const faceOk = faceDetected && faceCount === 1
   const multiFace = faceCount > 1
   const attentionLevel = attentionScore >= 70 ? "high" : attentionScore >= 40 ? "medium" : "low"
   const confLevel = confidenceScore >= 70 ? "high" : confidenceScore >= 40 ? "medium" : "low"
+
+  const faceLabel = !faceDetected ? "None" : faceCount === 1 ? "Single" : "Multiple"
+  const bodyLabel = bodyCount === 0 ? "None" : bodyCount === 1 ? "Single person" : "Multiple persons"
+  const handLabel = handCount === 0 ? "None" : handCount === 1 ? "Hand in frame" : "Multiple hands"
 
   const colorMap = {
     high: "text-green-400",
     medium: "text-yellow-400",
     low: "text-red-400",
-  }
-
-  const bgMap = {
-    high: "bg-green-500/20 border-green-500/30",
-    medium: "bg-yellow-500/20 border-yellow-500/30",
-    low: "bg-red-500/20 border-red-500/30",
   }
 
   if (!isActive) return null
@@ -40,7 +40,7 @@ export default function InterviewAnalytics({
           <div className="flex items-center gap-1.5">
             <span className={`w-1.5 h-1.5 rounded-full ${faceDetected ? "bg-green-400" : "bg-red-400"}`} />
             <span className={`font-semibold ${faceDetected ? "text-green-400" : "text-red-400"}`}>
-              {faceDetected ? `${faceCount} detected` : "None"}
+              {faceLabel}
             </span>
           </div>
         </div>
@@ -53,6 +53,27 @@ export default function InterviewAnalytics({
             <span className="text-red-400 font-semibold text-[10px]">Multiple faces detected</span>
           </div>
         )}
+
+        <div className="flex items-center justify-between">
+          <span className="text-white/60">Body</span>
+          <span className={`font-semibold ${bodyCount === 0 ? "text-red-400" : bodyCount === 1 ? "text-green-400" : "text-red-400"}`}>
+            {bodyLabel}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-white/60">Hands</span>
+          <span className={`font-semibold ${handCount === 0 ? "text-white/40" : handCount === 1 ? "text-yellow-400" : "text-red-400"}`}>
+            {handLabel}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-white/60">Device</span>
+          <span className={`font-semibold ${phoneDetected ? "text-red-400 animate-pulse" : "text-green-400"}`}>
+            {phoneDetected ? "Phone Detected" : "Clear"}
+          </span>
+        </div>
 
         <div className="flex items-center justify-between">
           <span className="text-white/60">Attention</span>
@@ -101,10 +122,12 @@ export default function InterviewAnalytics({
             {integrityFlags.slice(-3).map((flag, i) => (
               <div key={i} className="flex items-center gap-1.5 text-[10px]">
                 <span className={`w-1 h-1 rounded-full ${
-                  flag.type === "face_not_detected" || flag.type === "multi_face_detected" || flag.type === "looking_away" || flag.type === "single_face_restored"
+                  flag.type === "mobile_phone_detected" || flag.type === "face_not_detected" || flag.type === "multi_face_detected"
                     ? "bg-red-400" : "bg-yellow-400"
                 }`} />
                 <span className="text-white/50">
+                  {flag.type === "mobile_phone_detected" && "Mobile Phone Detected"}
+                  {flag.type === "mobile_phone_cleared" && "Phone Cleared"}
                   {flag.type === "face_not_detected" && "Face lost"}
                   {flag.type === "multi_face_detected" && "Multiple faces"}
                   {flag.type === "single_face_restored" && "Single face restored"}
@@ -112,7 +135,7 @@ export default function InterviewAnalytics({
                   {flag.type === "copy_paste" && "Copy/paste detected"}
                   {flag.type === "code_similarity_flag" && "Code similarity"}
                   {flag.type === "looking_away" && (flag.detail || "Looking away")}
-                  {!["face_not_detected","multi_face_detected","single_face_restored","tab_switch","copy_paste","code_similarity_flag","looking_away"].includes(flag.type) && flag.type}
+                  {!["mobile_phone_detected","mobile_phone_cleared","face_not_detected","multi_face_detected","single_face_restored","tab_switch","copy_paste","code_similarity_flag","looking_away"].includes(flag.type) && flag.type}
                 </span>
               </div>
             ))}
@@ -121,17 +144,10 @@ export default function InterviewAnalytics({
 
         {fdDebug && (
           <div className="pt-1.5 border-t border-white/5">
-            <span className="text-white/30 font-semibold tracking-wider uppercase text-[8px]">Detection</span>
-            <div className="mt-1 flex items-center gap-1.5 text-[9px] text-white/40 font-mono">
-              <span className={`w-1 h-1 rounded-full ${
-                fdDebug.tier === "native" ? "bg-green-400" :
-                fdDebug.tier === "human" ? "bg-blue-400" : "bg-yellow-500"
-              }`} />
-              <span className="uppercase font-semibold tracking-wider">
-                {fdDebug.tier === "human" ? "human" : fdDebug.tier}
-              </span>
-              <span>c:{fdDebug.confidence?.toFixed(2) ?? "?"}</span>
-              <span>v:{fdDebug.variance}</span>
+            <span className="text-white/30 font-semibold tracking-wider uppercase text-[8px]">Worker Engine</span>
+            <div className="mt-1 flex items-center gap-1.5 text-[9px] text-cyan-400 font-mono">
+              <span>{fdDebug.stats?.fps ?? fdDebug.fps ?? 0} FPS</span>
+              <span>({fdDebug.stats?.ms ?? fdDebug.inferenceMs ?? 0}ms)</span>
             </div>
           </div>
         )}

@@ -1,7 +1,62 @@
-const API = "http://localhost:8000"
+const API = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
 export function getToken() {
   return sessionStorage.getItem("token")
+}
+
+export async function logIntegrity(sessionId, type, extra = {}) {
+  const res = await fetch(`${API}/integrity/event`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ session_id: sessionId, type, ...extra }),
+  })
+  if (!res.ok) throw new Error("Failed to log integrity event")
+  return res.json()
+}
+
+async function postIntegrity(path, payload) {
+  const res = await fetch(`${API}/integrity/${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(`Failed to log integrity event (${path})`)
+  return res.json()
+}
+
+export function logFaceEvent(sessionId, eventType, extra = {}) {
+  return postIntegrity("face-event", { session_id: sessionId, event_type: eventType, ...extra })
+}
+
+export function logTabSwitch(sessionId) {
+  return postIntegrity("tab-switch", { session_id: sessionId })
+}
+
+export function logFullscreenExit(sessionId) {
+  return postIntegrity("fullscreen-exit", { session_id: sessionId })
+}
+
+export function logCopyPaste(sessionId, { question_id, pasted_content_length } = {}) {
+  return postIntegrity("copy-paste", { session_id: sessionId, question_id, pasted_content_length })
+}
+
+export function logDeviceEvent(sessionId, { device_type, confidence, evidence_signal } = {}) {
+  return postIntegrity("device-event", {
+    session_id: sessionId,
+    device_type: device_type || "cell_phone",
+    confidence: confidence || 0,
+    evidence_signal: evidence_signal || "unknown",
+  })
+}
+
+export function logIntegrityBatch(sessionId, events) {
+  return postIntegrity("batch", { session_id: sessionId, events })
 }
 
 export function setToken(t) {
@@ -119,6 +174,95 @@ export async function getInterviewFeedback(sessionId) {
   if (!res.ok) {
     const err = await res.json()
     throw new Error(err.detail || "Failed to fetch feedback")
+  }
+  return res.json()
+}
+
+export async function submitCalibration(sessionId, question, answer) {
+  const res = await fetch(`${API}/interview/calibration`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ session_id: sessionId, question, answer }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to submit calibration answer")
+  }
+  return res.json()
+}
+
+export async function sendInterviewMessage(sessionId, history) {
+  const res = await fetch(`${API}/interview/message`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ session_id: sessionId, history }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to get interviewer message")
+  }
+  return res.json()
+}
+
+export async function endInterview(sessionId) {
+  const res = await fetch(`${API}/interview/${sessionId}/end`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+    },
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to end interview")
+  }
+  return res.json()
+}
+
+export async function getProblems() {
+  const res = await fetch(`${API}/code/problems`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to fetch problems")
+  }
+  return res.json()
+}
+
+export async function runCode({ problemId, language, code }) {
+  const res = await fetch(`${API}/code/run`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ problemId, language, code }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to run code")
+  }
+  return res.json()
+}
+
+export async function checkCodeSimilarity({ sessionId, problemId, language, code }) {
+  const res = await fetch(`${API}/code/similarity`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ sessionId, problemId, language, code }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to check similarity")
   }
   return res.json()
 }

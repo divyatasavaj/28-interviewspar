@@ -190,6 +190,50 @@ class IntegritySummaryResponse(BaseModel):
     events: list[dict]
 
 
+class FaceEventRequest(BaseModel):
+    session_id: str
+    event_type: str
+    timestamp: Optional[str] = None
+
+
+class TabSwitchRequest(BaseModel):
+    session_id: str
+    timestamp: Optional[str] = None
+
+
+class FullscreenExitRequest(BaseModel):
+    session_id: str
+    timestamp: Optional[str] = None
+
+
+class CopyPasteRequest(BaseModel):
+    session_id: str
+    question_id: Optional[str] = None
+    pasted_content_length: Optional[int] = None
+    timestamp: Optional[str] = None
+
+
+class LatencyAnomalyRequest(BaseModel):
+    session_id: str
+    question_id: Optional[str] = None
+    response_latency_ms: float
+    baseline: Optional[dict] = None
+    timestamp: Optional[str] = None
+
+
+class DeviceEventRequest(BaseModel):
+    session_id: str
+    device_type: str = "cell_phone"
+    confidence: float
+    evidence_signal: Optional[str] = None
+    timestamp: Optional[str] = None
+
+
+class IntegrityBatchRequest(BaseModel):
+    session_id: str
+    events: list[dict]
+
+
 # ── Legacy Interview (kept for backward compat with existing UI) ──
 
 class StartInterviewRequest(BaseModel):

@@ -1,67 +1,67 @@
-import { useEffect, useRef, useState } from "react";
-import { logIntegrity } from "../api";
+import { useEffect, useRef, useState } from "react"
+import { logIntegrity, logTabSwitch, logFullscreenExit } from "../api/auth"
 
-// STEP 8 — browser-side integrity monitoring. Rule-based event detection only
-// (tab-switch, blur, fullscreen exit, visibility). Face detection is an optional hook:
-// if a face-api/MediaPipe model is loaded globally it is used; otherwise we only log
-// camera on/off (rules.md: no custom CV, video never leaves the browser).
+// Browser-side integrity monitoring. Rule-based event detection only
+// (tab-switch, blur, fullscreen exit, visibility). Runs during an active session;
+// monitoring starts only after explicit user consent.
 export default function IntegrityMonitor({ sessionId, active }) {
-  const [flags, setFlags] = useState(0);
-  const [consent, setConsent] = useState(false);
-  const started = useRef(false);
-
-  async function send(event, detail) {
-    try {
-      const r = await logIntegrity({ sessionId, event, detail });
-      if (r.count !== undefined) setFlags(r.count);
-    } catch {
-      /* non-fatal */
-    }
-  }
+  const [consent, setConsent] = useState(false)
+  const [monitoring, setMonitoring] = useState(false)
+  const started = useRef(false)
 
   useEffect(() => {
-    if (!active || !consent || started.current) return;
-    started.current = true;
-    send("session-start", { fullscreen: !!document.fullscreenElement });
+    if (!active || !consent || started.current) return
+    started.current = true
+    setMonitoring(true)
+    logIntegrity(sessionId, "session-start", { extra: { fullscreen: !!document.fullscreenElement } }).catch(() => {})
 
-    const onBlur = () => send("window-blur");
-    const onFocus = () => send("window-focus");
-    const onVis = () => { if (document.hidden) send("tab-hidden"); };
-    const onFs = () => { if (!document.fullscreenElement) send("fullscreen-exit"); };
+    const onBlur = () => logTabSwitch(sessionId).catch(() => {})
+    const onVis = () => {
+      if (document.hidden) logTabSwitch(sessionId).catch(() => {})
+    }
+    const onFs = () => {
+      if (!document.fullscreenElement) logFullscreenExit(sessionId).catch(() => {})
+    }
 
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onVis);
-    document.addEventListener("fullscreenchange", onFs);
+    window.addEventListener("blur", onBlur)
+    document.addEventListener("visibilitychange", onVis)
+    document.addEventListener("fullscreenchange", onFs)
 
     return () => {
-      window.removeEventListener("blur", onBlur);
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVis);
-      document.removeEventListener("fullscreenchange", onFs);
-    };
-  }, [active, consent, sessionId]);
+      window.removeEventListener("blur", onBlur)
+      document.removeEventListener("visibilitychange", onVis)
+      document.removeEventListener("fullscreenchange", onFs)
+    }
+  }, [active, consent, sessionId])
 
-  if (!active) return null;
+  if (!active) return null
 
   if (!consent) {
     return (
-      <div className="rounded-card border border-white/10 bg-white/5 p-3 text-sm">
-        <p className="mb-2">This session may record integrity signals (tab switches, focus, fullscreen) for the report. Video never leaves your browser.</p>
-        <button onClick={() => setConsent(true)} className="rounded-full bg-brand-violet px-3 py-1 text-xs font-semibold text-white">
-          Consent &amp; begin monitoring
+      <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-md rounded-xl border border-white/10 bg-black/70 backdrop-blur-md px-4 py-3 text-sm">
+        <p className="mb-2 text-white/70">
+          This session records integrity signals (tab switches, focus loss, fullscreen exit) and may detect prohibited devices (e.g. phones). All CV analysis runs on-device in your browser.
+        </p>
+        <button
+          onClick={() => setConsent(true)}
+          className="rounded-full bg-violet-600 px-3 py-1 text-xs font-semibold text-white"
+        >
+          Consent & begin monitoring
         </button>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-card border border-white/10 bg-white/5 px-3 py-1 text-xs">
-      <span className="text-score-good">● monitoring</span>
-      <button onClick={() => document.documentElement.requestFullscreen?.()} className="rounded bg-white/10 px-2 py-0.5">
+    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[10px] text-white backdrop-blur-md">
+      <span className="text-green-400">● monitoring</span>
+      <button
+        onClick={() => document.documentElement.requestFullscreen?.()}
+        className="rounded bg-white/10 px-2 py-0.5 hover:bg-white/20"
+      >
         Go fullscreen
       </button>
-      <span className="text-ink-muted">integrity flags: {flags}</span>
+      {monitoring && <span className="text-white/50">integrity: on</span>}
     </div>
-  );
+  )
 }
