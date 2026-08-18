@@ -242,3 +242,11 @@ MongoDB is document-based, so related data is grouped inside each document rathe
 - Session + answers could be embedded as one document (answers as an array inside the session) instead of a separate collection — either works; separate collections shown above keep individual answer documents smaller and easier to query independently (e.g. "all answers tagged rambling across all sessions").
 - No joins needed for the most common reads (get a session + its report) since related data is grouped by `session_id` reference, which MongoDB handles well at this project's scale.
 - Free tier: MongoDB Atlas free tier (512MB) is more than sufficient — same storage math as before applies (each session's text data is only tens of KB, video is not stored for practice sessions).
+
+
+
+
+
+
+- Frontend: npm run dev 
+- Backend: uvicorn main:app --reload 
