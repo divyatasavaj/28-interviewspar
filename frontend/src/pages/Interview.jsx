@@ -441,9 +441,9 @@ export default function Interview() {
   return (
     <div className="h-screen w-screen overflow-hidden font-sans bg-black flex flex-col">
       <div className="flex-1 flex flex-col md:flex-row">
-        <div className="flex-1 relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center border-b md:border-b-0 md:border-r border-white/5 min-h-0">
-          <div className="w-full h-full flex items-center justify-center p-4 md:p-8">
-            <div className="w-full max-w-lg">
+        <div className="flex-1 md:flex-none md:w-[35%] relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center border-b md:border-b-0 md:border-r border-white/5 min-h-0">
+          <div className="w-full h-full flex items-center justify-center p-4 md:p-6">
+            <div className="w-full max-w-md">
               <InterviewerAvatar status={status} interviewType={type} />
             </div>
           </div>
@@ -572,9 +572,17 @@ export default function Interview() {
                 onFacesDetected={handleFacesDetected}
                 onDebug={setFdDebug}
               />
-              <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
+              <div className="absolute top-3 left-3 z-20 flex items-center gap-2 flex-wrap max-w-[calc(100%-6rem)]">
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 <span className="text-[10px] font-semibold text-white/60 tracking-wider">LIVE</span>
+                {analytics.faceDetected && analytics.faceCount > 1 && (
+                  <span className="bg-red-500/80 text-white text-[10px] font-semibold px-2 py-1 rounded-md flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    Multiple faces detected
+                  </span>
+                )}
               </div>
               {calibStatus === "active" && (
                 <div className="absolute inset-0 z-30 bg-gray-950/70 flex items-center justify-center">
@@ -639,15 +647,6 @@ export default function Interview() {
             sessionId={sessionId}
             active={!!cameraActive}
           />
-
-          {analytics.faceDetected && analytics.faceCount > 1 && (
-            <div className="absolute top-12 left-3 z-20 bg-red-500/80 text-white text-[10px] font-semibold px-2 py-1 rounded-md flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-              Multiple faces detected
-            </div>
-          )}
 
           <InterviewAnalytics
             faceCount={analytics.faceCount}
