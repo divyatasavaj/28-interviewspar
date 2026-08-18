@@ -1,3 +1,5 @@
+import { useState } from "react"
+
 export default function InterviewAnalytics({
   faceCount = 0,
   faceDetected = false,
@@ -10,12 +12,17 @@ export default function InterviewAnalytics({
   isActive = false,
   fdDebug = null,
 }) {
+  const [open, setOpen] = useState(false)
   const multiFace = faceCount > 1
   const attentionLevel = attentionScore >= 70 ? "high" : attentionScore >= 40 ? "medium" : "low"
   const confLevel = confidenceScore >= 70 ? "high" : confidenceScore >= 40 ? "medium" : "low"
 
-  const faceLabel = !faceDetected ? "None" : faceCount === 1 ? "Single" : "Multiple"
-  const bodyLabel = bodyCount === 0 ? "None" : bodyCount === 1 ? "Single person" : "Multiple persons"
+  const faceLabel = !faceDetected ? "Not visible" : faceCount === 1 ? "In frame" : "Multiple"
+  // Candidate-present mirrors FaceDetection's personSignal OR-gate; the
+  // combined multi-person count drives the "additional person" wording.
+  const multiPerson = fdDebug?.stats?.multiPerson ?? Math.max(faceCount, bodyCount)
+  const candidatePresent = faceDetected || bodyCount >= 1
+  const bodyLabel = !candidatePresent ? "Candidate not visible" : multiPerson > 1 ? "Additional person detected" : "Candidate in frame"
   const handLabel = handCount === 0 ? "None" : handCount === 1 ? "Hand in frame" : "Multiple hands"
 
   const colorMap = {
@@ -26,23 +33,60 @@ export default function InterviewAnalytics({
 
   if (!isActive) return null
 
-  return (
-    <div className="absolute bottom-4 left-4 z-30 max-w-[220px]">
-      <div className="bg-gray-900/90 backdrop-blur-md border border-white/10 rounded-xl p-3 space-y-2.5 text-[11px]">
-        <div className="flex items-center justify-between pb-1.5 border-b border-white/5">
-          <span className="text-white/40 font-semibold tracking-wider uppercase text-[9px]">Live Analytics</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-        </div>
+  // Compact strip: single overall state badge (Task A labels). Driven by the
+  // sustained alert flags when present (ambient interrupt — pulses without the
+  // drawer needing to be open), else the instantaneous candidate state.
+  const f = fdDebug?.flags
+  const strip =
+    f?.personGone ? { tone: "bad", text: "Candidate not visible" }
+    : f?.multiPerson ? { tone: "bad", text: "Additional person detected" }
+    : f?.handIntrusion ? { tone: "bad", text: "Unidentified hand in frame" }
+    : f?.faceGone ? { tone: "warn", text: "Face not visible" }
+    : !candidatePresent ? { tone: "bad", text: "Candidate not visible" }
+    : multiPerson > 1 ? { tone: "bad", text: "Additional person detected" }
+    : { tone: "ok", text: "Candidate in frame" }
+  const stripBadge = (tone, text) => (
+    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+      tone === "ok" ? "bg-black/50 text-green-400"
+      : tone === "warn" ? "bg-yellow-500/80 text-white"
+      : "bg-red-500/80 text-white"
+    } ${tone !== "ok" ? "animate-pulse" : ""}`}>
+      {text}
+    </span>
+  )
 
-        <div className="flex items-center justify-between">
-          <span className="text-white/60">Face</span>
-          <div className="flex items-center gap-1.5">
-            <span className={`w-1.5 h-1.5 rounded-full ${faceDetected ? "bg-green-400" : "bg-red-400"}`} />
-            <span className={`font-semibold ${faceDetected ? "text-green-400" : "text-red-400"}`}>
-              {faceLabel}
-            </span>
+  return (
+    <div className="absolute bottom-4 left-4 z-30 w-[220px]">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full bg-gray-900/90 backdrop-blur-md border border-white/10 rounded-xl px-3 py-2 text-[11px] flex items-center justify-between gap-2 cursor-pointer hover:border-white/20 transition-colors"
+      >
+        {stripBadge(strip.tone, strip.text)}
+        <svg
+          className={`w-3 h-3 text-white/40 flex-shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      <div className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out ${open ? "max-h-[70vh] opacity-100" : "max-h-0 opacity-0"}`}>
+        <div className="mt-1.5 bg-gray-900/90 backdrop-blur-md border border-white/10 rounded-xl p-3 space-y-2.5 text-[11px] max-h-[70vh] overflow-y-auto">
+          <div className="flex items-center justify-between pb-1.5 border-b border-white/5">
+            <span className="text-white/40 font-semibold tracking-wider uppercase text-[9px]">Live Analytics</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           </div>
-        </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-white/60">Face</span>
+            <div className="flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${faceDetected ? (faceCount > 1 ? "bg-red-400" : "bg-green-400") : "bg-yellow-400"}`} />
+              <span className={`font-semibold ${faceDetected ? (faceCount > 1 ? "text-red-400" : "text-green-400") : "text-yellow-400"}`}>
+                {faceLabel}
+              </span>
+            </div>
+          </div>
 
         {multiFace && (
           <div className="bg-red-500/20 border border-red-500/30 rounded-lg px-2 py-1.5 flex items-center gap-1.5">
@@ -55,7 +99,7 @@ export default function InterviewAnalytics({
 
         <div className="flex items-center justify-between">
           <span className="text-white/60">Body</span>
-          <span className={`font-semibold ${bodyCount === 0 ? "text-red-400" : bodyCount === 1 ? "text-green-400" : "text-red-400"}`}>
+          <span className={`font-semibold ${bodyLabel === "Candidate in frame" ? "text-green-400" : "text-red-400"}`}>
             {bodyLabel}
           </span>
         </div>
@@ -114,18 +158,29 @@ export default function InterviewAnalytics({
             {integrityFlags.slice(-3).map((flag, i) => (
               <div key={i} className="flex items-center gap-1.5 text-[10px]">
                 <span className={`w-1 h-1 rounded-full ${
-                  flag.type === "face_not_detected" || flag.type === "multi_face_detected" || flag.type === "looking_away" || flag.type === "single_face_restored"
-                    ? "bg-red-400" : "bg-yellow-400"
+                  flag.type === "person_not_detected" || flag.type === "multi_person_detected" || flag.type === "hand_intrusion_detected" || flag.type === "multi_face_detected" || flag.type === "looking_away"
+                    ? "bg-red-400"
+                    : flag.type === "face_not_detected"
+                    ? "bg-yellow-400"
+                    : flag.type === "single_face_restored" || flag.type === "face_detected" || flag.type === "person_detected" || flag.type === "person_count_restored"
+                    ? "bg-green-400"
+                    : "bg-yellow-400"
                 }`} />
                 <span className="text-white/50">
-                  {flag.type === "face_not_detected" && "Face lost"}
+                  {flag.type === "person_not_detected" && "Candidate not visible"}
+                  {flag.type === "multi_person_detected" && "Additional person detected"}
+                  {flag.type === "hand_intrusion_detected" && "Unidentified hand in frame"}
+                  {flag.type === "face_not_detected" && "Face not visible"}
+                  {flag.type === "face_detected" && "Face back in frame"}
+                  {flag.type === "person_detected" && "Candidate back in frame"}
+                  {flag.type === "person_count_restored" && "Extra person gone"}
                   {flag.type === "multi_face_detected" && "Multiple faces"}
                   {flag.type === "single_face_restored" && "Single face restored"}
                   {flag.type === "tab_switch" && "Tab switched"}
                   {flag.type === "copy_paste" && "Copy/paste detected"}
                   {flag.type === "code_similarity_flag" && "Code similarity"}
                   {flag.type === "looking_away" && (flag.detail || "Looking away")}
-                  {!["face_not_detected","multi_face_detected","single_face_restored","tab_switch","copy_paste","code_similarity_flag","looking_away"].includes(flag.type) && flag.type}
+                  {!["person_not_detected","multi_person_detected","hand_intrusion_detected","face_not_detected","face_detected","person_detected","person_count_restored","multi_face_detected","single_face_restored","tab_switch","copy_paste","code_similarity_flag","looking_away"].includes(flag.type) && flag.type}
                 </span>
               </div>
             ))}
@@ -150,9 +205,15 @@ export default function InterviewAnalytics({
                   b:{fdDebug.stats.rawBodies}→{fdDebug.stats.bodies}
                 </span>
               )}
+              {fdDebug.stats && fdDebug.stats.multiPerson > 0 && (
+                <span className={fdDebug.stats.multiPerson > 1 ? "text-red-400" : "text-green-400"}>
+                  p:{fdDebug.stats.multiPerson}
+                </span>
+              )}
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   )

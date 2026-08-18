@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import { logIntegrity } from "../api/auth"
-import { stepState } from "../lib/faceLogic.js"
+import { stepState, resolveMultiPersonCount } from "../lib/faceLogic.js"
+import { createPersonDetector, detectHandIntrusion } from "../lib/personDetector.js"
 
 const SAMPLE_W = 80
 const VARIANCE_MIN = 5000
@@ -359,9 +360,10 @@ export default function FaceDetection({ videoRef, sessionId, active, onFacesDete
   const canvasRef = useRef(null)
   const timerRef = useRef(null)
   const cxRef = useRef(0.5); const cyRef = useRef(0.5)
-  const countersRef = useRef({ multiFace: 0, multiPerson: 0, noFace: 0, noPerson: 0, hand: 0 })
-  const firedRef = useRef({ multiFace: false, multiPerson: false, noFace: false, noPerson: false, hand: false })
+  const countersRef = useRef({ multiFace: 0, multiPerson: 0, noFace: 0, noPerson: 0, hand: 0, handIntrusion: 0, facePresent: 0, personPresent: 0 })
+  const firedRef = useRef({ multiFace: false, multiPerson: false, noFace: false, noPerson: false, hand: false, handIntrusion: false })
   const samplesRef = useRef([])
+  const multiPersonCountRef = useRef(0)
 
   const [tier, setTier] = useState("init")
   const [debug, setDebug] = useState({ confidence: 0, variance: 0, rawCx: 0.5, rawCy: 0.5 })
@@ -376,8 +378,9 @@ export default function FaceDetection({ videoRef, sessionId, active, onFacesDete
     ms: 0,
     avgMs: 0,
     interval: BASE_INTERVAL_MS,
+    multiPerson: 0,
   })
-  const [flags, setFlags] = useState({ faceGone: false, personGone: false })
+  const [flags, setFlags] = useState({ faceGone: false, personGone: false, multiPerson: false, handIntrusion: false })
   const [poseAlerts, setPoseAlerts] = useState([])
 
   const send = useCallback(async (type, detail) => {
@@ -389,12 +392,14 @@ export default function FaceDetection({ videoRef, sessionId, active, onFacesDete
     }
   }, [sessionId])
 
-  const evaluate = useCallback((faceCount, bodyCount, handCount, shoulderCount, elbowCount, wristCount, ms, avgMs, intervalMs, onFaces, faceBoxes, poseKeypoints, handLandmarks, rawBodies = 0, faceMeta = null) => {
+  const evaluate = useCallback((faceCount, bodyCount, handCount, shoulderCount, elbowCount, wristCount, ms, avgMs, intervalMs, onFaces, faceBoxes, poseKeypoints, handLandmarks, rawBodies = 0, faceMeta = null, multiPersonCount = 0, handIntrusion = false) => {
     const effectiveHandCount = Math.max(handCount, wristCount)
-    const { events } = stepState(countersRef.current, firedRef.current, faceCount, bodyCount, effectiveHandCount)
+    const { events } = stepState(countersRef.current, firedRef.current, faceCount, bodyCount, effectiveHandCount, multiPersonCount, handIntrusion)
     setFlags({
       faceGone: firedRef.current.noFace,
       personGone: firedRef.current.noPerson,
+      multiPerson: firedRef.current.multiPerson,
+      handIntrusion: firedRef.current.handIntrusion,
     })
     setStats({
       faces: faceCount,
@@ -407,6 +412,7 @@ export default function FaceDetection({ videoRef, sessionId, active, onFacesDete
       ms,
       avgMs,
       interval: intervalMs,
+      multiPerson: multiPersonCount,
     })
     for (const [event, detail] of events) {
       send(event, detail)
@@ -432,6 +438,23 @@ export default function FaceDetection({ videoRef, sessionId, active, onFacesDete
 
     return () => { cancelled = true }
   }, [])
+
+  // Dedicated multi-person detector (coco-ssd in a Web Worker, CPU backend,
+  // ~320px frame on a staggered ~1.25s interval). Additive signal: feeds
+  // multiPersonCount only — it never feeds Task 2's candidate-presence
+  // (personSignal/noPerson), which stays face-or-body based.
+  useEffect(() => {
+    if (!active) return
+    const det = createPersonDetector({
+      videoRef,
+      onUpdate: ({ count }) => { multiPersonCountRef.current = count },
+      // Dev-only: log every raw coco-ssd detection (any class, any score) so a
+      // missed second person can be diagnosed as absent vs below-threshold.
+      debug: DEV && import.meta.env.VITE_PERSON_DEBUG !== "0",
+    })
+    det.start()
+    return () => { det.stop(); multiPersonCountRef.current = 0 }
+  }, [active, videoRef])
 
   const videoReady = useCallback((video) => {
     return video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0
@@ -570,7 +593,7 @@ export default function FaceDetection({ videoRef, sessionId, active, onFacesDete
       const ctx = canvas.getContext("2d"); ctx.clearRect(0, 0, canvas.width, canvas.height)
       const faceData = faces.map((f) => ({ box: f.boundingBox, landmarks: f.landmarks, confidence: 1.0 }))
       setDebug({ confidence: 1.0, variance: 0, rawCx: 0, rawCy: 0 })
-      evaluate(faceData.length, 0, 0, 0, 0, 0, 0, 0, BASE_INTERVAL_MS, onFacesDetected, faceData)
+      evaluate(faceData.length, 0, 0, 0, 0, 0, 0, 0, BASE_INTERVAL_MS, onFacesDetected, faceData, undefined, undefined, 0, undefined, resolveMultiPersonCount(faceData.length, 0, multiPersonCountRef.current))
       for (const f of faceData) drawFace(ctx, f)
     } catch (e) {
       if (DEV) console.warn(LOG_PREFIX, "Tier 1 detect() threw — downgrading to fallback", e.message)
@@ -669,7 +692,20 @@ export default function FaceDetection({ videoRef, sessionId, active, onFacesDete
         }
       }
       setDebug({ confidence: faceData[0]?.confidence || 0, variance: 0, rawCx: 0, rawCy: 0 })
-      evaluate(faceCount, bodyCount, handCount, shoulderCount, elbowCount, wristCount, ms, avgMs, interval, onFacesDetected, faceData, poseKeypoints, handLandmarks, result.body?.length ?? 0, faceMeta)
+      // Combined multi-person count: max(qualified faces, qualified bodies,
+      // object-detector persons). Distinct from candidate-presence (noPerson).
+      const multiPersonCount = resolveMultiPersonCount(faceCount, bodyCount, multiPersonCountRef.current)
+      // Candidate region for hand-intrusion check: primary face, else primary body.
+      let cand = null
+      if (facesRaw.length) {
+        const b = facesRaw.reduce((a, b) => ((a.box[2] * a.box[3]) > (b.box[2] * b.box[3]) ? a : b)).box
+        cand = { x: b[0], y: b[1], width: b[2], height: b[3] }
+      } else if (qualifiedBodies[0]?.box) {
+        const b = qualifiedBodies[0].box
+        cand = Array.isArray(b) ? { x: b[0], y: b[1], width: b[2], height: b[3] } : b
+      }
+      const handIntrusion = detectHandIntrusion(result.hand || [], cand, vw, vh)
+      evaluate(faceCount, bodyCount, handCount, shoulderCount, elbowCount, wristCount, ms, avgMs, interval, onFacesDetected, faceData, poseKeypoints, handLandmarks, result.body?.length ?? 0, faceMeta, multiPersonCount, handIntrusion)
 
       for (const f of faceData) drawFace(ctx, f)
       drawPoseSkeleton(ctx, qualifiedBodies, result.hand || [])
@@ -709,9 +745,9 @@ export default function FaceDetection({ videoRef, sessionId, active, onFacesDete
     if (r.hasContent && r.confidence > CONFIDENCE_MIN) {
       const boxW = svw * 0.3; const boxH = svh * 0.45
       const boxX = cxRef.current * svw - boxW / 2; const boxY = cyRef.current * svh - boxH / 2
-      evaluate(1, 0, 0, 0, 0, 0, 0, 0, BASE_INTERVAL_MS, onFacesDetected, [{ box: { x: boxX, y: boxY, width: boxW, height: boxH }, landmarks: [], confidence: r.confidence }])
+      evaluate(1, 0, 0, 0, 0, 0, 0, 0, BASE_INTERVAL_MS, onFacesDetected, [{ box: { x: boxX, y: boxY, width: boxW, height: boxH }, landmarks: [], confidence: r.confidence }], undefined, undefined, 0, undefined, resolveMultiPersonCount(0, 0, multiPersonCountRef.current))
     } else {
-      evaluate(0, 0, 0, 0, 0, 0, 0, 0, BASE_INTERVAL_MS, onFacesDetected, [])
+      evaluate(0, 0, 0, 0, 0, 0, 0, 0, BASE_INTERVAL_MS, onFacesDetected, [], undefined, undefined, 0, undefined, resolveMultiPersonCount(0, 0, multiPersonCountRef.current))
     }
 
     if (canvasRef.current) {
@@ -749,20 +785,30 @@ export default function FaceDetection({ videoRef, sessionId, active, onFacesDete
     onDebug?.({ tier, ...debug, stats, flags })
   }, [tier, debug, stats, flags, onDebug])
 
-  const badge = (ok, text) => (
-    <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${ok ? "bg-black/50 text-green-400" : "bg-red-500/80 text-white"}`}>
+  const badge = (ok, text, warn = false) => (
+    <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${
+      ok ? "bg-black/50 text-green-400"
+      : warn ? "bg-yellow-500/80 text-white"
+      : "bg-red-500/80 text-white"
+    }`}>
       {text}
     </span>
   )
 
+  // Presentation-only state labels (Task A taxonomy). The underlying detection
+  // state (personSignal OR-gate, multiPersonCount) is untouched — only wording
+  // and severity tone change here.
   const faceState =
-    stats.faces === 0 ? { ok: false, text: "no face" }
-    : stats.faces === 1 ? { ok: true, text: "single face" }
-    : { ok: false, text: "multiple face" }
-  const bodyState =
-    stats.bodies === 0 ? { ok: false, text: "no person" }
-    : stats.bodies === 1 ? { ok: true, text: "single person" }
-    : { ok: false, text: "multiple person" }
+    stats.faces === 0 ? { ok: false, text: "Face not visible", warn: true }
+    : stats.faces === 1 ? { ok: true, text: "Face in frame" }
+    : { ok: false, text: "Multiple faces" }
+  // Candidate = face OR body (mirrors personSignal). Absent only when BOTH are
+  // gone; present-single vs additional-person driven by the combined count.
+  const candidatePresent = stats.faces >= 1 || stats.bodies >= 1
+  const candidateState =
+    !candidatePresent ? { ok: false, text: "Candidate not visible" }
+    : stats.multiPerson > 1 ? { ok: false, text: "Additional person detected" }
+    : { ok: true, text: "Candidate in frame" }
   const handCount = Math.max(stats.hands, stats.wrists)
   const handState =
     handCount === 0 ? null
@@ -775,7 +821,7 @@ export default function FaceDetection({ videoRef, sessionId, active, onFacesDete
         ref={canvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none z-10"
       />
-      <div className="pointer-events-none absolute top-3 left-3 z-10 flex flex-col items-start gap-1 font-mono max-w-[calc(100%-6rem)]">
+      <div className="pointer-events-none absolute top-9 left-3 z-10 flex flex-col items-start gap-1 font-mono max-w-[calc(100%-6rem)]">
         <div className="flex flex-wrap items-center gap-1">
           <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">
             {tier === "init" || tier === "fallback" || tier === "loading" ? "● detection" : tier === "error" ? "✗ model error" : "● detection"}
@@ -785,13 +831,15 @@ export default function FaceDetection({ videoRef, sessionId, active, onFacesDete
           )}
         </div>
         <div className="flex flex-wrap items-center gap-1">
-          {badge(faceState.ok, faceState.text)}
-          {badge(bodyState.ok, bodyState.text)}
+          {badge(faceState.ok, faceState.text, faceState.warn)}
+          {badge(candidateState.ok, candidateState.text, candidateState.warn)}
           {handState && badge(handState.ok, handState.text)}
         </div>
         <div className="flex flex-wrap items-center gap-1">
-          {flags.faceGone && badge(false, "face gone")}
-          {flags.personGone && badge(false, "person gone")}
+          {flags.faceGone && badge(false, "Face not visible", true)}
+          {flags.personGone && badge(false, "Candidate not visible")}
+          {flags.multiPerson && badge(false, "Additional person detected")}
+          {flags.handIntrusion && badge(false, "Unidentified hand in frame")}
           {poseAlerts.map((a, i) => (
             <span key={i} className="rounded-full bg-red-500/80 text-white px-1.5 py-0.5 text-[10px]">
               {a.type === "hand_near_face" && `⚠ ${a.hand} hand near face`}
