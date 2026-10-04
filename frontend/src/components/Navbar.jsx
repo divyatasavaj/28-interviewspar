@@ -13,9 +13,9 @@ export default function Navbar() {
 
   const navLinks = [
     { label: "Home", to: "/" },
-    { label: "Features", to: "/#features" },
-    { label: "Practice Tracks", to: isLoggedIn ? "/interview-type" : "/login" },
-    { label: "Student Guide", to: isLoggedIn ? "/account?tab=profile" : "/login" },
+    { label: "Features", to: "/features" },
+    { label: "Practice Tracks", to: "/practice-tracks" },
+    { label: "Student Guide", to: "/student-guide" },
   ]
 
   return (

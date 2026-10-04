@@ -1,6 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import ProtectedRoute from "./components/ProtectedRoute"
 import Home from "./pages/Home"
+import FeaturesPage from "./pages/FeaturesPage"
+import PracticeTracksPage from "./pages/PracticeTracksPage"
+import StudentGuidePage from "./pages/StudentGuidePage"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import Dashboard from "./pages/Dashboard"
@@ -14,6 +17,9 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/practice-tracks" element={<PracticeTracksPage />} />
+        <Route path="/student-guide" element={<StudentGuidePage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route
