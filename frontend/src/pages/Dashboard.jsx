@@ -72,34 +72,39 @@ export default function Dashboard() {
         <section className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-sm mb-8 relative overflow-hidden">
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-full px-3.5 py-1 text-xs font-semibold text-primary mb-4">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>AI Interview Spar Ready</span>
+              <div className="inline-flex items-center gap-2 bg-purple-50 border border-purple-100/70 rounded-full px-3.5 py-1 text-xs font-semibold text-primary mb-4">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Placement Simulation Engine Ready</span>
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                Welcome back, {user.name} 👋
+                Welcome back, {user.name}
               </h1>
-              <p className="mt-3 text-sm sm:text-base text-gray-500 leading-relaxed">
-                Target Role: <strong className="text-gray-800">{user.target_role || "Software Engineer"}</strong>.
+              <p className="mt-3 text-sm sm:text-base text-gray-600 leading-relaxed">
+                Target Role: <strong className="text-gray-900 font-semibold">{user.target_role || "Software Engineer"}</strong>.
                 {resumeData
-                  ? " Your resume is analyzed and questions are dynamically personalized to your background."
-                  : " Upload your resume to unlock hyper-personalized behavioral and technical questions."}
+                  ? " Your projects and tech stack are indexed for contextual interview questioning."
+                  : " Upload your resume to enable tailored questions targeting your actual college projects."}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 to="/interview-type"
-                className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-sm px-6 py-3 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center gap-2"
+                className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-sm px-6 py-3 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center gap-2 hover:-translate-y-0.5"
               >
-                <span>Start New Mock</span>
-                <span>🚀</span>
+                <span>Start Mock Session</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
               </Link>
               <Link
                 to="/account?tab=resume"
-                className="bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-semibold text-sm px-5 py-3 rounded-full transition-all hover:bg-gray-50 flex items-center gap-2"
+                className="bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-semibold text-sm px-5 py-3 rounded-full transition-all hover:bg-gray-50 flex items-center gap-2 hover:-translate-y-0.5"
               >
-                <span>{resumeData ? "📄 View Resume" : "⬆️ Upload Resume"}</span>
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>{resumeData ? "View Resume" : "Upload Resume"}</span>
               </Link>
             </div>
           </div>
@@ -107,21 +112,24 @@ export default function Dashboard() {
 
         {/* Stats Row */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <p className="text-xs font-medium text-gray-400">Total Interviews</p>
             <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-1">{completedSessions.length}</p>
-            <p className="text-[11px] text-emerald-600 font-semibold mt-1">✓ Active Candidate</p>
+            <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 font-semibold mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>Active Candidate</span>
+            </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <p className="text-xs font-medium text-gray-400">Avg Performance Score</p>
             <p className="text-2xl sm:text-3xl font-extrabold text-primary mt-1">
               {averageScore !== null ? `${averageScore}%` : "—"}
             </p>
-            <p className="text-[11px] text-gray-400 mt-1">{averageScore ? "Across all completed" : "Complete 1st session"}</p>
+            <p className="text-[11px] text-gray-400 mt-1">{averageScore ? "Across completed sessions" : "Complete first session"}</p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <p className="text-xs font-medium text-gray-400">Resume Status</p>
             <p className="text-lg sm:text-xl font-bold text-gray-900 mt-2 truncate">
               {resumeData ? "Parsed & Active" : "No Resume"}
@@ -131,7 +139,7 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <p className="text-xs font-medium text-gray-400">Voice Persona</p>
             <p className="text-lg sm:text-xl font-bold text-gray-900 mt-2">Natural Neural</p>
             <Link to="/account?tab=preferences" className="text-[11px] text-primary font-semibold hover:underline block mt-1">
@@ -212,17 +220,24 @@ export default function Dashboard() {
               <p>Loading your past mock sessions...</p>
             </div>
           ) : sessions.length === 0 ? (
-            <div className="py-12 text-center border-2 border-dashed border-gray-100 rounded-2xl">
-              <span className="text-3xl mb-2 block">🎙️</span>
-              <p className="text-sm font-semibold text-gray-800">No mock interviews completed yet</p>
-              <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+            <div className="py-12 px-4 text-center border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-purple-100/60 text-primary flex items-center justify-center mb-3">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+                </svg>
+              </div>
+              <p className="text-sm font-bold text-gray-900">No mock interviews completed yet</p>
+              <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto leading-relaxed">
                 Take your first interview to generate an instant AI performance scorecard with strength and weakness analysis.
               </p>
               <Link
                 to="/interview-type"
-                className="mt-4 inline-block bg-primary text-white text-xs font-semibold px-6 py-2.5 rounded-full shadow-md hover:bg-[#5b22e0] transition-all"
+                className="mt-4 inline-flex items-center gap-2 bg-primary hover:bg-[#5b22e0] text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
               >
-                Launch First Session
+                <span>Launch First Session</span>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
               </Link>
             </div>
           ) : (

@@ -8,7 +8,6 @@ export default function InterviewAnalytics({
   isActive = false,
   fdDebug = null,
 }) {
-  const faceOk = faceDetected && faceCount === 1
   const multiFace = faceCount > 1
   const attentionLevel = attentionScore >= 70 ? "high" : attentionScore >= 40 ? "medium" : "low"
   const confLevel = confidenceScore >= 70 ? "high" : confidenceScore >= 40 ? "medium" : "low"
@@ -17,12 +16,6 @@ export default function InterviewAnalytics({
     high: "text-green-400",
     medium: "text-yellow-400",
     low: "text-red-400",
-  }
-
-  const bgMap = {
-    high: "bg-green-500/20 border-green-500/30",
-    medium: "bg-yellow-500/20 border-yellow-500/30",
-    low: "bg-red-500/20 border-red-500/30",
   }
 
   if (!isActive) return null
