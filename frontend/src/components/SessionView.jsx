@@ -170,7 +170,11 @@ function Interview({ session }) {
             </span>
           </div>
           <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-card border border-white/10 bg-white/5 aspect-video">
-            <div className={`flex h-20 w-20 items-center justify-center rounded-full text-3xl ${aiSpeaking ? "bg-brand-violet animate-pulse" : "bg-white/10"}`}>🤖</div>
+            <div className={`flex h-20 w-20 items-center justify-center rounded-2xl ${aiSpeaking ? "bg-brand-violet animate-pulse text-white" : "bg-white/10 text-white/70"}`}>
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+              </svg>
+            </div>
             <span className="mt-2 text-xs text-ink-muted">{aiSpeaking ? "AI is speaking…" : "AI interviewer"}</span>
           </div>
         </div>
@@ -207,11 +211,28 @@ function Interview({ session }) {
         <div className="flex items-center justify-center gap-3">
           <button onClick={() => (speech.listening ? speech.stop() : speech.start())}
             disabled={!speech.supported}
-            className={`rounded-full px-6 py-3 text-sm font-semibold text-white ${speech.listening ? "bg-score-poor" : "bg-brand-violet"} disabled:opacity-50`}>
-            {speech.listening ? "■ Stop & Send" : "🎤 Answer by voice"}
+            className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white ${speech.listening ? "bg-score-poor" : "bg-brand-violet"} disabled:opacity-50`}>
+            {speech.listening ? (
+              <>
+                <span className="w-2.5 h-2.5 rounded-sm bg-white" />
+                <span>Stop & Send</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+                </svg>
+                <span>Answer by Voice</span>
+              </>
+            )}
           </button>
           <button onClick={() => { stopSpeak(); speakAi(currentQuestion, () => setAiSpeaking(true), () => setAiSpeaking(false)); }}
-            className="rounded-full bg-white/10 px-4 py-3 text-sm">🔊 Replay</button>
+            className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-3 text-sm hover:bg-white/15 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            </svg>
+            <span>Replay</span>
+          </button>
         </div>
 
         {provider && <p className="text-center text-xs text-ink-muted">provider: {provider}</p>}
@@ -231,8 +252,11 @@ function Interview({ session }) {
         <button onClick={() => setShowVoice((v) => !v)} className="rounded-full bg-white/10 px-3 py-1 text-xs">
           {showVoice ? "Hide" : "Voice"}
         </button>
-        <button onClick={toggleRoom} className="rounded-full bg-brand-green px-3 py-1 text-xs font-semibold text-white">
-          🎥 Live Room
+        <button onClick={toggleRoom} className="inline-flex items-center gap-1.5 rounded-full bg-brand-green px-3 py-1 text-xs font-semibold text-white">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 17h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <span>Live Room</span>
         </button>
         <IntegrityMonitor sessionId={session.sessionId} active={true} />
       </div>
@@ -241,10 +265,10 @@ function Interview({ session }) {
       {showResume && <ResumePanel sessionId={session.sessionId} />}
       {showCode && <CodePanel sessionId={session.sessionId} />}
 
-      {/* Calibration phase (text by default; use 🎥 Live Room for spoken Q&A) */}
+      {/* Calibration phase (text by default; use Live Room for spoken Q&A) */}
       {phase === "calibration" ? (
         <div className="rounded-card border border-white/10 bg-white/5 p-4">
-          <p className="mb-2 text-sm text-ink-muted">Calibration question (baseline, asked by the AI — switch to 🎥 Live Room to answer by voice):</p>
+          <p className="mb-2 text-sm text-ink-muted">Calibration question (baseline, asked by the AI — switch to Live Room to answer by voice):</p>
           <p className="mb-3 font-medium">{questions[calIdx]}</p>
           <textarea className="w-full rounded bg-ink-sidebar p-3 text-sm outline-none" rows={4}
             value={calText} onChange={(e) => setCalText(e.target.value)} placeholder="Your answer…" />

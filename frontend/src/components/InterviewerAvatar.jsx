@@ -4,56 +4,76 @@ export default function InterviewerAvatar({ status, interviewType }) {
   const thinking = status === "thinking"
 
   return (
-    <div className="relative flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-3xl overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent pointer-events-none" />
+    <div className="relative flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+      <div className="absolute inset-0 bg-radial-at-c from-primary/10 via-transparent to-transparent pointer-events-none" />
+
+      {/* Subtle outer breathing ring when active */}
+      {speaking && (
+        <div className="absolute w-60 h-60 rounded-full border border-purple-500/20 animate-ping opacity-30 pointer-events-none" />
+      )}
+      {listening && (
+        <div className="absolute w-60 h-60 rounded-full border border-emerald-500/20 animate-ping opacity-30 pointer-events-none" />
+      )}
 
       <div className="relative z-10 flex flex-col items-center">
         <div className="relative">
           <div
-            className={`w-28 h-28 md:w-36 md:h-36 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-2xl transition-all duration-500 ${
-              speaking ? "scale-110 shadow-primary/50" : ""
+            className={`w-28 h-28 md:w-36 md:h-36 rounded-3xl bg-gradient-to-tr from-primary via-indigo-600 to-purple-500 flex items-center justify-center shadow-2xl transition-all duration-500 border border-white/20 ${
+              speaking
+                ? "scale-105 shadow-primary/60 ring-4 ring-primary/30"
+                : listening
+                ? "scale-100 ring-4 ring-emerald-500/30"
+                : ""
             }`}
           >
-            <svg className="w-14 h-14 md:w-20 md:h-20 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+            <div className="w-14 h-14 md:w-18 md:h-18 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+              <svg className="w-8 h-8 md:w-10 md:h-10 text-white" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+              </svg>
+            </div>
           </div>
 
+          {/* Real-time Dynamic Soundwave Visualizer */}
           {speaking && (
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-end gap-1 h-6">
-              <span className="w-1.5 bg-white/80 rounded-full animate-pulse" style={{ height: "60%", animationDelay: "0ms" }} />
-              <span className="w-1.5 bg-white/80 rounded-full animate-pulse" style={{ height: "100%", animationDelay: "150ms" }} />
-              <span className="w-1.5 bg-white/80 rounded-full animate-pulse" style={{ height: "40%", animationDelay: "300ms" }} />
-              <span className="w-1.5 bg-white/80 rounded-full animate-pulse" style={{ height: "80%", animationDelay: "100ms" }} />
-              <span className="w-1.5 bg-white/80 rounded-full animate-pulse" style={{ height: "50%", animationDelay: "250ms" }} />
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-gray-900/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-purple-500/40 shadow-lg">
+              <span className="w-1 h-3.5 bg-purple-400 rounded-full animate-[soundwave_1.1s_ease-in-out_infinite]" />
+              <span className="w-1 h-5 bg-purple-300 rounded-full animate-[soundwave_0.8s_ease-in-out_infinite]" />
+              <span className="w-1 h-2.5 bg-indigo-400 rounded-full animate-[soundwave_1.3s_ease-in-out_infinite]" />
+              <span className="w-1 h-6 bg-purple-200 rounded-full animate-[soundwave_0.7s_ease-in-out_infinite]" />
+              <span className="w-1 h-4 bg-purple-400 rounded-full animate-[soundwave_1.0s_ease-in-out_infinite]" />
             </div>
           )}
 
           {listening && (
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
-              <div className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" style={{ animationDelay: "300ms" }} />
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" style={{ animationDelay: "600ms" }} />
-              </div>
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-gray-900/90 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/40 shadow-lg">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Listening</span>
             </div>
           )}
         </div>
 
-        <div className="mt-5 text-center">
-          <h3 className="text-white font-bold text-base md:text-lg">AI Interviewer</h3>
-          <p className="text-gray-400 text-xs md:text-sm mt-0.5">
-            {speaking && "Speaking..."}
-            {listening && "Listening to you..."}
-            {thinking && "Evaluating your answer..."}
-            {status === "idle" && (interviewType === "hr" ? "HR / Behavioral" : "Technical")}
+        <div className="mt-6 text-center">
+          <h3 className="text-white font-bold text-base md:text-lg tracking-tight">AI Technical Recruiter</h3>
+          <p className="text-gray-400 text-xs md:text-sm mt-1">
+            {speaking && "Articulating interview question..."}
+            {listening && "Listening closely to your answer..."}
+            {thinking && "Analyzing answer clarity & structure..."}
+            {status === "idle" && (interviewType === "hr" ? "Campus HR & Culture Assessment" : "Technical & Systems Round")}
           </p>
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 text-[10px] text-gray-500">
-        <span className={`w-1.5 h-1.5 rounded-full ${status === "listening" ? "bg-green-400" : status === "speaking" ? "bg-blue-400" : "bg-gray-500"}`} />
-        {status === "listening" ? "Your turn to speak" : status === "speaking" ? "AI is speaking" : status === "thinking" ? "Analyzing" : "Ready"}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 text-[10px] text-gray-400 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/5">
+        <span className={`w-2 h-2 rounded-full ${
+          status === "listening" ? "bg-emerald-400 animate-pulse" :
+          status === "speaking" ? "bg-purple-400 animate-pulse" :
+          status === "thinking" ? "bg-amber-400 animate-pulse" : "bg-gray-500"
+        }`} />
+        <span className="font-medium text-gray-300">
+          {status === "listening" ? "Candidate Response Turn" :
+           status === "speaking" ? "Interviewer Speaking" :
+           status === "thinking" ? "Synthesizing Rubric" : "Calibrated & Ready"}
+        </span>
       </div>
     </div>
   )

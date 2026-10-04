@@ -462,10 +462,12 @@ export default function Interview() {
                 <div className="mt-2 flex items-center justify-center gap-2">
                   <button
                     onClick={skipSpeaking}
-                    className="text-[11px] font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1 rounded-full transition-all flex items-center gap-1"
+                    className="text-[11px] font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1 rounded-full transition-all flex items-center gap-1.5"
                   >
                     <span>Skip to answering</span>
-                    <span>→</span>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
                   </button>
                 </div>
               </div>
