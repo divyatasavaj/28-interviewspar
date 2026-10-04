@@ -16,6 +16,7 @@ export default function Navbar() {
     { label: "Features", to: "/features" },
     { label: "Practice Tracks", to: "/practice-tracks" },
     { label: "Student Guide", to: "/student-guide" },
+    { label: "Plans", to: "/pricing" },
   ]
 
   return (

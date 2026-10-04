@@ -4,6 +4,7 @@ import Home from "./pages/Home"
 import FeaturesPage from "./pages/FeaturesPage"
 import PracticeTracksPage from "./pages/PracticeTracksPage"
 import StudentGuidePage from "./pages/StudentGuidePage"
+import SubscriptionPage from "./pages/SubscriptionPage"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import Dashboard from "./pages/Dashboard"
@@ -20,6 +21,8 @@ export default function App() {
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/practice-tracks" element={<PracticeTracksPage />} />
         <Route path="/student-guide" element={<StudentGuidePage />} />
+        <Route path="/subscription" element={<SubscriptionPage />} />
+        <Route path="/pricing" element={<SubscriptionPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route

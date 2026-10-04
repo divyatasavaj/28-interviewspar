@@ -18,6 +18,7 @@ export default function DashboardNavbar({ name }) {
     { label: "New Interview", to: "/interview-type" },
     { label: "Resume", to: "/account?tab=resume" },
     { label: "Reports", to: "/account?tab=reports" },
+    { label: "Plans", to: "/pricing" },
   ]
 
   return (
