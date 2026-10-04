@@ -36,7 +36,7 @@ export default function SessionView({ session }) {
 }
 
 // Owns the full session: calibration questions first, then the adaptive interview.
-// Both phases can run in the 🎥 Live Room (AI speaks the question, you answer by voice).
+// Both phases can run in the Live Room (AI speaks the question, you answer by voice).
 function Interview({ session }) {
   const [phase, setPhase] = useState("calibration"); // calibration | interview
   const [calIdx, setCalIdx] = useState(0);

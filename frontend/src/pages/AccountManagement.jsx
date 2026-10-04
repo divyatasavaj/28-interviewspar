@@ -113,8 +113,11 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900">Profile Details</h2>
             {successMsg && (
-              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full animate-fade-in">
-                ✓ {successMsg}
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full animate-fade-in">
+                <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{successMsg}</span>
               </span>
             )}
             {errorMsg && (
@@ -242,14 +245,24 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
               <button
                 type="button"
                 onClick={() => setShowPasswordModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-sm"
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Close"
               >
-                ✕
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
             {pwdError && <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-lg mb-3">{pwdError}</p>}
-            {pwdSuccess && <p className="text-xs text-emerald-600 bg-emerald-50 p-2.5 rounded-lg mb-3">✓ {pwdSuccess}</p>}
+            {pwdSuccess && (
+              <div className="flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 p-2.5 rounded-lg mb-3">
+                <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{pwdSuccess}</span>
+              </div>
+            )}
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div>
@@ -482,11 +495,18 @@ function ReportsView() {
   if (sessions.length === 0) {
     return (
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-12 text-center">
-        <span className="text-4xl mb-3 block">📊</span>
-        <h3 className="text-lg font-bold text-gray-900 mb-2">No interviews yet</h3>
-        <p className="text-sm text-gray-500 mb-6">Complete your first mock interview to generate performance feedback reports.</p>
-        <Link to="/interview-type" className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-sm px-6 py-3 rounded-full shadow-md shadow-primary/20 transition-all inline-block">
-          Start an Interview
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-50 text-primary flex items-center justify-center mb-4">
+          <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">No interview reports yet</h3>
+        <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">Complete your first mock interview to generate performance feedback reports and rubrics.</p>
+        <Link to="/interview-type" className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-sm px-6 py-3 rounded-full shadow-md shadow-primary/20 transition-all inline-flex items-center gap-2 hover:-translate-y-0.5">
+          <span>Start Practice Mock</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
         </Link>
       </div>
     )
@@ -597,8 +617,11 @@ function PreferencesView() {
           <p className="text-xs text-gray-400 mt-0.5">Customize the persona, speaking rate, and tone for your practice sessions</p>
         </div>
         {savedMsg && (
-          <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-            ✓ {savedMsg}
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+            <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>{savedMsg}</span>
           </span>
         )}
       </div>
@@ -690,7 +713,19 @@ function PreferencesView() {
             onClick={handleTestAudio}
             className="text-xs font-semibold text-primary bg-purple-50 hover:bg-purple-100 border border-purple-200 px-5 py-2.5 rounded-full transition-all flex items-center gap-2"
           >
-            <span>{testing ? "⏹️ Stop Preview" : "🔊 Preview Voice Now"}</span>
+            {testing ? (
+              <>
+                <span className="w-2.5 h-2.5 rounded-sm bg-primary" />
+                <span>Stop Preview</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                <span>Preview Voice Audio</span>
+              </>
+            )}
           </button>
 
           <button
@@ -755,11 +790,26 @@ export default function AccountManagement() {
         }`}
       >
         <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-          <Link to="/dashboard" className="text-xl font-extrabold tracking-tight">
-            <span className="text-gray-900">Interview</span>
-            <span className="text-primary">Spar</span>
+          <Link to="/dashboard" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-[#7c3aed] flex items-center justify-center text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div className="flex items-center">
+              <span className="text-lg font-extrabold tracking-tight text-gray-900 group-hover:text-primary transition-colors">Interview</span>
+              <span className="text-lg font-extrabold tracking-tight text-primary">Spar</span>
+            </div>
           </Link>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400">✕</button>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Close menu"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         <div className="flex flex-col items-center pt-8 pb-6 px-6 border-b border-gray-100">
@@ -788,10 +838,12 @@ export default function AccountManagement() {
         <div className="p-4 border-t border-gray-100 space-y-3">
           <button
             onClick={() => navigate("/interview-type")}
-            className="w-full bg-primary hover:bg-[#5b22e0] text-white font-bold text-xs py-3 rounded-full shadow-md shadow-primary/20 transition-all flex items-center justify-center gap-1.5"
+            className="w-full bg-primary hover:bg-[#5b22e0] text-white font-bold text-xs py-3 rounded-full shadow-md shadow-primary/20 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer"
           >
             <span>New Mock Interview</span>
-            <span>🚀</span>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
           </button>
 
           <button

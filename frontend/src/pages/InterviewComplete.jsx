@@ -256,25 +256,28 @@ export default function InterviewComplete() {
                 </ul>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+              <div className="flex flex-wrap items-center justify-center gap-4 pt-4 print:hidden">
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-semibold px-6 py-3.5 rounded-full transition-all flex items-center gap-2 shadow-sm hover:shadow"
+                  className="bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-semibold px-6 py-3.5 rounded-full transition-all flex items-center gap-2 shadow-sm hover:shadow hover:-translate-y-0.5 cursor-pointer"
                 >
-                  <span>🖨️ Print / Save PDF</span>
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  <span>Export Scorecard PDF</span>
                 </button>
                 <Link
                   to="/interview-type"
-                  className="bg-primary hover:bg-[#5b22e0] text-white font-semibold px-7 py-3.5 rounded-full shadow-lg shadow-primary/25 transition-all"
+                  className="bg-primary hover:bg-[#5b22e0] text-white font-semibold px-7 py-3.5 rounded-full shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
                 >
-                  Start Another Interview
+                  Start Another Round
                 </Link>
                 <Link
                   to="/dashboard"
-                  className="text-primary font-semibold px-7 py-3.5 rounded-full border-2 border-primary hover:bg-purple-50 transition-all"
+                  className="text-primary font-semibold px-7 py-3.5 rounded-full border border-primary/30 hover:border-primary hover:bg-purple-50 transition-all hover:-translate-y-0.5"
                 >
-                  Go to Dashboard
+                  Return to Command Center
                 </Link>
               </div>
             </div>
