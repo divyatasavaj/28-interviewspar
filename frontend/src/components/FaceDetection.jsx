@@ -1,193 +1,299 @@
-import { useEffect, useRef, useState } from "react";
-import { Human } from "@vladmandic/human";
-import { logIntegrity } from "../api";
-import { stepState } from "../lib/faceLogic.js";
+import { useEffect, useRef, useCallback, useState } from "react"
 
-// STEP 8 — face + body + hand presence detection on the local webcam stream using
-// @vladmandic/human (MediaPipe/BlazeFace + MoveNet + handpose). Video never leaves the
-// browser (rules.md: client-side only, no uploads).
-//
-// Signals (edge-triggered, debounced over consecutive frames):
-//   face events: multi_face_detected / face_count_restored / face_not_detected / face_detected
-//   body events: multi_person_detected / person_count_restored
-//   hand events: body_part_detected / body_part_restored  (a lone hand/small body part is
-//                not a "person" to MoveNet — it gets its own edge-triggered signal)
-// bodyCount (result.body.length, MoveNet multipose) is the PRIMARY person signal;
-// faceCount (result.face.length) and handCount (result.hand.length) are never summed into it.
-const BASE_INTERVAL_MS = 500;   // throttled detect loop, not per-frame
-const MAX_INTERVAL_MS = 1000;   // auto-throttle ceiling when frames run slow
+const SAMPLE_W = 80
+const VARIANCE_MIN = 5000
+const CONFIDENCE_MIN = 0.15
+const DETECT_INTERVAL = 500
+const LOG_PREFIX = "[FaceDetection]"
+const DEV = import.meta.env.DEV
 
-const humanConfig = {
-  backend: "webgl",
-  modelBasePath: "/models/", // Vite serves public/models
-  async: true,
-  warmup: "none",
-  debug: false,
-  filter: { enabled: true },
-  face: {
-    enabled: true,
-    detector: { enabled: true, modelPath: "blazeface.json", maxDetected: 4, minConfidence: 0.3 },
-    mesh: { enabled: false },
-    iris: { enabled: false },
-    attention: { enabled: false },
-    emotion: { enabled: false },
-    description: { enabled: false },
-    antispoof: { enabled: false },
-    liveness: { enabled: false },
-    gear: { enabled: false },
-  },
-  body: {
-    enabled: true,
-    modelPath: "movenet-multipose.json", // multi-person pose → result.body.length can exceed 1
-    maxDetected: 4,
-    minConfidence: 0.2, // 0.3 missed head-and-shoulders / partial bodies on a webcam
-    skipFrames: 1,
-    skipTime: 200,
-  },
-  hand: {
-    enabled: true,
-    detector: { modelPath: "handtrack.json" },
-    skeleton: { modelPath: "handlandmark-lite.json" },
-    landmarks: true,
-    maxDetected: 4,
-    minConfidence: 0.2,
-  },
-  object: { enabled: false },
-  segmentation: { enabled: false },
-  gesture: { enabled: false },
-};
+// ── Tier 1: Native window.FaceDetector ──
 
-export default function FaceDetection({ videoRef, sessionId, active }) {
-  const [status, setStatus] = useState("idle"); // idle | loading | ready | error
-  const [stats, setStats] = useState({ faces: 0, bodies: 0, hands: 0, ms: 0, avgMs: 0, interval: BASE_INTERVAL_MS });
-  const [flags, setFlags] = useState({ multiFace: false, multiPerson: false, handPresent: false, faceGone: false, personGone: false });
-  const humanRef = useRef(null);
-  const countersRef = useRef({ multiFace: 0, multiPerson: 0, noFace: 0, noBody: 0, hand: 0 });
-  const firedRef = useRef({ multiFace: false, multiPerson: false, noFace: false, noBody: false, hand: false });
-  const samplesRef = useRef([]);
+let nativeInstance = null
 
-  async function send(event, detail) {
+async function probeNativeDetector() {
+  if (nativeInstance) return nativeInstance
+  const FD = window.FaceDetector
+  if (!FD) {
+    if (DEV) console.log(LOG_PREFIX, "Tier 1 unavailable: window.FaceDetector not found")
+    return null
+  }
+  let instance
+  try {
+    instance = new FD({ maxDetectedFaces: 5, fastMode: true })
+  } catch (e) {
+    if (DEV) console.log(LOG_PREFIX, "Tier 1 unavailable: constructor threw", e.message)
+    return null
+  }
+  // Probe with a real detect() call — this is where NotSupportedError surfaces
+  const probe = document.createElement("canvas")
+  probe.width = 16; probe.height = 16
+  try {
+    await instance.detect(probe)
+  } catch (e) {
+    if (DEV) console.log(LOG_PREFIX, "Tier 1 unavailable: detect() threw", e.message)
+    return null
+  }
+  if (DEV) console.log(LOG_PREFIX, "Tier 1 available (native FaceDetector)")
+  nativeInstance = instance
+  return instance
+}
+
+// ── Tier 2: @vladmandic/human BlazeFace ──
+
+let humanInstance = null
+let humanLoadPromise = null
+
+async function loadHuman() {
+  if (humanInstance) return true
+  if (humanLoadPromise) return humanLoadPromise
+  if (DEV) console.log(LOG_PREFIX, "Tier 2 (Human): starting load")
+  humanLoadPromise = (async () => {
     try {
-      await logIntegrity({ sessionId, event, detail });
-    } catch {
-      /* non-fatal */
+      const H = await import("@vladmandic/human")
+      const config = {
+        modelBasePath: "/models/human/",
+        backend: "webgl",
+        debug: false,
+        filter: { enabled: false },
+        face: {
+          enabled: true,
+          detector: { maxDetected: 5, minConfidence: 0.5, rotation: false },
+          mesh: { enabled: false },
+          iris: { enabled: false },
+          description: { enabled: false },
+          emotion: { enabled: false },
+          antispoof: { enabled: false },
+          liveness: { enabled: false },
+          gear: { enabled: false },
+          attention: { enabled: false },
+        },
+        body: { enabled: false },
+        hand: { enabled: false },
+        gesture: { enabled: false },
+        object: { enabled: false },
+        segmentation: { enabled: false },
+      }
+      humanInstance = new H.Human(config)
+      await humanInstance.load()
+      if (DEV) console.log(LOG_PREFIX, "Tier 2 (Human): model loaded, ready")
+      return true
+    } catch (err) {
+      console.warn(LOG_PREFIX, "Tier 2 (Human): load failed", err.message || err)
+      humanLoadPromise = null
+      return false
     }
-  }
+  })()
+  return humanLoadPromise
+}
 
-  // Wrap the pure state machine with refs + flag shape used by the component.
-  function evaluate(faceCount, bodyCount, handCount) {
-    const { events } = stepState(countersRef.current, firedRef.current, faceCount, bodyCount, handCount);
-    const next = {
-      multiFace: firedRef.current.multiFace,
-      multiPerson: firedRef.current.multiPerson,
-      handPresent: firedRef.current.hand,
-      faceGone: firedRef.current.noFace,
-      personGone: firedRef.current.noBody,
-    };
-    return { events, next };
-  }
+// ── Tier 3: Pixel brightness fallback ──
 
+function analyzeFrameSimple(imageData) {
+  const { data, width, height } = imageData
+  const total = width * height
+  let sumGray = 0, sumGraySq = 0, grayMin = 255
+  let brightX = 0, brightY = 0, brightWeight = 0
+  for (let i = 0; i < total; i++) {
+    const idx = i * 4
+    const gray = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]
+    sumGray += gray; sumGraySq += gray * gray
+    if (gray < grayMin) grayMin = gray
+    const w = gray - grayMin
+    brightX += (i % width) * w; brightY += Math.floor(i / width) * w; brightWeight += w
+  }
+  const mean = sumGray / total
+  const variance = sumGraySq / total - mean * mean
+  const hasContent = variance > VARIANCE_MIN
+  let cx = 0.5, cy = 0.5, confidence = 0
+  if (hasContent && brightWeight > 0) {
+    cx = brightX / brightWeight / width; cy = brightY / brightWeight / height
+    confidence = Math.min(0.5, variance / 10000)
+  }
+  return { hasContent, cx, cy, confidence, variance: Math.round(variance) }
+}
+
+// ── Component ──
+
+export default function FaceDetection({ videoRef, onFacesDetected, active, onDebug }) {
+  const canvasRef = useRef(null)
+  const timerRef = useRef(null)
+  const cxRef = useRef(0.5); const cyRef = useRef(0.5)
+
+  const [tier, setTier] = useState("init")
+  const [debug, setDebug] = useState({ confidence: 0, variance: 0, rawCx: 0.5, rawCy: 0.5 })
+
+  // Determine which tier to use (runs once on mount)
   useEffect(() => {
-    if (!active || !videoRef?.current || !sessionId) return;
-    let stopped = false;
-    let timer = null;
-    let interval = BASE_INTERVAL_MS;
+    let cancelled = false
+    // Tier 1 probe is async — don't await it, start Tier 3 immediately
+    setTier("fallback")
+    if (DEV) console.log(LOG_PREFIX, "Starting with Tier 3 (fallback)")
 
-    const human = new Human(humanConfig);
-    humanRef.current = human;
-    setStatus("loading");
+    probeNativeDetector().then((inst) => {
+      if (cancelled) return
+      if (inst) {
+        if (DEV) console.log(LOG_PREFIX, "Upgrading to Tier 1 (native)")
+        setTier("native")
+      }
+    })
 
-    (async () => {
-      try {
-        await human.load();
-        if (!stopped) setStatus("ready");
-      } catch (e) {
-        console.error("[FaceDetection] model load failed:", e);
-        if (!stopped) {
-          setStatus("error");
-          send("face_detector_error", { message: String(e.message || e) });
+    loadHuman().then((ok) => {
+      if (cancelled) return
+      if (ok && !nativeInstance) {
+        if (DEV) console.log(LOG_PREFIX, "Upgrading to Tier 2 (Human)")
+        setTier("human")
+      } else if (ok && nativeInstance) {
+        if (DEV) console.log(LOG_PREFIX, "Tier 2 loaded but Tier 1 already active — staying on Tier 1")
+      } else {
+        if (DEV) console.log(LOG_PREFIX, "Tier 2 failed to load — staying on Tier 3")
+      }
+    })
+
+    return () => { cancelled = true }
+  }, [])
+
+  const videoReady = useCallback((video) => {
+    return video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0
+  }, [])
+
+  // ── Tier 1 loop ──
+
+  const runNative = useCallback(async () => {
+    if (!active) return
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas || !nativeInstance) return
+    if (!videoReady(video)) { timerRef.current = setTimeout(runNative, 200); return }
+
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight
+    try {
+      const faces = await nativeInstance.detect(video)
+      const ctx = canvas.getContext("2d"); ctx.clearRect(0, 0, canvas.width, canvas.height)
+      const faceData = faces.map((f) => ({ box: f.boundingBox, landmarks: f.landmarks, confidence: 1.0 }))
+      onFacesDetected?.(faceData)
+      setDebug({ confidence: 1.0, variance: 0, rawCx: 0, rawCy: 0 })
+      for (const f of faceData) {
+        const b = f.box
+        ctx.strokeStyle = "rgba(34, 197, 94, 0.8)"; ctx.lineWidth = 2
+        ctx.strokeRect(b.x, b.y, b.width, b.height)
+        ctx.fillStyle = "rgba(34, 197, 94, 0.15)"; ctx.fillRect(b.x, b.y, b.width, b.height)
+        if (f.landmarks) for (const lm of f.landmarks) {
+          ctx.fillStyle = "rgba(59, 130, 246, 0.8)"
+          ctx.beginPath(); ctx.arc(lm.x, lm.y, 2, 0, Math.PI * 2); ctx.fill()
         }
       }
-    })();
+    } catch (e) {
+      if (DEV) console.warn(LOG_PREFIX, "Tier 1 detect() threw — downgrading to fallback", e.message)
+      setTier("fallback")
+    }
+    timerRef.current = setTimeout(runNative, DETECT_INTERVAL)
+  }, [active, videoRef, onFacesDetected, videoReady])
 
-    const tick = async () => {
-      if (stopped) return;
-      const video = videoRef.current;
-      if (!video || video.readyState < 2) {
-        timer = setTimeout(tick, 300);
-        return;
+  // ── Tier 2 loop ──
+
+  const runHuman = useCallback(async () => {
+    if (!active) return
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas || !humanInstance) { timerRef.current = setTimeout(runHuman, 200); return }
+    if (!videoReady(video)) { timerRef.current = setTimeout(runHuman, 200); return }
+
+    try {
+      const result = await humanInstance.detect(video)
+      const detections = result.face || []
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight
+      const ctx = canvas.getContext("2d"); ctx.clearRect(0, 0, canvas.width, canvas.height)
+      const faceData = detections
+        .filter((d) => d.boxScore >= 0.6)
+        .map((d) => ({
+          box: { x: d.box[0], y: d.box[1], width: d.box[2], height: d.box[3] },
+          landmarks: [],
+          confidence: d.boxScore,
+        }))
+      onFacesDetected?.(faceData)
+      setDebug({ confidence: faceData[0]?.confidence || 0, variance: 0, rawCx: 0, rawCy: 0 })
+      for (const f of faceData) {
+        const b = f.box
+        ctx.strokeStyle = "rgba(34, 197, 94, 0.8)"; ctx.lineWidth = 2
+        ctx.strokeRect(b.x, b.y, b.width, b.height)
+        ctx.fillStyle = "rgba(34, 197, 94, 0.15)"; ctx.fillRect(b.x, b.y, b.width, b.height)
       }
-      const t0 = performance.now();
-      let res;
-      try {
-        res = await human.detect(video);
-      } catch (e) {
-        console.error("[FaceDetection] detect error:", e);
-        timer = setTimeout(tick, interval);
-        return;
+    } catch (e) {
+      if (DEV) console.warn(LOG_PREFIX, "Tier 2 detect() threw", e.message)
+    }
+    timerRef.current = setTimeout(runHuman, DETECT_INTERVAL)
+  }, [active, videoRef, onFacesDetected, videoReady])
+
+  // ── Tier 3 loop ──
+
+  const runFallback = useCallback(() => {
+    if (!active) return
+    const video = videoRef.current
+    if (!video) { timerRef.current = setTimeout(runFallback, 200); return }
+    if (!videoReady(video)) { timerRef.current = setTimeout(runFallback, 200); return }
+
+    const sw = SAMPLE_W; const sh = Math.round(SAMPLE_W * (video.videoHeight / video.videoWidth))
+    const c = document.createElement("canvas"); c.width = sw; c.height = sh
+    const ctx = c.getContext("2d")
+    if (!ctx) { timerRef.current = setTimeout(runFallback, 200); return }
+    ctx.drawImage(video, 0, 0, sw, sh)
+    const imgData = ctx.getImageData(0, 0, sw, sh)
+    const r = analyzeFrameSimple(imgData)
+
+    cxRef.current = cxRef.current + (r.cx - cxRef.current) * 0.25
+    cyRef.current = cyRef.current + (r.cy - cyRef.current) * 0.25
+    setDebug({ confidence: r.confidence, variance: r.variance, rawCx: r.cx, rawCy: r.cy })
+
+    const svw = video.videoWidth; const svh = video.videoHeight
+
+    if (r.hasContent && r.confidence > CONFIDENCE_MIN) {
+      const boxW = svw * 0.3; const boxH = svh * 0.45
+      const boxX = cxRef.current * svw - boxW / 2; const boxY = cyRef.current * svh - boxH / 2
+      onFacesDetected?.([{ box: { x: boxX, y: boxY, width: boxW, height: boxH }, landmarks: [], confidence: r.confidence }])
+    } else {
+      onFacesDetected?.([])
+    }
+
+    if (canvasRef.current) {
+      const oc = canvasRef.current; const octx = oc.getContext("2d")
+      if (octx) {
+        oc.width = svw; oc.height = svh; octx.clearRect(0, 0, oc.width, oc.height)
+        if (r.hasContent && r.confidence > CONFIDENCE_MIN) {
+          const boxW = svw * 0.3; const boxH = svh * 0.45
+          const boxX = cxRef.current * svw - boxW / 2; const boxY = cyRef.current * svh - boxH / 2
+          octx.strokeStyle = "rgba(234, 179, 8, 0.5)"; octx.lineWidth = 1
+          octx.setLineDash([3, 3])
+          octx.beginPath(); octx.moveTo(svw / 2 - 8, svh / 2); octx.lineTo(svw / 2 + 8, svh / 2)
+          octx.moveTo(svw / 2, svh / 2 - 8); octx.lineTo(svw / 2, svh / 2 + 8); octx.stroke()
+          octx.setLineDash([])
+          octx.strokeStyle = "rgba(234, 179, 8, 0.6)"; octx.lineWidth = 2
+          octx.strokeRect(boxX, boxY, boxW, boxH); octx.fillStyle = "rgba(234, 179, 8, 0.08)"; octx.fillRect(boxX, boxY, boxW, boxH)
+        }
       }
-      const ms = Math.round(performance.now() - t0);
-      const faceCount = res?.face?.length ?? 0;
-      const bodyCount = res?.body?.length ?? 0;
-      const handCount = res?.hand?.length ?? 0;
+    }
 
-      // Rolling average for the auto-throttle + overlay.
-      samplesRef.current.push(ms);
-      if (samplesRef.current.length > 10) samplesRef.current.shift();
-      const avgMs = Math.round(samplesRef.current.reduce((a, b) => a + b, 0) / samplesRef.current.length);
+    timerRef.current = setTimeout(runFallback, DETECT_INTERVAL)
+  }, [active, videoRef, onFacesDetected, videoReady])
 
-      if (avgMs > interval * 0.7 && interval < MAX_INTERVAL_MS) {
-        interval = Math.min(interval + 200, MAX_INTERVAL_MS);
-        console.info(`[FaceDetection] slow frames (avg ${avgMs}ms) → interval ${interval}ms`);
-      }
+  // ── Loop dispatcher ──
 
-      const { events, next } = evaluate(faceCount, bodyCount, handCount);
-      setFlags((prev) => ({ ...prev, ...next }));
-      setStats({ faces: faceCount, bodies: bodyCount, hands: handCount, ms, avgMs, interval });
+  useEffect(() => {
+    if (!active || tier === "init") return
+    const loop = tier === "native" ? runNative : tier === "human" ? runHuman : runFallback
+    timerRef.current = setTimeout(loop, 100)
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [active, tier, runNative, runHuman, runFallback])
 
-      for (const [event, detail] of events) {
-        send(event, detail);
-      }
-
-      if (!stopped) timer = setTimeout(tick, interval);
-    };
-
-    timer = setTimeout(tick, 400);
-    return () => {
-      stopped = true;
-      clearTimeout(timer);
-      humanRef.current = null;
-      try { human.dispose(); } catch { /* noop */ }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, sessionId]);
-
-  if (!active) return null;
-
-  const badge = (ok, text) => (
-    <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${ok ? "bg-black/50 text-score-good" : "bg-score-poor/80 text-white"}`}>
-      {text}
-    </span>
-  );
+  // Expose debug info to parent
+  useEffect(() => {
+    onDebug?.({ tier, ...debug })
+  }, [tier, debug, onDebug])
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col items-start gap-1 p-2 font-mono">
-      <div className="flex flex-wrap items-center gap-1">
-        <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">
-          {status === "loading" ? "⌛ loading models…" : status === "error" ? "✗ model error" : "● detection"}
-        </span>
-        <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-score-warn">bodies: {stats.bodies}</span>
-        <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-score-warn">faces: {stats.faces}</span>
-        <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-score-warn">hands: {stats.hands}</span>
-        <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-ink-muted">{stats.ms}ms/{stats.interval}ms</span>
-      </div>
-      <div className="flex flex-wrap items-center gap-1">
-        {badge(!flags.multiPerson, flags.multiPerson ? "multi-person" : "1 person")}
-        {badge(!flags.multiFace, flags.multiFace ? "multi-face" : "1 face")}
-        {flags.handPresent && badge(false, "body part (hand) in frame")}
-        {flags.faceGone && badge(false, "face gone")}
-        {flags.personGone && badge(false, "person gone")}
-      </div>
-    </div>
-  );
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none z-10"
+    />
+  )
 }

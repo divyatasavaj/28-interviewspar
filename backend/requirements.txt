@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+pymongo[srv]
+bcrypt
+python-jose[cryptography]
+python-multipart
+pydantic[email]
+python-dotenv
+pdfplumber
+python-docx
+groq
+google-generativeai
+dnspython
+python-socketio
+edge-tts
