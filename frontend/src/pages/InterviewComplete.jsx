@@ -78,7 +78,22 @@ export default function InterviewComplete() {
           )}
 
           {error && !loading && (
-            <div className="bg-red-50 border border-red-100 rounded-2xl p-6 text-sm text-red-600 text-center max-w-lg mx-auto">{error}</div>
+            <div className="bg-red-50 border border-red-100 rounded-2xl p-6 text-sm text-red-600 text-center max-w-lg mx-auto">
+              <p>{error}</p>
+              <button
+                onClick={() => {
+                  setError("")
+                  setLoading(true)
+                  getInterviewFeedback(sessionId)
+                    .then(setFeedback)
+                    .catch((err) => setError(err.message))
+                    .finally(() => setLoading(false))
+                }}
+                className="mt-3 text-xs font-semibold bg-primary text-white px-4 py-2 rounded-full hover:bg-[#5b22e0] transition-all"
+              >
+                Retry Generating Report
+              </button>
+            </div>
           )}
 
           {feedback && (
@@ -242,6 +257,13 @@ export default function InterviewComplete() {
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-semibold px-6 py-3.5 rounded-full transition-all flex items-center gap-2 shadow-sm hover:shadow"
+                >
+                  <span>🖨️ Print / Save PDF</span>
+                </button>
                 <Link
                   to="/interview-type"
                   className="bg-primary hover:bg-[#5b22e0] text-white font-semibold px-7 py-3.5 rounded-full shadow-lg shadow-primary/25 transition-all"

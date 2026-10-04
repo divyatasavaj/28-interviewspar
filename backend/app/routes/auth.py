@@ -94,23 +94,33 @@ def get_me(user: dict = Depends(require_user)):
         name=user["name"],
         email=user["email"],
         resume_status=resume_status,
+        target_role=user.get("target_role", "Software Engineer"),
+        experience_level=user.get("experience_level", "mid"),
         created_at=str(user["_id"].generation_time),
     )
 
 
-@router.put("/profile")
+@router.put("/profile", response_model=UserResponse)
 def update_profile(body: UpdateProfileRequest, user: dict = Depends(require_user), db: Database = Depends(get_db)):
     updates = {}
-    if body.name is not None:
-        updates["name"] = body.name
+    if body.name is not None and body.name.strip():
+        updates["name"] = body.name.strip()
+    if body.target_role is not None and body.target_role.strip():
+        updates["target_role"] = body.target_role.strip()
+    if body.experience_level is not None and body.experience_level.strip():
+        updates["experience_level"] = body.experience_level.strip()
+
     if updates:
         db.users.update_one({"_id": user["_id"]}, {"$set": updates})
         user.update(updates)
+
     return UserResponse(
         id=str(user["_id"]),
         name=user["name"],
         email=user["email"],
         resume_status="present" if user.get("resume") and user["resume"].get("raw_text") else "none",
+        target_role=user.get("target_role", "Software Engineer"),
+        experience_level=user.get("experience_level", "mid"),
         created_at=str(user["_id"].generation_time),
     )
 

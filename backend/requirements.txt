@@ -12,3 +12,4 @@ groq
 google-generativeai
 dnspython
 python-socketio
+edge-tts

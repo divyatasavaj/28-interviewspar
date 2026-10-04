@@ -122,3 +122,35 @@ export async function getInterviewFeedback(sessionId) {
   }
   return res.json()
 }
+
+export async function updateUserProfile(data) {
+  const res = await fetch(`${API}/auth/profile`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to update profile")
+  }
+  return res.json()
+}
+
+export async function changeUserPassword(old_password, new_password) {
+  const res = await fetch(`${API}/auth/change-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ old_password, new_password }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail || "Failed to change password")
+  }
+  return res.json()
+}

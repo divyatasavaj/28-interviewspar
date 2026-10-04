@@ -36,11 +36,15 @@ class UserResponse(BaseModel):
     name: str
     email: str
     resume_status: str = "none"
+    target_role: Optional[str] = "Software Engineer"
+    experience_level: Optional[str] = "mid"
     created_at: str
 
 
 class UpdateProfileRequest(BaseModel):
     name: Optional[str] = None
+    target_role: Optional[str] = None
+    experience_level: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):

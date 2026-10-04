@@ -4,6 +4,8 @@ import { getMe, clearToken, startInterview, answerInterview, getToken } from "..
 import FaceDetection from "../components/FaceDetection"
 import InterviewerAvatar from "../components/InterviewerAvatar"
 import InterviewAnalytics from "../components/InterviewAnalytics"
+import VoiceControls from "../components/VoiceControls"
+import { playHumanSpeech, stopAnySpeech } from "../utils/naturalSpeech"
 
 const STT = window.SpeechRecognition || window.webkitSpeechRecognition
 const API = "http://localhost:8000"
@@ -34,6 +36,29 @@ export default function Interview() {
     integrityFlags: [],
   })
 
+  const [voice, setVoice] = useState(() => localStorage.getItem("interviewer_voice") || "en-US-AvaNeural")
+  const [rate, setRate] = useState(() => localStorage.getItem("interviewer_rate") || "-3%")
+  const [pitch, setPitch] = useState(() => localStorage.getItem("interviewer_pitch") || "+0Hz")
+
+  const voiceRef = useRef(voice)
+  const rateRef = useRef(rate)
+  const pitchRef = useRef(pitch)
+
+  useEffect(() => {
+    voiceRef.current = voice
+    localStorage.setItem("interviewer_voice", voice)
+  }, [voice])
+
+  useEffect(() => {
+    rateRef.current = rate
+    localStorage.setItem("interviewer_rate", rate)
+  }, [rate])
+
+  useEffect(() => {
+    pitchRef.current = pitch
+    localStorage.setItem("interviewer_pitch", pitch)
+  }, [pitch])
+
   const [fdDebug, setFdDebug] = useState(null)
 
   useEffect(() => {
@@ -42,7 +67,7 @@ export default function Interview() {
 
   const recognitionRef = useRef(null)
   const listeningResolveRef = useRef(null)
-  const synthRef = useRef(window.speechSynthesis)
+  const speakResolveRef = useRef(null)
   const videoRef = useRef(null)
   const sessionIdRef = useRef(null)
   const tierRef = useRef(null)
@@ -135,20 +160,31 @@ export default function Interview() {
 
   const speakQuestion = useCallback((text) => {
     return new Promise((resolve) => {
-      const synth = synthRef.current
-      synth.cancel()
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.rate = 0.95
-      utterance.pitch = 1.0
-      utterance.volume = 1
-      utterance.onstart = () => setStatus("speaking")
-      utterance.onend = () => {
-        setStatus("listening")
-        setTimeout(() => resolve(), 300)
-      }
-      utterance.onerror = () => resolve()
-      synth.speak(utterance)
+      speakResolveRef.current = resolve
+      playHumanSpeech(text, {
+        voice: voiceRef.current,
+        rate: rateRef.current,
+        pitch: pitchRef.current,
+        onStart: () => setStatus("speaking"),
+        onEnd: () => {
+          setStatus("listening")
+          speakResolveRef.current = null
+          setTimeout(() => resolve(), 300)
+        },
+        onError: () => {
+          speakResolveRef.current = null
+          resolve()
+        },
+      })
     })
+  }, [])
+
+  const skipSpeaking = useCallback(() => {
+    stopAnySpeech()
+    setStatus("listening")
+    const r = speakResolveRef.current
+    speakResolveRef.current = null
+    if (r) r()
   }, [])
 
   const startListening = useCallback(() => {
@@ -256,8 +292,15 @@ export default function Interview() {
       }
     }
     run()
-    return () => { cancelled = true; stopListening(); synthRef.current.cancel() }
+    return () => { cancelled = true; stopListening(); stopAnySpeech() }
   }, [question, retryKey])
+
+  const handleReplayQuestion = useCallback(() => {
+    if (!question) return
+    stopListening()
+    stopAnySpeech()
+    setRetryKey((k) => k + 1)
+  }, [question, stopListening])
 
   const handleFacesDetected = useCallback((faces) => {
     const currentTier = tierRef.current
@@ -394,7 +437,7 @@ export default function Interview() {
   }
 
   function handleEndCall() {
-    synthRef.current.cancel()
+    stopAnySpeech()
     stopListening()
     if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop())
     navigate("/dashboard")
@@ -416,6 +459,15 @@ export default function Interview() {
             {status === "speaking" && question && (
               <div className="bg-black/70 backdrop-blur-md rounded-xl px-4 py-3 border border-white/10 text-center">
                 <p className="text-white/90 text-sm leading-relaxed">{question}</p>
+                <div className="mt-2 flex items-center justify-center gap-2">
+                  <button
+                    onClick={skipSpeaking}
+                    className="text-[11px] font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1 rounded-full transition-all flex items-center gap-1"
+                  >
+                    <span>Skip to answering</span>
+                    <span>→</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -587,6 +639,17 @@ export default function Interview() {
         </div>
 
         <div className="flex items-center gap-3">
+          <VoiceControls
+            currentVoice={voice}
+            onChangeVoice={setVoice}
+            currentRate={rate}
+            onChangeRate={setRate}
+            currentPitch={pitch}
+            onChangePitch={setPitch}
+            onReplayQuestion={question ? handleReplayQuestion : null}
+            isSpeaking={status === "speaking"}
+          />
+
           {!STT && (
             <span className="text-[9px] text-yellow-400/70 bg-yellow-400/10 px-2 py-1 rounded">
               Speech recognition not supported. Use Chrome.

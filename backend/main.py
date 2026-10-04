@@ -11,6 +11,7 @@ from app.routes.reports import router as reports_router
 from app.routes.feedback import router as feedback_router
 from app.routes.integrity import router as integrity_router
 from app.routes.video import router as video_router
+from app.routes.tts import router as tts_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -41,6 +42,7 @@ app.include_router(reports_router)
 app.include_router(feedback_router)
 app.include_router(integrity_router)
 app.include_router(video_router)
+app.include_router(tts_router)
 
 
 @app.get("/")
