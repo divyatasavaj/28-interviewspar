@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from app.database import init_db
 from app.routes.auth import router as auth_router
 from app.routes.resume import router as resume_router
+from app.routes.resume_assessment import router as resume_assessment_router
 from app.routes.interview import router as interview_router
 from app.routes.questions import router as questions_router
 from app.routes.sessions import router as sessions_router
@@ -34,6 +35,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(resume_router)
+app.include_router(resume_assessment_router)
 app.include_router(interview_router)
 app.include_router(questions_router)
 app.include_router(sessions_router)
