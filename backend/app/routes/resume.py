@@ -1,3 +1,4 @@
+from typing import Optional
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Depends, Header, HTTPException, UploadFile, status
 from pymongo.database import Database
@@ -17,7 +18,7 @@ from app.resume_intelligence.parser import (
 router = APIRouter(prefix="/resume", tags=["resume"])
 
 
-def require_token(authorization: str | None = Header(default=None)) -> str:
+def require_token(authorization: Optional[str] = Header(default=None)) -> str:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authorization header")
     token = authorization.removeprefix("Bearer ")
@@ -27,7 +28,7 @@ def require_token(authorization: str | None = Header(default=None)) -> str:
     return user_id
 
 
-def _latest_resume(db: Database, user_id: str) -> dict | None:
+def _latest_resume(db: Database, user_id: str) -> Optional[dict]:
     cursor = (
         db.resumes.find({"user_id": user_id}).sort("_id", -1).limit(1)
     )

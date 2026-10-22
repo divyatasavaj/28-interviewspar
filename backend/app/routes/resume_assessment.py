@@ -1,5 +1,6 @@
 """Authenticated resume match and job-description assessment endpoints."""
 
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from pymongo.database import Database
 
@@ -76,8 +77,8 @@ def create_job_description_match(
 
 @router.get("/match/latest", response_model=ResumeAssessment)
 def get_latest_match(
-    mode: AssessmentMode | None = Query(default=None),
-    target_role_id: str | None = Query(default=None, min_length=1, max_length=80),
+    mode: Optional[AssessmentMode] = Query(default=None),
+    target_role_id: Optional[str] = Query(default=None, min_length=1, max_length=80),
     db: Database = Depends(get_db),
     user_id: str = Depends(require_token),
 ):

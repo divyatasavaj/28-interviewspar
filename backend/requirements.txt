@@ -13,3 +13,4 @@ google-generativeai
 dnspython
 python-socketio
 edge-tts
+eval-type-backport
