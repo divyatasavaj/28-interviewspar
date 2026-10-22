@@ -58,7 +58,7 @@ async function loadHuman() {
         filter: { enabled: false },
         face: {
           enabled: true,
-          detector: { maxDetected: 5, minConfidence: 0.5, rotation: false },
+          detector: { maxDetected: 5, minConfidence: 0.35, rotation: false },
           mesh: { enabled: false },
           iris: { enabled: false },
           description: { enabled: false },
@@ -68,7 +68,7 @@ async function loadHuman() {
           gear: { enabled: false },
           attention: { enabled: false },
         },
-        body: { enabled: false },
+        body: { enabled: true, minConfidence: 0.3, maxDetected: 5 },
         hand: { enabled: false },
         gesture: { enabled: false },
         object: { enabled: false },
@@ -205,7 +205,7 @@ export default function FaceDetection({ videoRef, onFacesDetected, active, onDeb
       canvas.width = video.videoWidth; canvas.height = video.videoHeight
       const ctx = canvas.getContext("2d"); ctx.clearRect(0, 0, canvas.width, canvas.height)
       const faceData = detections
-        .filter((d) => d.boxScore >= 0.6)
+        .filter((d) => d.boxScore >= 0.35)
         .map((d) => ({
           box: { x: d.box[0], y: d.box[1], width: d.box[2], height: d.box[3] },
           landmarks: [],
@@ -218,6 +218,19 @@ export default function FaceDetection({ videoRef, onFacesDetected, active, onDeb
         ctx.strokeStyle = "rgba(34, 197, 94, 0.8)"; ctx.lineWidth = 2
         ctx.strokeRect(b.x, b.y, b.width, b.height)
         ctx.fillStyle = "rgba(34, 197, 94, 0.15)"; ctx.fillRect(b.x, b.y, b.width, b.height)
+      }
+      const bodies = result.body || []
+      for (const body of bodies) {
+        if (body.score < 0.3) continue
+        const b = body.box
+        ctx.strokeStyle = "rgba(239, 68, 68, 0.7)"; ctx.lineWidth = 2
+        ctx.strokeRect(b[0], b[1], b[2], b[3])
+        if (body.keypoints) {
+          ctx.fillStyle = "rgba(239, 68, 68, 0.9)"
+          for (const kp of body.keypoints) {
+            ctx.beginPath(); ctx.arc(kp.position[0], kp.position[1], 3, 0, Math.PI * 2); ctx.fill()
+          }
+        }
       }
     } catch (e) {
       if (DEV) console.warn(LOG_PREFIX, "Tier 2 detect() threw", e.message)
