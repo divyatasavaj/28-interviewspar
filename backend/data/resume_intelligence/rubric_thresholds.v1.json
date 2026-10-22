@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "threshold_version": "2026-10-21.1",
+  "policy_note": "These are InterviewSpar project decisions for deciding when Indian job-posting evidence is sufficient for manual rubric review. They are not universal labour-market truths and do not approve a rubric automatically.",
+  "thresholds": {
+    "minimum_eligible_postings": 100,
+    "minimum_unique_employers": 25,
+    "minimum_distinct_sources": 2,
+    "minimum_recency_ratio": 0.7,
+    "recency_window_months": 18,
+    "maximum_duplicate_rate": 0.25,
+    "minimum_required_skill_coverage": 0.8,
+    "minimum_mean_skill_extraction_confidence": 0.9,
+    "minimum_india_location_ratio": 0.8,
+    "minimum_temporal_span_days": 90,
+    "maximum_single_source_share": 0.8
+  },
+  "confidence_policy": {
+    "minimum_medium_confidence_postings": 50,
+    "minimum_high_confidence_postings": 100
+  }
+}

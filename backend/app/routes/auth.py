@@ -16,6 +16,11 @@ from app.schemas import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _has_resume(user: dict) -> bool:
+    resume = user.get("resume") or {}
+    return bool(resume.get("latest_resume_id") or resume.get("raw_text"))
+
+
 @router.get("/check-db")
 def check_db():
     from app.database import init_db
@@ -88,7 +93,7 @@ def login(body: LoginRequest, db: Database = Depends(get_db)):
 
 @router.get("/me", response_model=UserResponse)
 def get_me(user: dict = Depends(require_user)):
-    resume_status = "present" if user.get("resume") and user["resume"].get("raw_text") else "none"
+    resume_status = "present" if _has_resume(user) else "none"
     return UserResponse(
         id=str(user["_id"]),
         name=user["name"],
@@ -118,7 +123,7 @@ def update_profile(body: UpdateProfileRequest, user: dict = Depends(require_user
         id=str(user["_id"]),
         name=user["name"],
         email=user["email"],
-        resume_status="present" if user.get("resume") and user["resume"].get("raw_text") else "none",
+        resume_status="present" if _has_resume(user) else "none",
         target_role=user.get("target_role", "Software Engineer"),
         experience_level=user.get("experience_level", "mid"),
         created_at=str(user["_id"].generation_time),

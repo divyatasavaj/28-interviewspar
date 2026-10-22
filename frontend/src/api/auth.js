@@ -154,3 +154,69 @@ export async function changeUserPassword(old_password, new_password) {
   }
   return res.json()
 }
+
+export async function createRoleMatch(target_role_id) {
+  const res = await fetch(`${API}/resume/analysis/match`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ target_role_id }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail?.message || err.detail || "Role match failed")
+  }
+  return res.json()
+}
+
+export async function createJobDescriptionMatch(job_description) {
+  const res = await fetch(`${API}/resume/analysis/job-description`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ job_description }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.detail?.message || err.detail || "Job description match failed")
+  }
+  return res.json()
+}
+
+export async function getLatestMatch(mode, target_role_id) {
+  const params = new URLSearchParams()
+  if (mode) params.append("mode", mode)
+  if (target_role_id) params.append("target_role_id", target_role_id)
+  const qs = params.toString() ? `?${params.toString()}` : ""
+  const res = await fetch(`${API}/resume/analysis/match/latest${qs}`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  })
+  if (!res.ok) return null
+  return res.json()
+}
+
+export async function getMatchById(assessmentId) {
+  const res = await fetch(`${API}/resume/analysis/match/${assessmentId}`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail?.message || err.detail || "Assessment not found")
+  }
+  return res.json()
+}
+
+export async function getLatestResumeAnalysis() {
+  const res = await fetch(`${API}/resume/analysis/latest`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || "No resume analysis found")
+  }
+  return res.json()
+}

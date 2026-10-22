@@ -8,6 +8,7 @@ import SubscriptionPage from "./pages/SubscriptionPage"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import Dashboard from "./pages/Dashboard"
+import ResumeIntelligence from "./pages/ResumeIntelligence"
 import AccountManagement from "./pages/AccountManagement"
 import InterviewType from "./pages/InterviewType"
 import Interview from "./pages/Interview"
@@ -30,6 +31,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/resume-intelligence"
+          element={
+            <ProtectedRoute>
+              <ResumeIntelligence />
             </ProtectedRoute>
           }
         />
