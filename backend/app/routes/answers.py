@@ -88,8 +88,9 @@ def capture_text_answer(body: CaptureTextAnswerRequest, db: Database = Depends(g
             groq_key = os.environ.get("GROQ_API_KEY", "")
             if groq_key and not groq_key.startswith("your"):
                 client = Groq(api_key=groq_key)
+                model_name = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
                 response = client.chat.completions.create(
-                    model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+                    model=model_name,
                     messages=[
                         {"role": "system", "content": "Rate this interview answer on quality. Return JSON with keys: score (0-100), feedback (string)."},
                         {"role": "user", "content": body.text},
