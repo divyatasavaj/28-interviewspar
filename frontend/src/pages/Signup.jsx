@@ -30,7 +30,7 @@ export default function Signup() {
     }
     try {
       const data = await signup(name, email, password)
-      setToken(data.access_token)
+      setToken(data.token)
       navigate("/dashboard")
     } catch (err) {
       setError(err.message)

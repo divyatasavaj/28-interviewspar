@@ -89,7 +89,7 @@ export default function Dashboard() {
 
             <div className="flex flex-wrap items-center gap-3">
               <Link
-                to="/interview-type"
+                to="/interview/start"
                 className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-sm px-6 py-3 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center gap-2 hover:-translate-y-0.5"
               >
                 <span>Start Mock Session</span>
@@ -171,7 +171,7 @@ export default function Dashboard() {
               <div className="relative z-10 mt-6 flex items-center justify-between">
                 <span className="text-xs text-purple-300">6 Core Questions • ~10 mins</span>
                 <Link
-                  to="/interview?type=hr"
+                  to="/interview/start"
                   className="bg-white text-gray-900 hover:bg-gray-100 font-bold text-xs px-5 py-2.5 rounded-full transition-all shadow-md"
                 >
                   Start HR Spar →
@@ -192,7 +192,7 @@ export default function Dashboard() {
               <div className="relative z-10 mt-6 flex items-center justify-between">
                 <span className="text-xs text-blue-300">Adaptive Engine • ~15 mins</span>
                 <Link
-                  to="/interview?type=technical"
+                  to="/interview/start"
                   className="bg-white text-gray-900 hover:bg-gray-100 font-bold text-xs px-5 py-2.5 rounded-full transition-all shadow-md"
                 >
                   Start Tech Spar →

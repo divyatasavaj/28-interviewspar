@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { getMe, clearToken, startInterview, answerInterview, getToken } from "../api/auth"
+import { logIntegrity } from "../api"
 import FaceDetection from "../components/FaceDetection"
 import InterviewerAvatar from "../components/InterviewerAvatar"
 import InterviewAnalytics from "../components/InterviewAnalytics"
@@ -8,7 +9,7 @@ import VoiceControls from "../components/VoiceControls"
 import { playHumanSpeech, stopAnySpeech } from "../utils/naturalSpeech"
 
 const STT = window.SpeechRecognition || window.webkitSpeechRecognition
-const API = "http://localhost:8000"
+const API = "/api"
 
 export default function Interview() {
   const navigate = useNavigate()
@@ -340,14 +341,14 @@ export default function Interview() {
       const canFireMulti = currentTier === "native" || currentTier === "human"
 
       if (isMulti && canFireMulti && multiFaceStreakRef.current === 3) {
-        logIntegrity("multi_face_detected", { timestamp: new Date().toISOString(), extra: { count: faceCount } })
+        logIntegrityCall("multi_face_detected", { timestamp: new Date().toISOString(), extra: { count: faceCount } })
       }
       if (!isMulti && wasMulti && canFireMulti && prevCount > 0) {
-        logIntegrity("single_face_restored", { timestamp: new Date().toISOString(), extra: { previous_count: prevCount } })
+        logIntegrityCall("single_face_restored", { timestamp: new Date().toISOString(), extra: { previous_count: prevCount } })
       }
 
       if (!faceDetected && prev.faceDetected) {
-        logIntegrity("face_not_detected", { timestamp: new Date().toISOString() })
+        logIntegrityCall("face_not_detected", { timestamp: new Date().toISOString() })
       }
 
       prevFaceCountRef.current = faceCount
@@ -369,11 +370,11 @@ export default function Interview() {
         attention = Math.round(Math.max(0, 100 - offCenter * 300))
 
         if (lookingDown && !prev._lookingDown) {
-          logIntegrity("looking_away", { timestamp: new Date().toISOString(), extra: { direction: "down" } })
+          logIntegrityCall("looking_away", { timestamp: new Date().toISOString(), extra: { direction: "down" } })
           prev.integrityFlags = [...prev.integrityFlags, { type: "looking_away", detail: "Looking down (possible device)", timestamp: Date.now() }]
         }
         if (lookingAway && !prev._lookingAway) {
-          logIntegrity("looking_away", { timestamp: new Date().toISOString(), extra: { direction: cx < 0.5 ? "left" : "right" } })
+          logIntegrityCall("looking_away", { timestamp: new Date().toISOString(), extra: { direction: cx < 0.5 ? "left" : "right" } })
           prev.integrityFlags = [...prev.integrityFlags, { type: "looking_away", detail: `Looking ${cx < 0.5 ? "left" : "right"}`, timestamp: Date.now() }]
         }
       } else {
@@ -383,15 +384,11 @@ export default function Interview() {
     })
   }, [])
 
-  async function logIntegrity(type, extra = {}) {
+  async function logIntegrityCall(type, extra = {}) {
     const sid = sessionIdRef.current
     if (!sid) return
     try {
-      await fetch(`${API}/integrity/event`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ session_id: sid, type, ...extra }),
-      })
+      await logIntegrity({ sessionId: sid, event: type, detail: extra })
     } catch {}
   }
 
@@ -399,7 +396,7 @@ export default function Interview() {
     if (!sessionId) return
     function handleVisibility() {
       if (document.hidden) {
-        logIntegrity("tab_switch", { timestamp: new Date().toISOString() })
+        logIntegrityCall("tab_switch", { timestamp: new Date().toISOString() })
         setAnalytics((prev) => ({
           ...prev,
           integrityFlags: [...prev.integrityFlags, { type: "tab_switch", timestamp: Date.now() }],
@@ -409,7 +406,7 @@ export default function Interview() {
     function handleCopy() {
       const selected = window.getSelection()?.toString()
       if (selected && selected.length > 20) {
-        logIntegrity("copy_paste", { timestamp: new Date().toISOString(), extra: { length: selected.length } })
+        logIntegrityCall("copy_paste", { timestamp: new Date().toISOString(), extra: { length: selected.length } })
         setAnalytics((prev) => ({
           ...prev,
           integrityFlags: [...prev.integrityFlags, { type: "copy_paste", timestamp: Date.now() }],

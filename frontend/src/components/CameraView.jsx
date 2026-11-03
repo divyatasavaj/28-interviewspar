@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import { getToken } from "../api/auth"
 
-const API = "http://localhost:8000"
+const API = "http://localhost:4000"
 
 export default function CameraView({ interviewSessionId, onFaceEvent }) {
   const videoRef = useRef(null)

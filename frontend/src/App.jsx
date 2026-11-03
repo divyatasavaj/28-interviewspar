@@ -10,8 +10,10 @@ import Signup from "./pages/Signup"
 import Dashboard from "./pages/Dashboard"
 import AccountManagement from "./pages/AccountManagement"
 import InterviewType from "./pages/InterviewType"
-import Interview from "./pages/Interview"
 import InterviewComplete from "./pages/InterviewComplete"
+import StartInterviewPage from "./pages/StartInterviewPage"
+import InterviewPage from "./pages/InterviewPage"
+import InterviewReportPage from "./pages/InterviewReportPage"
 
 export default function App() {
   return (
@@ -50,10 +52,26 @@ export default function App() {
           }
         />
         <Route
-          path="/interview"
+          path="/interview/start"
           element={
             <ProtectedRoute>
-              <Interview />
+              <StartInterviewPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/interview/:sessionId"
+          element={
+            <ProtectedRoute>
+              <InterviewPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/interview/:sessionId/report"
+          element={
+            <ProtectedRoute>
+              <InterviewReportPage />
             </ProtectedRoute>
           }
         />

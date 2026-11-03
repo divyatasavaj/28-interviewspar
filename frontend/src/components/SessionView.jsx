@@ -8,6 +8,7 @@ import {
 import IntegrityMonitor from "./IntegrityMonitor.jsx";
 import FaceDetection from "./FaceDetection.jsx";
 import VoicePanel from "./VoicePanel.jsx";
+import HumanAvatar from "./HumanAvatar.jsx";
 import { useWebcam } from "../hooks/useWebcam.js";
 import { useSpeech } from "../hooks/useSpeech.js";
 
@@ -36,28 +37,39 @@ export default function SessionView({ session }) {
 }
 
 // Owns the full session: calibration questions first, then the adaptive interview.
-// Both phases can run in the Live Room (AI speaks the question, you answer by voice).
-function Interview({ session }) {
-  const [phase, setPhase] = useState("calibration"); // calibration | interview
-  const [calIdx, setCalIdx] = useState(0);
-  const [calText, setCalText] = useState("");
-  const [calDone, setCalDone] = useState(0);
+  // Both phases can run in the Live Room (AI speaks the question, you answer by voice).
+  function Interview({ session }) {
+    const [phase, setPhase] = useState("calibration"); // calibration | interview
+    const [calIdx, setCalIdx] = useState(0);
+    const [calText, setCalText] = useState("");
+    const [calDone, setCalDone] = useState(0);
 
-  const [history, setHistory] = useState([]);
-  const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [provider, setProvider] = useState(null);
-  const [showResume, setShowResume] = useState(false);
-  const [showCode, setShowCode] = useState(false);
-  const [showVoice, setShowVoice] = useState(false);
-  const [roomMode, setRoomMode] = useState(false);
-  const scrollRef = useRef(null);
+    const [history, setHistory] = useState([]);
+    const [input, setInput] = useState("");
+    const [busy, setBusy] = useState(false);
+    const [provider, setProvider] = useState(null);
+    const [showResume, setShowResume] = useState(false);
+    const [showCode, setShowCode] = useState(false);
+    const [showVoice, setShowVoice] = useState(false);
+    const [roomMode, setRoomMode] = useState(false);
+    const [questionShownAt, setQuestionShownAt] = useState(null);
+    const scrollRef = useRef(null);
 
-  const webcam = useWebcam();
-  const speech = useSpeech();
-  const [aiSpeaking, setAiSpeaking] = useState(false);
+    const webcam = useWebcam();
+    const speech = useSpeech();
+    const [aiSpeaking, setAiSpeaking] = useState(false);
 
-  const questions = session.calibrationQuestions || [];
+    const questions = session.calibrationQuestions || [];
+
+    // Track when question is shown for response latency
+    useEffect(() => {
+      if (phase === "interview" && history.length > 0) {
+        const lastAssistant = [...history].reverse().find((m) => m.role === "assistant");
+        if (lastAssistant) setQuestionShownAt(Date.now());
+      } else if (phase === "calibration" && questions[calIdx]) {
+        setQuestionShownAt(Date.now());
+      }
+    }, [phase, history, calIdx]);
 
   // Seed the first adaptive interview question once calibration completes.
   useEffect(() => {
@@ -98,11 +110,35 @@ function Interview({ session }) {
     const t = speech.transcript.trim();
     if (t) {
       speech.setTranscript("");
+      const responseLatency = questionShownAt ? Date.now() - questionShownAt : 0;
+      setQuestionShownAt(null);
       if (phase === "calibration") submitCal(t);
-      else send(t);
+      else sendWithFluency(t, responseLatency);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speech.listening, roomMode, phase]);
+
+  async function sendWithFluency(textOverride, responseLatency) {
+    const value = (textOverride ?? input).trim();
+    if (!value || busy) return;
+    const next = [...history, { role: "user", content: value }];
+    setHistory(next); setInput(""); setBusy(true);
+    try {
+      const res = await sendInterviewMessage({ 
+        sessionId: session.sessionId, 
+        history: next,
+        fluency: speech.fluency,
+        responseLatency,
+        codeCorrect: 0
+      });
+      setProvider(res.provider);
+      setHistory([...next, { role: "assistant", content: res.reply, tag: res.mistakeTag }]);
+    } catch (e) {
+      setHistory([...next, { role: "assistant", content: `Error: ${e.message}` }]);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function submitCal(textOverride) {
     const value = (textOverride ?? calText).trim();
@@ -122,10 +158,18 @@ function Interview({ session }) {
   async function send(textOverride) {
     const value = (textOverride ?? input).trim();
     if (!value || busy) return;
+    const responseLatency = questionShownAt ? Date.now() - questionShownAt : 0;
+    setQuestionShownAt(null);
     const next = [...history, { role: "user", content: value }];
     setHistory(next); setInput(""); setBusy(true);
     try {
-      const res = await sendInterviewMessage({ sessionId: session.sessionId, history: next });
+      const res = await sendInterviewMessage({ 
+        sessionId: session.sessionId, 
+        history: next,
+        fluency: speech.fluency,
+        responseLatency,
+        codeCorrect: 0
+      });
       setProvider(res.provider);
       setHistory([...next, { role: "assistant", content: res.reply, tag: res.mistakeTag }]);
     } catch (e) {
@@ -170,12 +214,14 @@ function Interview({ session }) {
             </span>
           </div>
           <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-card border border-white/10 bg-white/5 aspect-video">
-            <div className={`flex h-20 w-20 items-center justify-center rounded-2xl ${aiSpeaking ? "bg-brand-violet animate-pulse text-white" : "bg-white/10 text-white/70"}`}>
-              <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
-              </svg>
-            </div>
-            <span className="mt-2 text-xs text-ink-muted">{aiSpeaking ? "AI is speaking…" : "AI interviewer"}</span>
+            <HumanAvatar
+              seed={session.sessionId}
+              size={80}
+              status={aiSpeaking ? "speaking" : webcam.on ? "listening" : "idle"}
+              persona={session?.persona || "tech"}
+              ariaLabel={aiSpeaking ? "AI Interviewer speaking" : "AI Interviewer listening"}
+            />
+            <span className="mt-2 text-xs text-ink-muted">{aiSpeaking ? "AI is speaking…" : webcam.on ? "AI listening…" : "AI interviewer"}</span>
           </div>
         </div>
 

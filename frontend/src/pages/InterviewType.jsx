@@ -1,4 +1,4 @@
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate, Link, useSearchParams } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { getMe, clearToken, getLatestResume } from "../api/auth"
 import DashboardNavbar from "../components/DashboardNavbar"
@@ -155,15 +155,15 @@ export default function InterviewType() {
                 </div>
               </div>
 
-              <button
-                onClick={() => navigate(`/interview?type=${type.id}`)}
+              <Link
+                to={`/interview/start?persona=${type.id === 'hr' ? 'hr' : 'tech'}`}
                 className="w-full bg-primary hover:bg-[#5b22e0] text-white font-bold text-sm py-3.5 rounded-2xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer"
               >
                 <span>Launch {type.title} Track</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
-              </button>
+              </Link>
             </div>
           ))}
         </div>

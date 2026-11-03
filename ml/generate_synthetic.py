@@ -10,16 +10,17 @@ OUT = "data/synthetic_answers.csv"
 HEADER = [
     "answer_text", "star_present", "hedge_word_freq", "filler_word_count",
     "answer_length", "response_latency", "code_correct", "mistake_label",
+    "pause_count", "grammar_errors", "fluency_score",
 ]
 
 # Per-label feature signatures (mean-ish values) used to fabricate plausible rows.
 SIGNATURES = {
-    "good-answer": dict(star=1, hedge=0, filler=0, length=(80, 160), lat=4.0, code=1),
-    "rambling":     dict(star=0, hedge=2, filler=6, length=(180, 320), lat=7.0, code=0),
-    "no-structure": dict(star=0, hedge=1, filler=1, length=(40, 110), lat=3.0, code=0),
-    "resume-gap":   dict(star=1, hedge=1, filler=1, length=(30, 90), lat=2.0, code=0),
-    "silent-coding":dict(star=0, hedge=0, filler=0, length=(5, 25), lat=12.0, code=0),
-    "underselling": dict(star=1, hedge=4, filler=1, length=(40, 100), lat=3.0, code=1),
+    "good-answer": dict(star=1, hedge=0, filler=0, length=(80, 160), lat=4.0, code=1, pauses=0, grammar=0, fluency=95),
+    "rambling":     dict(star=0, hedge=2, filler=6, length=(180, 320), lat=7.0, code=0, pauses=2, grammar=1, fluency=40),
+    "no-structure": dict(star=0, hedge=1, filler=1, length=(40, 110), lat=3.0, code=0, pauses=1, grammar=2, fluency=50),
+    "resume-gap":   dict(star=1, hedge=1, filler=1, length=(30, 90), lat=2.0, code=0, pauses=0, grammar=0, fluency=60),
+    "silent-coding":dict(star=0, hedge=0, filler=0, length=(5, 25), lat=12.0, code=0, pauses=5, grammar=0, fluency=20),
+    "underselling": dict(star=1, hedge=4, filler=1, length=(40, 100), lat=3.0, code=1, pauses=1, grammar=1, fluency=55),
 }
 
 FILLER = ["um", "uh", "like", "you know", "basically", "i mean", "well"]
@@ -62,6 +63,9 @@ def main(n_per_label=35):
                 round(sig["lat"] + random.uniform(-1, 1), 1),
                 sig["code"] if label in ("good-answer", "underselling") else 0,
                 label,
+                sig.get("pauses", random.randint(0, 2)),
+                sig.get("grammar", random.randint(0, 2)),
+                sig.get("fluency", 50 + random.randint(-10, 10)),
             ])
     random.shuffle(rows)
     with open(OUT, "w", newline="") as f:

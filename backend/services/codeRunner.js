@@ -62,7 +62,12 @@ function runWithTimeout(file, lang) {
 export async function runCode({ language, code, testCases }) {
   const ext = language === "javascript" ? "mjs" : "py";
   const file = join(tmpdir(), `isp_${randomUUID()}.${ext}`);
-  await writeFile(file, harness(language, code, testCases), "utf8");
+  const harnessCode = harness(language, code, testCases);
+  // Debug: log the generated file content
+  console.log("=== Generated file:", file, "===");
+  console.log(harnessCode);
+  console.log("=== End generated file ===");
+  await writeFile(file, harnessCode, "utf8");
   const { output, error } = await runWithTimeout(file, language);
   if (error) return { error };
   const lines = output.trim().split("\n").map((l) => l.trim()).filter(Boolean);

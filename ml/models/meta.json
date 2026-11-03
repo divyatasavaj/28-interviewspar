@@ -6,7 +6,10 @@
     "filler_word_count",
     "answer_length",
     "response_latency",
-    "code_correct"
+    "code_correct",
+    "pause_count",
+    "grammar_errors",
+    "fluency_score"
   ],
   "labels": [
     "good-answer",
@@ -46,7 +49,7 @@
       0,
       0,
       0,
-      7,
+      8,
       0,
       0
     ],
@@ -68,12 +71,15 @@
     ]
   ],
   "feature_importance": {
-    "star_present": 0.182304931693222,
-    "hedge_word_freq": 0.4096415698755848,
-    "filler_word_count": 0.03912151127342254,
-    "answer_length": 0.5602661548802822,
-    "response_latency": 0.17962433004899359,
-    "code_correct": 0.14247355933298436
+    "star_present": 0.08578109152512244,
+    "hedge_word_freq": 0.28745851231345904,
+    "filler_word_count": 0.04228184677060764,
+    "answer_length": 0.41572861951737705,
+    "response_latency": 0.1723891706546304,
+    "code_correct": 0.09660153767701052,
+    "pause_count": 0.20081712529420384,
+    "grammar_errors": 0.08464923206826058,
+    "fluency_score": 0.2307985168349178
   },
-  "n_samples": 210
+  "n_samples": 211
 }

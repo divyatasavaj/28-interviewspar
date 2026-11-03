@@ -58,7 +58,7 @@ async function loadHuman() {
         filter: { enabled: false },
         face: {
           enabled: true,
-          detector: { maxDetected: 5, minConfidence: 0.5, rotation: false },
+          detector: { maxDetected: 5, minConfidence: 0.35, rotation: false },
           mesh: { enabled: false },
           iris: { enabled: false },
           description: { enabled: false },
@@ -205,7 +205,7 @@ export default function FaceDetection({ videoRef, onFacesDetected, active, onDeb
       canvas.width = video.videoWidth; canvas.height = video.videoHeight
       const ctx = canvas.getContext("2d"); ctx.clearRect(0, 0, canvas.width, canvas.height)
       const faceData = detections
-        .filter((d) => d.boxScore >= 0.6)
+        .filter((d) => d.boxScore >= 0.4)
         .map((d) => ({
           box: { x: d.box[0], y: d.box[1], width: d.box[2], height: d.box[3] },
           landmarks: [],

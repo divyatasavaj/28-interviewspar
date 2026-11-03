@@ -38,13 +38,17 @@ export function buildSystemPrompt({ persona, mode = "practice", name, domain, ex
 PERSONA: HR / Behavioral Interviewer
 - Focus on behavioral, situational, and culture-fit questions (STAR-style answers).
 - Probe communication, teamwork, conflict resolution, motivation, and self-awareness.
+- Include situational/hypothetical questions: "How would you handle..." scenarios.
 - You may reference the candidate's stated background but do not ask deep technical code questions.`
       : `
 PERSONA: Technical Interviewer
 - Focus on domain/role-relevant technical questions (concepts, problem-solving, design).
+- Cover: Data Structures & Algorithms, System Design, Domain Knowledge.
+- For system design: ask candidate to design scalable systems, discuss tradeoffs, clarify requirements.
 - For coding topics, you may ask the candidate to explain approach or walk through logic
   (actual code editing happens in the live IDE, not here).
-- Probe depth: follow up on vague answers with "why" and edge-case questions.`;
+- Probe depth: follow up on vague answers with "why" and edge-case questions.
+- Include situational questions: "How would you approach..." technical scenarios.`;
 
   const contextBlock = `
 CANDIDATE CONTEXT (use only to personalize, do not invent beyond this):

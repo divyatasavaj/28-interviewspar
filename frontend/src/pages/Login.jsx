@@ -21,7 +21,7 @@ export default function Login() {
     }
     try {
       const data = await login(email, password)
-      setToken(data.access_token)
+      setToken(data.token)
       navigate("/dashboard")
     } catch (err) {
       if (err.message === "No user found with this email") {

@@ -31,7 +31,7 @@ export default function Hero() {
           {/* Action CTAs */}
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
-              to="/signup"
+              to="/interview/start"
               className="inline-flex items-center gap-2.5 bg-primary hover:bg-[#5b22e0] text-white font-semibold text-sm sm:text-base px-7 py-3.5 rounded-full shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:-translate-y-0.5 transition-all duration-200"
             >
               <span>Start Free Practice</span>

@@ -15,10 +15,11 @@ STAR_WORDS = ["situation", "task", "action", "result", "when i", "we ", "because
 FEATURE_COLUMNS = [
     "star_present", "hedge_word_freq", "filler_word_count",
     "answer_length", "response_latency", "code_correct",
+    "pause_count", "grammar_errors", "fluency_score",
 ]
 
 
-def extract_features(text="", response_latency=0.0, code_correct=0):
+def extract_features(text="", response_latency=0.0, code_correct=0, pause_count=0, grammar_errors=0, fluency_score=100):
     text = text or ""
     lower = " " + text.lower() + " "
     words = text.strip().split()
@@ -33,6 +34,9 @@ def extract_features(text="", response_latency=0.0, code_correct=0):
         "answer_length": len(words),
         "response_latency": float(response_latency),
         "code_correct": int(code_correct),
+        "pause_count": int(pause_count),
+        "grammar_errors": int(grammar_errors),
+        "fluency_score": float(fluency_score),
     }
 
 

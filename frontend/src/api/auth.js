@@ -1,26 +1,27 @@
-const API = "http://localhost:8000"
+const API = "/api";
+const TOKEN_KEY = "interviewspar_token";
 
 export function getToken() {
-  return sessionStorage.getItem("token")
+  return typeof localStorage !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
 }
 
 export function setToken(t) {
-  sessionStorage.setItem("token", t)
+  if (typeof localStorage !== "undefined") localStorage.setItem(TOKEN_KEY, t);
 }
 
 export function clearToken() {
-  sessionStorage.removeItem("token")
+  if (typeof localStorage !== "undefined") localStorage.removeItem(TOKEN_KEY);
 }
 
-export async function signup(name, email, password) {
-  const res = await fetch(`${API}/auth/signup`, {
+export async function signup(name, email, password, role = "student") {
+  const res = await fetch(`${API}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ name, email, password, role }),
   })
   if (!res.ok) {
     const err = await res.json()
-    throw new Error(err.detail || "Signup failed")
+    throw new Error(err.error || "Signup failed")
   }
   return res.json()
 }
@@ -33,7 +34,7 @@ export async function login(email, password) {
   })
   if (!res.ok) {
     const err = await res.json()
-    throw new Error(err.detail || "Login failed")
+    throw new Error(err.error || "Login failed")
   }
   return res.json()
 }
@@ -56,7 +57,7 @@ export async function uploadResume(file) {
   })
   if (!res.ok) {
     const err = await res.json()
-    throw new Error(err.detail || "Upload failed")
+    throw new Error(err.error || "Upload failed")
   }
   return res.json()
 }
@@ -76,38 +77,38 @@ export async function startInterview(interviewType) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${getToken()}`,
     },
-    body: JSON.stringify({ interview_type: interviewType }),
+    body: JSON.stringify({ persona: interviewType }),
   })
   if (!res.ok) {
     const err = await res.json()
-    throw new Error(err.detail || "Failed to start interview")
+    throw new Error(err.error || "Failed to start interview")
   }
   return res.json()
 }
 
 export async function answerInterview(sessionId, answer) {
-  const res = await fetch(`${API}/interview/answer`, {
+  const res = await fetch(`${API}/interview/message`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${getToken()}`,
     },
-    body: JSON.stringify({ session_id: sessionId, answer }),
+    body: JSON.stringify({ sessionId, answer }),
   })
   if (!res.ok) {
     const err = await res.json()
-    throw new Error(err.detail || "Failed to submit answer")
+    throw new Error(err.error || "Failed to submit answer")
   }
   return res.json()
 }
 
 export async function listSessions() {
-  const res = await fetch(`${API}/interview/sessions`, {
+  const res = await fetch(`${API}/sessions`, {
     headers: { Authorization: `Bearer ${getToken()}` },
   })
   if (!res.ok) {
     const err = await res.json()
-    throw new Error(err.detail || "Failed to fetch sessions")
+    throw new Error(err.error || "Failed to fetch sessions")
   }
   return res.json()
 }
@@ -118,14 +119,14 @@ export async function getInterviewFeedback(sessionId) {
   })
   if (!res.ok) {
     const err = await res.json()
-    throw new Error(err.detail || "Failed to fetch feedback")
+    throw new Error(err.error || "Failed to fetch feedback")
   }
   return res.json()
 }
 
 export async function updateUserProfile(data) {
-  const res = await fetch(`${API}/auth/profile`, {
-    method: "PUT",
+  const res = await fetch(`${API}/auth/me`, {
+    method: "PATCH",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${getToken()}`,
@@ -134,7 +135,7 @@ export async function updateUserProfile(data) {
   })
   if (!res.ok) {
     const err = await res.json()
-    throw new Error(err.detail || "Failed to update profile")
+    throw new Error(err.error || "Failed to update profile")
   }
   return res.json()
 }
@@ -150,7 +151,7 @@ export async function changeUserPassword(old_password, new_password) {
   })
   if (!res.ok) {
     const err = await res.json()
-    throw new Error(err.detail || "Failed to change password")
+    throw new Error(err.error || "Failed to change password")
   }
   return res.json()
 }

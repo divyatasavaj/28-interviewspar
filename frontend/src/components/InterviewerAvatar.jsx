@@ -1,7 +1,9 @@
+import HumanAvatar from "./HumanAvatar.jsx";
+
 export default function InterviewerAvatar({ status, interviewType }) {
-  const speaking = status === "speaking"
-  const listening = status === "listening"
-  const thinking = status === "thinking"
+  const speaking = status === "speaking";
+  const listening = status === "listening";
+  const thinking = status === "thinking";
 
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
@@ -17,21 +19,14 @@ export default function InterviewerAvatar({ status, interviewType }) {
 
       <div className="relative z-10 flex flex-col items-center">
         <div className="relative">
-          <div
-            className={`w-28 h-28 md:w-36 md:h-36 rounded-3xl bg-gradient-to-tr from-primary via-indigo-600 to-purple-500 flex items-center justify-center shadow-2xl transition-all duration-500 border border-white/20 ${
-              speaking
-                ? "scale-105 shadow-primary/60 ring-4 ring-primary/30"
-                : listening
-                ? "scale-100 ring-4 ring-emerald-500/30"
-                : ""
-            }`}
-          >
-            <div className="w-14 h-14 md:w-18 md:h-18 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
-              <svg className="w-8 h-8 md:w-10 md:h-10 text-white" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
-              </svg>
-            </div>
-          </div>
+          {/* Human Avatar with DiceBear personas */}
+          <HumanAvatar
+            seed="interviewer-main"
+            size={96}
+            status={status}
+            persona={interviewType === "hr" ? "hr" : "tech"}
+            ariaLabel={interviewType === "hr" ? "AI HR Interviewer" : "AI Technical Interviewer"}
+          />
 
           {/* Real-time Dynamic Soundwave Visualizer */}
           {speaking && (
@@ -40,7 +35,7 @@ export default function InterviewerAvatar({ status, interviewType }) {
               <span className="w-1 h-5 bg-purple-300 rounded-full animate-[soundwave_0.8s_ease-in-out_infinite]" />
               <span className="w-1 h-2.5 bg-indigo-400 rounded-full animate-[soundwave_1.3s_ease-in-out_infinite]" />
               <span className="w-1 h-6 bg-purple-200 rounded-full animate-[soundwave_0.7s_ease-in-out_infinite]" />
-              <span className="w-1 h-4 bg-purple-400 rounded-full animate-[soundwave_1.0s_ease-in-out_infinite]" />
+              <span className="w-1 h-4 bg-purple-400 rounded-full animate-[soundwave_1.0s_ease-in_out_infinite]" />
             </div>
           )}
 
@@ -53,7 +48,9 @@ export default function InterviewerAvatar({ status, interviewType }) {
         </div>
 
         <div className="mt-6 text-center">
-          <h3 className="text-white font-bold text-base md:text-lg tracking-tight">AI Technical Recruiter</h3>
+          <h3 className="text-white font-bold text-base md:text-lg tracking-tight">
+            {interviewType === "hr" ? "AI HR Recruiter" : "AI Technical Recruiter"}
+          </h3>
           <p className="text-gray-400 text-xs md:text-sm mt-1">
             {speaking && "Articulating interview question..."}
             {listening && "Listening closely to your answer..."}

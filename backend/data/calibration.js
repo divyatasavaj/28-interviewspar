@@ -90,6 +90,91 @@ export const CALIBRATION_BANK = {
     "Describe a time you received difficult feedback.",
     "Why should we move you to the next round?",
   ],
+  "System Design": [
+    "Design a URL shortener like bit.ly. Consider scale, analytics, and custom aliases.",
+    "Design a pastebin service. Handle expiration, privacy, and high write throughput.",
+    "Design a rate limiter for an API. Compare token bucket vs sliding window approaches.",
+    "Design a notification system for a social app. Support push, email, in-app, and preferences.",
+    "Design a distributed cache. Address eviction, consistency, and hot keys.",
+    "Design a chat application like WhatsApp. Handle presence, delivery receipts, and groups.",
+    "Design a search autocomplete system. Optimize for latency and relevance.",
+    "Design a file storage service like Dropbox. Handle sync, versioning, and sharing.",
+    "Design a video streaming platform. Address CDN, adaptive bitrate, and encoding.",
+    "Design a ticket booking system. Handle concurrency, seat locking, and payments.",
+    "Design an API gateway. Cover routing, auth, rate limiting, and observability.",
+    "Design a logging and metrics platform. Handle ingestion, storage, and query at scale.",
+    "Design a recommendation system. Cover candidate generation, ranking, and freshness.",
+  ],
+  "DevOps": [
+    "Explain the difference between CI and CD. What tools have you used?",
+    "What is infrastructure as code? Name two tools and a benefit of each.",
+    "Describe how you would set up zero-downtime deployments.",
+    "What is a container and how does it differ from a virtual machine?",
+    "Explain the purpose of a load balancer and name two algorithms.",
+    "What is blue-green deployment and when would you use it?",
+    "How do you handle secrets management in a CI/CD pipeline?",
+    "Describe the difference between monitoring, logging, and tracing.",
+    "What is Kubernetes and what problem does it solve?",
+    "Explain what a service mesh does (e.g., Istio, Linkerd).",
+    "How would you design a disaster recovery plan for a critical service?",
+    "What is GitOps and how does it relate to Kubernetes?",
+  ],
+  "Mobile": [
+    "What is the difference between native and cross-platform development?",
+    "Explain the mobile app lifecycle (iOS/Android).",
+    "What are the main challenges in mobile app performance optimization?",
+    "Describe how you handle offline-first data synchronization.",
+    "What is deep linking and how do you implement it?",
+    "Explain the difference between hot reload and hot restart in Flutter.",
+    "How do you handle push notifications on iOS vs Android?",
+    "What is app sandboxing and why does it matter for security?",
+    "Describe your approach to mobile app testing (unit, UI, integration).",
+    "What are the key considerations for mobile app accessibility?",
+    "How do you manage app versioning and backward compatibility?",
+    "Explain the role of app store review guidelines in release planning.",
+  ],
+  "QA": [
+    "What is the difference between unit, integration, and end-to-end tests?",
+    "Explain the test pyramid and why it matters.",
+    "What is test-driven development (TDD) and what are its benefits?",
+    "Describe how you would test a REST API.",
+    "What is a flaky test and how do you handle it?",
+    "Explain the difference between black-box and white-box testing.",
+    "How do you approach test data management?",
+    "What is contract testing and when would you use it?",
+    "Describe your strategy for regression testing in a CI/CD pipeline.",
+    "What is the difference between verification and validation?",
+    "How do you measure test coverage and what is a good target?",
+    "Explain the role of QA in a shift-left testing approach.",
+  ],
+  "Security": [
+    "Explain the OWASP Top 10 and name three vulnerabilities.",
+    "What is the difference between authentication and authorization?",
+    "Describe how you would secure a REST API against common attacks.",
+    "What is a JWT and what are its security considerations?",
+    "Explain the difference between symmetric and asymmetric encryption.",
+    "What is CSRF and how do you prevent it?",
+    "Describe the principle of least privilege with an example.",
+    "What is a security audit and what does it typically cover?",
+    "How do you handle sensitive data in logs and error messages?",
+    "Explain what a threat model is and how you create one.",
+    "What is DevSecOps and how does it differ from traditional security?",
+    "Describe the difference between SAST, DAST, and IAST.",
+  ],
+  "ML Engineering": [
+    "What is the difference between batch and online inference?",
+    "Explain feature store and why it's useful in ML pipelines.",
+    "Describe how you would monitor model drift in production.",
+    "What is A/B testing for ML models and how do you set it up?",
+    "Explain the difference between model training and model serving.",
+    "What is data versioning and why does it matter for ML?",
+    "Describe how you handle model rollback in production.",
+    "What is the difference between feature engineering and feature selection?",
+    "Explain the concept of model observability.",
+    "How do you ensure reproducibility in ML experiments?",
+    "What is a feature pipeline and how does it differ from a training pipeline?",
+    "Describe the challenges of deploying LLMs in production.",
+  ],
 };
 
 // pick `count` random unique questions for the given domain (falls back to HR bank)
@@ -102,4 +187,79 @@ export function getCalibrationQuestions(domain, count = 3) {
     out.push(pool.splice(i, 1)[0]);
   }
   return out;
+}
+
+// SCREENING QUESTIONS — basic qualification check (Stage 1 from Question Pipeline)
+export const SCREENING_QUESTIONS = [
+  "What is your highest level of education completed?",
+  "How many years of professional experience do you have in your target domain?",
+  "Are you legally authorized to work in the country where this role is based?",
+  "What is your current notice period / availability to start?",
+  "What are your salary expectations for this role?",
+];
+
+export function getScreeningQuestions(count = 3) {
+  const pool = [...SCREENING_QUESTIONS];
+  const out = [];
+  while (out.length < count && pool.length) {
+    const i = Math.floor(Math.random() * pool.length);
+    out.push(pool.splice(i, 1)[0]);
+  }
+  return out;
+}
+
+// SYSTEM DESIGN EVALUATION RUBRICS — key dimensions to assess
+export const SYSTEM_DESIGN_RUBRICS = {
+  "requirements_clarification": {
+    weight: 0.15,
+    description: "Asks clarifying questions: functional/non-functional, scale, constraints",
+    keywords: ["scale", "users", "qps", "latency", "availability", "consistency", "functional", "non-functional"]
+  },
+  "high_level_design": {
+    weight: 0.20,
+    description: "Draws architecture diagram, identifies major components and data flow",
+    keywords: ["api", "database", "cache", "queue", "load balancer", "service", "component", "flow"]
+  },
+  "data_model": {
+    weight: 0.15,
+    description: "Defines schema, entities, relationships, and access patterns",
+    keywords: ["table", "schema", "entity", "relation", "index", "primary key", "foreign key", "nosql", "document"]
+  },
+  "scalability": {
+    weight: 0.20,
+    description: "Addresses horizontal scaling, partitioning, sharding, replication",
+    keywords: ["shard", "partition", "replica", "horizontal", "vertical", "scale out", "load balance"]
+  },
+  "reliability": {
+    weight: 0.15,
+    description: "Covers failure modes, redundancy, retries, circuit breakers, disaster recovery",
+    keywords: ["failover", "redundant", "retry", "circuit breaker", "backup", "disaster", "recovery", "sla"]
+  },
+  "tradeoffs": {
+    weight: 0.15,
+    description: "Explicitly discusses CAP, latency vs consistency, cost vs performance",
+    keywords: ["tradeoff", "cap", "consistency", "availability", "partition", "latency", "cost", "compromise"]
+  },
+};
+
+export function evaluateSystemDesignAnswer(answerText) {
+  const text = (answerText || "").toLowerCase();
+  const scores = {};
+  let totalWeighted = 0;
+  let totalWeight = 0;
+  
+  for (const [dimension, rubric] of Object.entries(SYSTEM_DESIGN_RUBRICS)) {
+    const matches = rubric.keywords.filter(k => text.includes(k)).length;
+    const score = Math.min(1, matches / Math.max(2, rubric.keywords.length * 0.3));
+    scores[dimension] = {
+      score: Math.round(score * 100),
+      matchedKeywords: rubric.keywords.filter(k => text.includes(k)),
+      description: rubric.description
+    };
+    totalWeighted += score * rubric.weight;
+    totalWeight += rubric.weight;
+  }
+  
+  const overall = totalWeight > 0 ? Math.round((totalWeighted / totalWeight) * 100) : 0;
+  return { overall, dimensions: scores };
 }

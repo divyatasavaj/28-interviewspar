@@ -43,6 +43,9 @@ def main():
         payload.get("answer_text", ""),
         response_latency=float(payload.get("response_latency", 0) or 0),
         code_correct=int(payload.get("code_correct", 0) or 0),
+        pause_count=int(payload.get("pause_count", 0) or 0),
+        grammar_errors=int(payload.get("grammar_errors", 0) or 0),
+        fluency_score=float(payload.get("fluency_score", 100) or 100),
     )
 
     if os.path.exists(MODEL_PATH) and os.path.exists(META_PATH):

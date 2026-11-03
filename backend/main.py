@@ -12,6 +12,8 @@ from app.routes.feedback import router as feedback_router
 from app.routes.integrity import router as integrity_router
 from app.routes.video import router as video_router
 from app.routes.tts import router as tts_router
+from app.api.interview_v2 import router as interview_v2_router
+from app.api.code_evaluation import router as code_evaluation_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -43,6 +45,8 @@ app.include_router(feedback_router)
 app.include_router(integrity_router)
 app.include_router(video_router)
 app.include_router(tts_router)
+app.include_router(interview_v2_router)
+app.include_router(code_evaluation_router)
 
 
 @app.get("/")
