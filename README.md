@@ -90,6 +90,8 @@ npm run lint
 Backend HTTP tests use synthetic in-memory collections and mocked providers.
 They do not establish live MongoDB, Groq, Judge0, or browser acceptance.
 See [TODO.md](TODO.md) for the exact verification record and outstanding tasks.
+The separate [site verification report](docs/SITE_TEST_REPORT.md) documents live
+database and Chrome checks, their opt-in commands, confirmed fixes and remaining limits.
 
 ## Project reference
 

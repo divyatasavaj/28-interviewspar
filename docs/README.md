@@ -8,6 +8,7 @@ Current implementation references:
 - [Deployment](DEPLOYMENT.md)
 - [Repair TODO and verification](../TODO.md)
 - [Follow-up quality findings](QUALITY_REVIEW.md)
+- [Live API and Chrome site verification](SITE_TEST_REPORT.md)
 - [Resume intelligence design/history](RESUME_INTELLIGENCE_IMPLEMENTATION_PLAN.md)
 - [ML guide](../ml/README.md)
 

@@ -51,9 +51,11 @@ outputs are excluded from commits.
 
 ## Outstanding acceptance and feature work
 
-- [ ] Run real MongoDB integration/concurrency tests in a dedicated disposable database, including indexes, restart persistence, and deletion/backup retention.
-- [ ] Run browser acceptance on desktop/mobile: signup, resume upload/matching, HR/technical interviews, retries, dictation, read-aloud, print/PDF, accessibility, deletion.
-- [ ] Verify configured Groq, Judge0 isolation/limits, and Edge TTS availability/failure behavior. No live provider request was made in this verification pass.
+- [x] Run real MongoDB integration/concurrency tests in a disposable database: indexes, restart persistence, ownership, answer races, and deletion. See the site test report.
+- [ ] Validate MongoDB backup/retention and disaster recovery independently.
+- [x] Run Chrome desktop/mobile acceptance: registration, account/profile, PDF resume and matching, complete HR/technical rounds, saved reports/PDF generation, skip/early finish, deletion and credential changes. All 96 recorded checks passed.
+- [ ] Verify physical-device speech, native print dialogs, screen readers, Safari and Firefox. Chrome emulation does not establish these behaviors.
+- [ ] Restore successful Groq/Edge TTS integration and configure/validate Judge0. Synthetic diagnostics returned Groq HTTP 404 and Edge TTS HTTP 403; coding remains explicitly unavailable without Judge0.
 - [ ] Run the new GitHub CI workflow and build/deploy the Docker/nginx examples in a test environment. Examples were not deployed locally.
 - [ ] Compile/test the Solidity contract and validate issuer authorization on a local chain before any Sepolia deployment. Only JS syntax was checked; no wallet transaction occurred.
 - [ ] Gather consented independent candidate data, review annotations, and validate/calibrate ML signals. Current bootstrap data cannot support hiring decisions.
@@ -93,3 +95,15 @@ is committed for subsequent remote validation.
 See [quality review](docs/QUALITY_REVIEW.md) for confirmed findings, fixes,
 regression evidence, and remaining limitations. The earlier verification table
 is retained as the initial repair record.
+
+## Site testing follow-up
+
+- [x] T21: Add opt-in live HTTP/MongoDB journeys with synthetic data and verified cleanup.
+- [x] T22: Add component rendering coverage for every routed page and repair authentication field labels.
+- [x] T23: Repair clipped tablet navigation and remove unsupported home-page ratings/live metrics and the misdirected demo CTA.
+- [x] T24: Keep routine profile reads out of the credential-attempt limit; verify the stricter credential limit remains enforced.
+- [x] T25: Correct password-length instructions and associate account/resume labels with their controls.
+- [x] T26: Finish Chrome acceptance and record the 96 passing checks, provider failures, and remaining manual verification.
+
+Commands, coverage, evidence and service limitations are recorded in
+[the site test report](docs/SITE_TEST_REPORT.md).
