@@ -19,7 +19,7 @@ acceptance or completion of every aspirational feature in the historical PRD.
 - [x] T10: Tighten legacy marketplace/privacy boundaries, correct product claims, and restrict certificate minting to the issuer on test networks.
 - [x] T11: Run meaningful backend, ML, frontend, syntax, configuration, and diff checks; add regressions for observed integration failures.
 - [x] T12a: Update setup/API/deployment/source-map documentation and add CI/deployment examples.
-- [ ] T12b: Complete staged sensitive-data review, commit remaining task groups, push b3 without force, and verify the remote commit.
+- [x] T12b: Complete staged sensitive-data review, commit remaining task groups, push b3 without force, and verify the remote commit.
 
 ## Verification record — 2026-11-03
 
@@ -70,4 +70,11 @@ outputs are excluded from commits.
 - `b5e98a9`: ML features, validation split, and provenance repairs.
 - `24bba38`: canonical authentication, resume, interview, safe execution, UI integration, and regression tests.
 - `c392854`: legacy isolation, privacy/authorization fixes, issuer restriction, and corrected product claims.
-- Documentation/deployment checklist commit and remote publication verification follow these task commits.
+- `055b26e`: current architecture/API/setup documentation, CI, deployment examples, and verification checklist.
+- `10c25a6`: normalize whitespace preserved from the original local work and CSV line endings.
+
+The repair commits were pushed to `origin/b3` without force and fetched back at
+`10c25a6` to confirm publication. The final checklist confirmation follows that
+commit. No personal/runtime data or private environment values were found in
+the outgoing changes. GitHub Actions execution is not yet verified; the workflow
+is committed for subsequent remote validation.
