@@ -30,15 +30,15 @@ class ValidationEngine:
         self.completeness_validator = create_completeness_validator()
 
     def validate_answer(
-        self, 
-        answer: str, 
+        self,
+        answer: str,
         context: ValidationContext,
         retry_count: int = 0
     ) -> AnswerEvaluation:
         validation_results = []
         overall_valid = True
         flagged_issues = []
-        
+
         # Language validation
         lang_result = self.language_validator.validate(answer, context.question_text)
         lang_validation = ValidationResult(
@@ -134,15 +134,15 @@ class ValidationEngine:
                     messages.append("Your answer doesn't seem to address the question. " + r.message)
                 elif r.rule_type == ValidationRuleType.COMPLETENESS_CHECK:
                     messages.append("Your answer is incomplete. " + r.message)
-        
+
         if retry_count > 0:
             messages.append(f"This is retry {retry_count + 1}. Please provide a proper answer.")
-        
+
         return " ".join(messages)
 
     def validate_with_rules(
-        self, 
-        answer: str, 
+        self,
+        answer: str,
         rules: list[ValidationRule],
         context: ValidationContext,
         retry_count: int = 0
@@ -153,7 +153,7 @@ class ValidationEngine:
         language_score = 1.0
         relevance_score = 1.0
         completeness_score = 1.0
-        
+
         for rule in rules:
             if rule.rule_type == ValidationRuleType.LANGUAGE_ENFORCEMENT:
                 allowed = rule.parameters.get('allowed_languages', context.allowed_languages)
@@ -174,7 +174,7 @@ class ValidationEngine:
                 if not vr.is_valid and vr.severity == "error":
                     overall_valid = False
                     flagged_issues.append(f"Language: {vr.message}")
-            
+
             elif rule.rule_type == ValidationRuleType.RELEVANCE_CHECK:
                 threshold = rule.parameters.get('threshold', context.relevance_threshold)
                 self.relevance_validator.threshold = threshold
@@ -194,7 +194,7 @@ class ValidationEngine:
                 if not vr.is_valid and vr.severity == "error":
                     overall_valid = False
                     flagged_issues.append(f"Relevance: {vr.message}")
-            
+
             elif rule.rule_type == ValidationRuleType.COMPLETENESS_CHECK:
                 expected = rule.parameters.get('expected_fields', context.expected_fields)
                 min_words = rule.parameters.get('min_words', context.min_words)
@@ -217,7 +217,7 @@ class ValidationEngine:
                     flagged_issues.append(f"Completeness: {vr.message}")
 
         quality_score = (language_score + relevance_score + completeness_score) / 3
-        
+
         feedback = "Good answer. Thank you." if overall_valid else self._generate_feedback(validation_results, retry_count)
 
         return AnswerEvaluation(

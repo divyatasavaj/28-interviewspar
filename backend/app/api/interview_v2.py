@@ -38,12 +38,12 @@ def get_question_bank():
     if question_bank is None:
         from app.lib.interview.rounds.hr.questions import get_hr_questions
         from app.lib.interview.rounds.technical import get_theory_questions_for_role, get_challenges_for_role
-        
+
         all_questions = list(get_hr_questions())
         for role in TechnicalRole:
             all_questions.extend(get_theory_questions_for_role(role))
             all_questions.extend(get_challenges_for_role(role))
-        
+
         question_bank = QuestionBank(questions=all_questions)
     return question_bank
 
@@ -124,7 +124,7 @@ def start_interview(
 ):
     """Start a new interview session"""
     session_id = str(uuid.uuid4())
-    
+
     # Create session
     sm = get_session_manager()
     session = sm.create_session(
@@ -133,11 +133,11 @@ def start_interview(
         initial_round=RoundType.HR,
         role=body.role
     )
-    
+
     # Start HR round
     hr_round = create_hr_round(get_validation_engine())
     result = hr_round.start_round(session)
-    
+
     return StartInterviewResponse(
         session_id=session_id,
         question=result.current_question.prompt if result.current_question else "No questions available",
@@ -156,20 +156,20 @@ def submit_answer(
     """Submit an answer for the current question"""
     sm = get_session_manager()
     session = sm.get_session(body.session_id)
-    
+
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     if session.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not authorized for this session")
     if session.status != "active":
         raise HTTPException(status_code=400, detail=f"Session is {session.status}")
-    
+
     ve = get_validation_engine()
-    
+
     if session.current_round == RoundType.HR:
         hr_round = create_hr_round(ve)
         result = hr_round.process_answer(session, body.answer)
-        
+
         return AnswerResponse(
             evaluation=result.evaluation.model_dump() if result.evaluation else {},
             should_advance=not result.is_complete,
@@ -181,11 +181,11 @@ def submit_answer(
             message=result.message,
             retry_message=result.evaluation.feedback if result.evaluation and not result.evaluation.overall_valid else None
         )
-    
+
     elif session.current_round == RoundType.TECHNICAL:
         tech_round = create_technical_round(session.current_role, ve)
         result = tech_round.process_answer(session, body.answer, body.code)
-        
+
         return AnswerResponse(
             evaluation=result.evaluation.model_dump() if result.evaluation else {},
             should_advance=not result.is_complete,
@@ -197,7 +197,7 @@ def submit_answer(
             message=result.message,
             retry_message=result.evaluation.feedback if result.evaluation and not result.evaluation.overall_valid else None
         )
-    
+
     else:
         raise HTTPException(status_code=400, detail=f"Round {session.current_round} not implemented yet")
 
@@ -207,12 +207,12 @@ def get_session(session_id: str, user_id: str = Depends(require_token)):
     """Get session status and progress"""
     sm = get_session_manager()
     session = sm.get_session(session_id)
-    
+
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     if session.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     current_question = None
     if session.current_round == RoundType.HR:
         from app.lib.interview.rounds.hr import get_hr_question_by_id
@@ -226,7 +226,7 @@ def get_session(session_id: str, user_id: str = Depends(require_token)):
             if q.id == session.current_question_id:
                 current_question = q
                 break
-    
+
     return {
         "session_id": session.session_id,
         "user_id": session.user_id,
@@ -251,15 +251,15 @@ def complete_session(session_id: str, user_id: str = Depends(require_token)):
     """Complete the interview session and generate report"""
     sm = get_session_manager()
     session = sm.get_session(session_id)
-    
+
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     if session.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     report = sm.complete_session(session_id)
     session.status = "completed"
-    
+
     return {
         "session_id": session_id,
         "status": "completed",

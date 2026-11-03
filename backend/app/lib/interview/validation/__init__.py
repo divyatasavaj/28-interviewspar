@@ -5,7 +5,7 @@ from .validation_engine import ValidationEngine, ValidationContext, create_valid
 
 __all__ = [
     "LanguageValidator",
-    "RelevanceValidator", 
+    "RelevanceValidator",
     "CompletenessValidator",
     "ValidationEngine",
     "ValidationContext",

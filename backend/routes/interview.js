@@ -47,10 +47,10 @@ router.post("/screening", (req, res) => {
   const session = getSession(sessionId);
   if (!session) return res.status(404).json({ error: "session not found" });
   if (session.phase !== "screening") return res.status(400).json({ error: "not in screening phase" });
-  
+
   // Basic qualification check: score the answer
   const qualificationScore = scoreScreeningAnswer(question, answer);
-  
+
   session.screeningAnswers.push({
     question,
     answer: answer || "",
@@ -70,7 +70,7 @@ router.post("/screening", (req, res) => {
 function scoreScreeningAnswer(question, answer) {
   const text = (answer || "").toLowerCase().trim();
   if (!text) return 0;
-  
+
   // Simple keyword-based scoring for basic qualification
   if (question.includes("education")) {
     const degrees = ["phd", "master", "bachelor", "b.sc", "m.sc", "b.tech", "m.tech", "b.e", "m.e", "degree", "university", "college"];
@@ -157,7 +157,7 @@ router.post("/calibration", (req, res) => {
 
     try {
       const tag = lastUser
-        ? await classifyAnswer({ 
+        ? await classifyAnswer({
             answerText: lastUser.content,
             responseLatency: responseLatency || 0,
             codeCorrect: codeCorrect || 0,
@@ -178,7 +178,7 @@ router.post("/calibration", (req, res) => {
           });
           updateAbility(session, { mistakeLabel: tag.label, answerText: lastUser.content });
         }
-        
+
         // STEP 8 — response latency anomaly detection
         if (responseLatency && responseLatency > 30000) { // > 30 seconds for a typical answer
           session.integrityLog = session.integrityLog || [];
@@ -250,30 +250,30 @@ router.get("/:sessionId/feedback", authRequired, (req, res) => {
   if (session.ownerId !== req.user.id && req.user.role !== "admin") {
     return res.status(403).json({ error: "forbidden" });
   }
-  
+
   const mistakeJournal = session.mistakeJournal || [];
   const totalQuestions = mistakeJournal.length + (session.calibrationAnswers?.length || 0);
   const goodAnswers = mistakeJournal.filter(m => m.label === 'good-answer').length;
   const overallScore = totalQuestions > 0 ? Math.round((goodAnswers / totalQuestions) * 100) : 0;
-  
+
   const strengths = [];
   const weaknesses = [];
-  
+
   if (session.ability) {
     Object.entries(session.ability).forEach(([topic, score]) => {
       if (score >= 0.7) strengths.push(`Strong ${topic} (${Math.round(score * 100)}%)`);
       else if (score < 0.4) weaknesses.push(`Weak ${topic} (${Math.round(score * 100)}%)`);
     });
   }
-  
+
   mistakeJournal.forEach(m => {
     if (m.label !== 'good-answer' && !weaknesses.includes(m.label)) {
       weaknesses.push(m.label.replace(/-/g, ' '));
     }
   });
-  
+
   const ramblingDetected = mistakeJournal.some(m => m.label === 'rambling');
-  
+
   res.json({
     overallScore,
     strengths: strengths.length ? strengths : ['Completed the interview'],

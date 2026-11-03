@@ -20,20 +20,20 @@ export const QUESTION_CATEGORIES = {
 export function categorizeQuestion(questionText, domain = "") {
   const text = (questionText || "").toLowerCase();
   const categories = [];
-  
+
   for (const [category, keywords] of Object.entries(QUESTION_CATEGORIES)) {
     if (category === "technical-domain") continue; // handled separately
     if (keywords.some(k => text.includes(k))) {
       categories.push(category);
     }
   }
-  
+
   // Check domain-specific keywords
   const domainLower = domain.toLowerCase();
   if (domainLower && text.includes(domainLower)) {
     categories.push("technical-domain");
   }
-  
+
   return categories.length > 0 ? categories : ["general"];
 }
 

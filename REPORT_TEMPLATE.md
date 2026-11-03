@@ -2,9 +2,9 @@
 
 # InterviewSpar — SGP Final Report Template
 
-**Project:** AI-Adaptive Interview Practice Platform  
-**Team:** [Team Members]  
-**Semester:** [Semester/Year]  
+**Project:** AI-Adaptive Interview Practice Platform
+**Team:** [Team Members]
+**Semester:** [Semester/Year]
 **GitHub:** https://github.com/[repo]
 
 ---

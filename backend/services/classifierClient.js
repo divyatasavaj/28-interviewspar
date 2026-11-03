@@ -9,9 +9,9 @@ const ML_DIR = join(__dirname, "..", "..", "ml"); // backend/ -> repo -> ml/
 
 export function classifyAnswer({ answerText, responseLatency = 0, codeCorrect = 0, pauseCount = 0, grammarErrors = 0, fluencyScore = 100 }) {
   return new Promise((resolve) => {
-    const payload = JSON.stringify({ 
-      answer_text: answerText, 
-      response_latency: responseLatency, 
+    const payload = JSON.stringify({
+      answer_text: answerText,
+      response_latency: responseLatency,
       code_correct: codeCorrect,
       pause_count: pauseCount,
       grammar_errors: grammarErrors,

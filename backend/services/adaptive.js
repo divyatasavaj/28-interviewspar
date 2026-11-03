@@ -25,7 +25,7 @@ const TOPIC_KEYWORDS = {
 export function topicFor(session, answerText = "") {
   const text = (answerText || "").toLowerCase();
   const domain = session.domain || "General";
-  
+
   // Check for system design keywords first (high priority)
   if (TOPIC_KEYWORDS["System Design"].some(k => text.includes(k))) {
     return "System Design";
@@ -48,7 +48,7 @@ export function topicFor(session, answerText = "") {
 
 export function updateAbility(session, { mistakeLabel, codeCorrect, answerText }) {
   session.ability = session.ability || {};
-  
+
   // Determine the topic from the answer content
   const topic = topicFor(session, answerText);
   let a = session.ability[topic] ?? 0.5;
@@ -87,12 +87,12 @@ export function buildDifficultyHint(session) {
   const diff = difficultyFor(a);
   const comm = session.ability["Communication"] ?? 0.5;
   const cultural = session.ability["Cultural Alignment"] ?? 0.5;
-  
+
   const commNote =
     comm < 0.45 ? "The candidate is struggling with structure/fluency — ask a simpler, more guided question and let them explain step by step."
     : comm > 0.7 ? "The candidate communicates clearly — you may probe with a more open, challenging follow-up."
     : "";
-    
+
   const culturalNote =
     cultural < 0.45 ? "Candidate shows weak cultural alignment signals — include a values/behavioral question."
     : cultural > 0.7 ? "Candidate demonstrates strong cultural alignment — you may skip behavioral probing."

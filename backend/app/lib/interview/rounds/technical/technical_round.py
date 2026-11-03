@@ -41,11 +41,11 @@ class TechnicalRound:
         self._current_phase = "theory"
         self._theory_index = 0
         self._coding_index = 0
-        
+
         first_question = self._get_next_question()
         if first_question:
             session.current_question_id = first_question.id
-        
+
         return TechnicalRoundResult(
             session_id=session.session_id,
             current_question=first_question,
@@ -61,7 +61,7 @@ class TechnicalRound:
         self._theory_index = session.metadata.get("theory_index", 0)
         self._coding_index = session.metadata.get("coding_index", 0)
         current_question = self._get_current_question(session)
-        
+
         if not current_question:
             return TechnicalRoundResult(
                 session_id=session.session_id,
@@ -72,31 +72,31 @@ class TechnicalRound:
                 message="Technical round completed!",
                 round_type=self._current_phase
             )
-        
+
         # For coding challenges, combine answer and code
         full_answer = answer
         if code and current_question.question_type == QuestionType.CODING_CHALLENGE:
             full_answer = f"Code:\n{code}\n\nExplanation:\n{answer}"
-        
+
         from app.lib.interview.question_schema import AnswerSubmission
         submission = AnswerSubmission(
             session_id=session.session_id,
             question_id=current_question.id,
             answer=full_answer
         )
-        
+
         result = self.processor.process_answer(submission, session, self._create_question_bank(), current_question)
-        
+
         # Update session
         if result.session_updates:
             for key, value in result.session_updates.items():
                 setattr(session, key, value)
-        
+
         session.current_question_id = result.next_question_id
-        
+
         next_question = self._get_next_question()
         is_complete = next_question is None
-        
+
         # Check phase transition
         phase_msg = ""
         if self._current_phase == "theory" and self._theory_index >= len(self.theory_questions) and self.coding_challenges:
@@ -105,12 +105,12 @@ class TechnicalRound:
             phase_msg = "Moving to Phase 2: Coding Challenges. "
         elif self._current_phase == "coding" and self._coding_index >= len(self.coding_challenges):
             is_complete = True
-        
+
         if is_complete:
             session.current_round = RoundType.BEHAVIORAL
             session.current_question_index = 0
             session.current_question_id = None
-        
+
         session.metadata.update(technical_phase=self._current_phase, theory_index=self._theory_index, coding_index=self._coding_index)
         return TechnicalRoundResult(
             session_id=session.session_id,
@@ -132,7 +132,7 @@ class TechnicalRound:
             for c in self.coding_challenges:
                 if c.id == session.current_question_id:
                     return c
-        
+
         # Fallback to index
         if self._current_phase == "theory" and self._theory_index < len(self.theory_questions):
             return self.theory_questions[self._theory_index]
@@ -165,14 +165,14 @@ class TechnicalRound:
         coding_total = len(self.coding_challenges)
         total = theory_total + coding_total
         answered = len(session.questions_answered)
-        
+
         if self._current_phase == "theory":
             current = self._theory_index
             phase_progress = f"Theory: {current}/{theory_total}"
         else:
             current = theory_total + self._coding_index
             phase_progress = f"Coding: {self._coding_index}/{coding_total}"
-        
+
         return {
             'current': min(current + 1, total),
             'total': total,

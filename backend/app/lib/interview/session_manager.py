@@ -23,8 +23,8 @@ class SessionManager:
         self.session_history: Dict[str, list[SessionAction]] = {}
 
     def create_session(
-        self, 
-        user_id: str, 
+        self,
+        user_id: str,
         session_id: str,
         initial_round: RoundType = RoundType.HR,
         role: TechnicalRole = None
@@ -49,7 +49,7 @@ class SessionManager:
         session = self.sessions.get(session_id)
         if not session:
             return None
-        
+
         for key, value in updates.items():
             if hasattr(session, key):
                 setattr(session, key, value)
@@ -60,35 +60,35 @@ class SessionManager:
         session = self.get_session(session_id)
         if not session:
             return None
-        
+
         questions = self.question_bank.get_questions_for_round(
             session.current_round, session.current_role
         )
-        
+
         if session.current_question_index < len(questions):
             return questions[session.current_question_index]
         return None
 
     def process_answer(
-        self, 
-        session_id: str, 
+        self,
+        session_id: str,
         answer: str,
         language: str = 'en'
     ) -> dict:
         session = self.get_session(session_id)
         if not session:
             return {'error': 'Session not found'}
-        
+
         if session.status != 'active':
             return {'error': f'Session is {session.status}'}
-        
+
         current_question = self.get_current_question(session_id)
         if not current_question:
             return {'error': 'No more questions in this round'}
-        
+
         # Process answer
         processor = create_answer_processor(session.current_round)
-        
+
         from app.lib.interview.question_schema import AnswerSubmission
         submission = AnswerSubmission(
             session_id=session_id,
@@ -96,13 +96,13 @@ class SessionManager:
             answer=answer,
             language=language
         )
-        
+
         result = processor.process_answer(submission, session, self.question_bank, current_question)
-        
+
         # Update session
         if result.session_updates:
             self.update_session(session_id, result.session_updates)
-        
+
         # Log action
         self._log_action(session_id, 'answer', {
             'question_id': current_question.id,
@@ -111,16 +111,16 @@ class SessionManager:
             'quality_score': result.evaluation.quality_score,
             'should_advance': result.should_advance
         })
-        
+
         # Get next question if advancing
         next_question = None
         if result.should_advance and result.next_question_id:
             next_question = self.question_bank.get_question_by_id(result.next_question_id)
             session.current_question_id = result.next_question_id
-        
+
         # Check if round complete
         round_complete = not result.should_advance or next_question is None
-        
+
         return {
             'evaluation': result.evaluation,
             'should_advance': result.should_advance,
@@ -134,12 +134,12 @@ class SessionManager:
         session = self.get_session(session_id)
         if not session:
             return None
-        
+
         session.current_round = next_round
         session.current_question_index = 0
         session.current_question_id = None
         session.updated_at = datetime.utcnow()
-        
+
         self._log_action(session_id, 'switch_round', {'new_round': next_round.value})
         return session
 
@@ -147,15 +147,15 @@ class SessionManager:
         session = self.get_session(session_id)
         if not session:
             return None
-        
+
         session.status = 'completed'
         session.completed_at = datetime.utcnow()
-        
+
         # Get all evaluations (would be stored separately in practice)
         evaluations = []  # Placeholder - would fetch from DB
-        
+
         report = self._generate_report(session, evaluations)
-        
+
         self._log_action(session_id, 'complete', {'report_id': report.session_id})
         return report
 
@@ -168,9 +168,9 @@ class SessionManager:
                 round_scores[round_type] = sum(e.quality_score for e in round_evals) / len(round_evals)
             else:
                 round_scores[round_type] = 0.0
-        
+
         overall = sum(round_scores.values()) / len(round_scores) if round_scores else 0.0
-        
+
         return InterviewReport(
             session_id=session.session_id,
             user_id=session.user_id,

@@ -247,7 +247,7 @@ export function evaluateSystemDesignAnswer(answerText) {
   const scores = {};
   let totalWeighted = 0;
   let totalWeight = 0;
-  
+
   for (const [dimension, rubric] of Object.entries(SYSTEM_DESIGN_RUBRICS)) {
     const matches = rubric.keywords.filter(k => text.includes(k)).length;
     const score = Math.min(1, matches / Math.max(2, rubric.keywords.length * 0.3));
@@ -259,7 +259,7 @@ export function evaluateSystemDesignAnswer(answerText) {
     totalWeighted += score * rubric.weight;
     totalWeight += rubric.weight;
   }
-  
+
   const overall = totalWeight > 0 ? Math.round((totalWeighted / totalWeight) * 100) : 0;
   return { overall, dimensions: scores };
 }

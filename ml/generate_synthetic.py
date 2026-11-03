@@ -173,7 +173,7 @@ def main(n_per_label=35):
             row[index] = features[key]
     random.shuffle(rows)
     with open(OUT, "w", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(HEADER)
         w.writerows(rows)
     print(f"wrote {len(rows)} synthetic rows -> {OUT}")

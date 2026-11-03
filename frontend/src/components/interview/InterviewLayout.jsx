@@ -57,7 +57,7 @@ export default function InterviewLayout({ children, session, onAnswerSubmit, onC
         setCurrentQuestion(data.next_question);
         setProgress(data.progress);
         setCurrentRound(data.next_question.round || currentRound);
-        
+
         if (data.next_question.type === 'coding_challenge') {
           setShowCodeEditor(true);
           setCodeChallenge(data.next_question);
@@ -84,7 +84,7 @@ export default function InterviewLayout({ children, session, onAnswerSubmit, onC
 
   const handleCodeSubmit = async (code, language) => {
     if (!codeChallenge) return;
-    
+
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/interview/v2/code/evaluate`, {
@@ -101,15 +101,15 @@ export default function InterviewLayout({ children, session, onAnswerSubmit, onC
       });
 
       const data = await response.json();
-      
+
       if (data.execution_result?.status === 'success') {
         await handleAnswerSubmit(
           `Code executed successfully. ${data.passed}/${data.total} tests passed.\n\nAI Review: ${data.feedback}`,
           code
         );
       } else {
-        setValidationErrors([{ 
-          type: 'code_error', 
+        setValidationErrors([{
+          type: 'code_error',
           message: data.execution_result?.error_message || 'Code execution failed',
           suggestions: ['Check syntax errors', 'Verify logic matches requirements']
         }]);
@@ -136,10 +136,10 @@ export default function InterviewLayout({ children, session, onAnswerSubmit, onC
               </span>
             )}
           </div>
-          
-          <ProgressIndicator 
-            current={progress.current} 
-            total={progress.total} 
+
+          <ProgressIndicator
+            current={progress.current}
+            total={progress.total}
             percentage={progress.percentage}
             phase={progress.phase}
           />
@@ -249,7 +249,7 @@ function CodeEditorPanel({ challenge, language, onLanguageChange, onSubmit, isSu
                   {output.execution_result.passed}/{output.execution_result.total} passed · {output.execution_result.execution_time_ms?.toFixed(0)}ms
                 </span>
               </div>
-              
+
               {output.execution_result.test_results && output.execution_result.test_results.map((test, i) => (
                 <div key={i} className="text-xs p-2 rounded bg-gray-800/50">
                   <div className="flex justify-between">

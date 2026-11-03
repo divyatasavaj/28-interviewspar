@@ -17,7 +17,7 @@ export default function TechnicalRound({ session, onAnswerSubmit }) {
     if (session?.current_question) {
       setCurrentQuestion(session.current_question);
       setPhase(session.progress?.phase || 'theory');
-      
+
       if (session.current_question.type === 'coding_challenge') {
         setShowCodeEditor(true);
         setCodeChallenge(session.current_question);
@@ -65,7 +65,7 @@ export default function TechnicalRound({ session, onAnswerSubmit }) {
       } else {
         setRetryCount(0);
         setAnswer('');
-        
+
         if (data.reply) {
           // Parse the AI's reply to determine question type
           let questionType = 'technical_theory';
@@ -74,23 +74,23 @@ export default function TechnicalRound({ session, onAnswerSubmit }) {
           } else if (data.reply.toLowerCase().includes('design') || data.reply.toLowerCase().includes('architecture') || data.reply.toLowerCase().includes('system')) {
             questionType = 'system_design';
           }
-          
-          setCurrentQuestion({ 
-            prompt: data.reply, 
+
+          setCurrentQuestion({
+            prompt: data.reply,
             type: questionType,
             difficulty: 'medium'
           });
-          
+
           if (questionType === 'coding_challenge') {
             setShowCodeEditor(true);
-            setCodeChallenge({ 
+            setCodeChallenge({
               id: `challenge-${Date.now()}`,
               prompt: data.reply,
               type: 'coding_challenge'
             });
           }
         }
-        
+
         if (data.next_question) {
           setCurrentQuestion(data.next_question);
           setPhase(data.progress?.phase || 'theory');
@@ -106,7 +106,7 @@ export default function TechnicalRound({ session, onAnswerSubmit }) {
 
   const handleCodeSubmit = async (code, language) => {
     if (!codeChallenge) return;
-    
+
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/code/run`, {
@@ -123,7 +123,7 @@ export default function TechnicalRound({ session, onAnswerSubmit }) {
       });
 
       const data = await response.json();
-      
+
       if (data.execution_result?.status === 'success') {
         await handleAnswerSubmit(
           `Code executed successfully. ${data.execution_result.passed}/${data.execution_result.total} tests passed.\n\nAI Review: ${data.feedback}`,
@@ -192,7 +192,7 @@ export default function TechnicalRound({ session, onAnswerSubmit }) {
               <p className="text-lg font-medium">{currentQuestion.prompt}</p>
             </div>
           </div>
-          
+
           {retryCount > 0 && (
             <div className="mb-4 p-3 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 text-sm">
               ⚠️ Retry {retryCount}/2 - Please provide a detailed technical answer
@@ -208,7 +208,7 @@ export default function TechnicalRound({ session, onAnswerSubmit }) {
               className="w-full rounded bg-gray-900 border border-white/10 p-4 text-white focus:outline-none focus:border-brand-violet resize-none font-mono text-sm"
               disabled={isSubmitting}
             />
-            
+
             <div className="flex justify-end gap-3">
               <button
                 type="button"

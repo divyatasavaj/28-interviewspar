@@ -124,8 +124,8 @@ export default function SessionView({ session }) {
     const next = [...history, { role: "user", content: value }];
     setHistory(next); setInput(""); setBusy(true);
     try {
-      const res = await sendInterviewMessage({ 
-        sessionId: session.sessionId, 
+      const res = await sendInterviewMessage({
+        sessionId: session.sessionId,
         history: next,
         fluency: speech.fluency,
         responseLatency,
@@ -163,8 +163,8 @@ export default function SessionView({ session }) {
     const next = [...history, { role: "user", content: value }];
     setHistory(next); setInput(""); setBusy(true);
     try {
-      const res = await sendInterviewMessage({ 
-        sessionId: session.sessionId, 
+      const res = await sendInterviewMessage({
+        sessionId: session.sessionId,
         history: next,
         fluency: speech.fluency,
         responseLatency,

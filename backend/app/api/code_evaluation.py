@@ -59,7 +59,7 @@ def get_challenge(challenge_id: str, user_id: str = Depends(require_token)):
     challenge = get_challenge_by_id(challenge_id)
     if not challenge:
         raise HTTPException(status_code=404, detail="Challenge not found")
-    
+
     return ChallengeDetailResponse(
         id=challenge.id,
         title=challenge.metadata.get('title', challenge.id),
@@ -82,9 +82,9 @@ def evaluate_code(
     challenge = get_challenge_by_id(body.challenge_id)
     if not challenge:
         raise HTTPException(status_code=404, detail="Challenge not found")
-    
+
     evaluator = create_code_evaluator()
-    
+
     if body.test_cases:
         raise HTTPException(400, "Client-supplied grading cases are not accepted")
     test_cases = None
@@ -95,7 +95,7 @@ def evaluate_code(
         challenge=challenge,
         test_cases=test_cases
     )
-    
+
     return CodeEvaluationResponse(
         execution_result={
             "status": evaluation.execution_result.status.value,

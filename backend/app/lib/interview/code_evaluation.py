@@ -81,24 +81,24 @@ class CodeExecutor:
 
 class AICodeReviewer:
     """Uses LLM to review code quality"""
-    
+
     def __init__(self):
         self.client = Groq(api_key=os.environ["GROQ_API_KEY"], timeout=12, max_retries=0) if os.environ.get("GROQ_API_KEY") else None
         self.model = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
-    
+
     def review_code(
-        self, 
-        code: str, 
-        language: Language, 
+        self,
+        code: str,
+        language: Language,
         problem_description: str,
         test_results: List[Dict],
         function_signature: str = None
     ) -> Dict:
         """Review code and return quality assessment"""
-        
+
         passed_tests = sum(1 for r in test_results if r.get('passed', False))
         total_tests = len(test_results)
-        
+
         prompt = f"""You are an expert code reviewer. Analyze the following code submission.
 
 **Problem:** {problem_description}
@@ -134,10 +134,10 @@ Return ONLY valid JSON, no markdown."""
                 temperature=0.3,
                 max_tokens=2000
             )
-            
+
             content = response.choices[0].message.content.strip()
             content = content.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-            
+
             return json.loads(content)
         except Exception as e:
             return {
@@ -154,11 +154,11 @@ Return ONLY valid JSON, no markdown."""
 
 class CodeEvaluator:
     """Main evaluator combining execution and AI review"""
-    
+
     def __init__(self):
         self.executor = CodeExecutor()
         self.reviewer = AICodeReviewer()
-    
+
     def evaluate(
         self,
         code: str,
@@ -167,17 +167,17 @@ class CodeEvaluator:
         test_cases: List[TestCase] = None
     ) -> CodeEvaluation:
         """Evaluate code submission"""
-        
+
         # Use challenge's test cases if not provided
         if test_cases is None:
             test_cases = [
                 TestCase(input=tc.get('input'), expected_output=tc.get('expected'), description=tc.get('description', ''))
                 for tc in challenge.test_cases
             ]
-        
+
         # Execute code
         execution_result = self.executor.execute(code, language, test_cases, challenge.function_signature)
-        
+
         # AI review if execution successful
         ai_review = None
         if execution_result.status == ExecutionStatus.SUCCESS:
@@ -188,10 +188,10 @@ class CodeEvaluator:
                 test_results=execution_result.test_results or [],
                 function_signature=challenge.function_signature
             )
-        
+
         # Calculate scores
         correctness_score = (execution_result.passed / execution_result.total * 100) if execution_result.total > 0 else 0
-        
+
         if ai_review:
             complexity_score = ai_review.get('complexity_score', 0)
             style_score = ai_review.get('style_score', 0)
@@ -206,7 +206,7 @@ class CodeEvaluator:
             overall_score = correctness_score  # Only correctness if no AI review
             feedback = "Code executed but AI review unavailable"
             suggestions = ["Enable AI review for detailed feedback"]
-        
+
         return CodeEvaluation(
             execution_result=execution_result,
             ai_review=ai_review,

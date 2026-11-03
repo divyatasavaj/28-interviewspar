@@ -57,7 +57,7 @@ class AnswerProcessor:
 
         # Determine if should advance
         should_advance = evaluation.overall_valid
-        
+
         # Handle retries
         if not should_advance and retry_count < self.max_retries_per_question:
             # Update retry count
@@ -72,7 +72,7 @@ class AnswerProcessor:
                 retry_message=retry_message,
                 session_updates=session_updates
             )
-        
+
         # Max retries exceeded or valid answer
         if not should_advance:
             # Flag violation
@@ -115,7 +115,7 @@ class AnswerProcessor:
             'project': ['project_name', 'tech_stack'],
             'location': ['location'],
         }
-        
+
         qtype = question.question_type.value
         for key, fields in field_map.items():
             if key in qtype:
@@ -132,7 +132,7 @@ class AnswerProcessor:
 
 class HRAnswerProcessor(AnswerProcessor):
     """Specialized processor for HR round with basic info questions"""
-    
+
     def _get_expected_fields(self, question) -> list[str]:
         prompt_lower = question.prompt.lower()
         if 'name' in prompt_lower:
@@ -152,7 +152,7 @@ class HRAnswerProcessor(AnswerProcessor):
 
 class TechnicalAnswerProcessor(AnswerProcessor):
     """Specialized processor for technical round"""
-    
+
     def _get_expected_fields(self, question) -> list[str]:
         # For technical questions, we expect more detailed answers
         return []

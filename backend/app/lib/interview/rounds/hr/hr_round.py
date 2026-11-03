@@ -30,9 +30,9 @@ class HRRound:
         session.current_round = RoundType.HR
         session.current_question_index = 0
         session.current_question_id = self.questions[0].id if self.questions else None
-        
+
         first_question = self.questions[0] if self.questions else None
-        
+
         return HRRoundResult(
             session_id=session.session_id,
             current_question=first_question,
@@ -52,11 +52,11 @@ class HRRound:
                 progress=self._get_progress(session),
                 message="No questions configured for HR round."
             )
-        
+
         current_question = get_hr_question_by_id(session.current_question_id)
         if not current_question:
             current_question = self.questions[session.current_question_index] if session.current_question_index < len(self.questions) else None
-        
+
         if not current_question:
             return HRRoundResult(
                 session_id=session.session_id,
@@ -66,31 +66,31 @@ class HRRound:
                 progress=self._get_progress(session),
                 message="HR round completed!"
             )
-        
+
         from app.lib.interview.question_schema import AnswerSubmission
         submission = AnswerSubmission(
             session_id=session.session_id,
             question_id=current_question.id,
             answer=answer
         )
-        
+
         result = self.processor.process_answer(submission, session, self._create_question_bank(), current_question)
-        
+
         # Update session with processor updates
         if result.session_updates:
             for key, value in result.session_updates.items():
                 setattr(session, key, value)
-        
+
         session.current_question_id = result.next_question_id
-        
+
         next_question = get_hr_question_by_id(result.next_question_id) if result.next_question_id else None
         is_complete = next_question is None
-        
+
         if is_complete:
             session.current_round = RoundType.TECHNICAL
             session.current_question_index = 0
             session.current_question_id = None
-        
+
         return HRRoundResult(
             session_id=session.session_id,
             current_question=next_question,

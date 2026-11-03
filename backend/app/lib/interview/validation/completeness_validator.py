@@ -79,29 +79,29 @@ class CompletenessValidator:
                 detected_fields={},
                 explanation=f"Answer too short (minimum {self.min_words} words required)"
             )
-        
+
         fields_to_check = expected_fields or self.required_fields
         detected = self._detect_all_fields(answer)
-        
+
         found_fields = [f for f in fields_to_check if f in detected]
         missing_fields = [f for f in fields_to_check if f not in detected]
-        
+
         # Also check word count
         word_count = len(answer.split())
         word_score = min(1.0, word_count / (self.min_words * 2))
-        
+
         field_score = len(found_fields) / len(fields_to_check) if fields_to_check else 1.0
-        
+
         final_score = (field_score * 0.7) + (word_score * 0.3)
         is_complete = final_score >= 0.6 and len(missing_fields) == 0
-        
+
         explanation_parts = []
         if found_fields:
             explanation_parts.append(f"Detected: {', '.join(f'{k}={v}' for k,v in detected.items() if k in found_fields)}")
         if missing_fields:
             explanation_parts.append(f"Missing required fields: {', '.join(missing_fields)}")
         explanation_parts.append(f"Word count: {word_count}")
-        
+
         return CompletenessResult(
             score=final_score,
             is_complete=is_complete,

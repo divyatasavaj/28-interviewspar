@@ -15,7 +15,7 @@ router.get("/problems", (_req, res) => {
 // OR body: {testCases, language, code} for custom challenges
 router.post("/run", async (req, res) => {
   const { problemId, testCases, language, code } = req.body;
-  
+
   let cases;
   if (testCases && Array.isArray(testCases)) {
     cases = testCases;
@@ -26,7 +26,7 @@ router.post("/run", async (req, res) => {
   } else {
     return res.status(400).json({ error: "problemId or testCases required" });
   }
-  
+
   if (!["javascript", "python"].includes(language)) return res.status(400).json({ error: "unsupported language" });
   if (typeof code !== "string" || !code.trim()) return res.status(400).json({ error: "empty code" });
 

@@ -58,7 +58,7 @@ export default function HRRound({ session, onAnswerSubmit }) {
       } else {
         setRetryCount(0);
         setAnswer('');
-        
+
         // Handle different response formats
         if (session.phase === 'adaptive') {
           // For adaptive phase, the AI's reply is the next question
@@ -69,7 +69,7 @@ export default function HRRound({ session, onAnswerSubmit }) {
           // For screening/calibration, just advance locally
           onAnswerSubmit?.(data);
         }
-        
+
         if (data.next_question) {
           setCurrentQuestion(data.next_question);
         }
@@ -145,7 +145,7 @@ export default function HRRound({ session, onAnswerSubmit }) {
             <p className="text-lg font-medium">{currentQuestion.prompt}</p>
           </div>
         </div>
-        
+
         {retryCount > 0 && (
           <div className="mb-4 p-3 rounded bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 text-sm">
             ⚠️ Retry {retryCount}/2 - Please provide a proper answer in English
@@ -161,7 +161,7 @@ export default function HRRound({ session, onAnswerSubmit }) {
             className="w-full rounded bg-gray-900 border border-white/10 p-4 text-white focus:outline-none focus:border-brand-violet resize-none"
             disabled={isSubmitting}
           />
-          
+
           <div className="flex justify-end gap-3">
             <button
               type="button"
