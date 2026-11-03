@@ -130,8 +130,10 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Full Name</label>
+              <label htmlFor="profile-name" className="block text-xs font-semibold text-gray-700 mb-1.5">Full Name</label>
               <input
+                id="profile-name"
+                autoComplete="name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -140,8 +142,10 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email Address</label>
+              <label htmlFor="profile-email" className="block text-xs font-semibold text-gray-700 mb-1.5">Email Address</label>
               <input
+                id="profile-email"
+                autoComplete="email"
                 type="email"
                 value={user.email}
                 disabled
@@ -149,8 +153,9 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Target Job Role</label>
+              <label htmlFor="profile-role" className="block text-xs font-semibold text-gray-700 mb-1.5">Target Job Role</label>
               <input
+                id="profile-role"
                 type="text"
                 value={targetRole}
                 onChange={(e) => setTargetRole(e.target.value)}
@@ -159,8 +164,9 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Experience Level</label>
+              <label htmlFor="profile-experience" className="block text-xs font-semibold text-gray-700 mb-1.5">Experience Level</label>
               <select
+                id="profile-experience"
                 value={experienceLevel}
                 onChange={(e) => setExperienceLevel(e.target.value)}
                 className="w-full rounded-xl bg-gray-50 border border-gray-200 px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
@@ -267,8 +273,10 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Current Password</label>
+                <label htmlFor="current-password" className="block text-xs font-medium text-gray-700 mb-1">Current Password</label>
                 <input
+                  id="current-password"
+                  autoComplete="current-password"
                   type="password"
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
@@ -277,8 +285,10 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">New Password (min 6 characters)</label>
+                <label htmlFor="new-password" className="block text-xs font-medium text-gray-700 mb-1">New Password (min 8 characters)</label>
                 <input
+                  id="new-password"
+                  autoComplete="new-password"
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -355,9 +365,10 @@ function ResumeView() {
           <svg className="w-10 h-10 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
-          <p className="text-sm font-semibold text-gray-700 mb-1">Select your resume file</p>
+          <label htmlFor="resume-file" className="block text-sm font-semibold text-gray-700 mb-1">Select your resume file</label>
           <p className="text-xs text-gray-400 mb-4">Supported formats: PDF, DOCX (Up to 10MB)</p>
           <input
+            id="resume-file"
             type="file"
             accept=".pdf,.docx"
             onChange={(e) => setFile(e.target.files[0])}

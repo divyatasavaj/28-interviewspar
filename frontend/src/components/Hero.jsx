@@ -25,7 +25,7 @@ export default function Hero() {
           </h1>
 
           <p className="mt-5 text-base sm:text-lg text-gray-600 leading-relaxed max-w-xl">
-            Simulate realistic campus placements, internships, and technical rounds with an empathetic AI interviewer. Receive instant rubrics on technical correctness, vocal cadence, and the STAR framework.
+            Practice HR and technical questions with saved answers and feedback. Review text structure cues, and enable optional AI assessment with your consent. Technical correctness is shown only when evaluated.
           </p>
 
           {/* Action CTAs */}
@@ -41,27 +41,17 @@ export default function Hero() {
             </Link>
 
             <Link
-              to="/login"
+              to="/practice-tracks"
               className="inline-flex items-center gap-2 text-gray-700 hover:text-gray-950 font-semibold text-sm sm:text-base px-6 py-3.5 rounded-full border border-gray-200 hover:border-gray-300 hover:bg-white transition-all hover:-translate-y-0.5 shadow-sm"
             >
               <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              <span>Explore Interactive Demo</span>
+              <span>Explore Practice Tracks</span>
             </Link>
           </div>
 
-          {/* Student Trust Proof */}
-          <div className="mt-10 pt-6 border-t border-gray-200/70 flex flex-wrap items-center gap-6">
-            <div className="flex items-center gap-1.5">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <svg key={s} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              ))}
-              <span className="text-xs font-bold text-gray-900 ml-1">4.9 / 5.0</span>
-            </div>
-            <div className="h-4 w-px bg-gray-200" />
+          <div className="mt-10 pt-6 border-t border-gray-200/70">
             <p className="text-xs text-gray-500">
               Designed for <strong className="text-gray-800 font-semibold">engineering students</strong> preparing for top tech roles
             </p>
@@ -77,10 +67,10 @@ export default function Hero() {
                 <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
                 <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                <span className="text-xs font-semibold text-gray-700 ml-2">Live Interview Session</span>
+                <span className="text-xs font-semibold text-gray-700 ml-2">Example interview question</span>
               </div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md">
-                Active Assessment
+                Preview
               </span>
             </div>
 
@@ -116,7 +106,7 @@ export default function Hero() {
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                 </svg>
-                <span>AI Interviewer (Ava)</span>
+                <span>Question preview</span>
               </div>
               <p className="text-xs sm:text-sm text-gray-800 font-medium leading-relaxed">
                 {activeTab === "technical"
@@ -125,46 +115,9 @@ export default function Hero() {
               </p>
             </div>
 
-            {/* Live Real-time Evaluation Metrics */}
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>Answer Relevance & Depth</span>
-                  <span className="font-bold text-gray-900">88%</span>
-                </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: "88%" }} />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>Vocal Fluency & Pacing</span>
-                  <span className="font-bold text-emerald-600">0.96 (Minimal Fillers)</span>
-                </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: "94%" }} />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>STAR Structure Alignment</span>
-                  <span className="font-bold text-blue-600">Action & Result Clear</span>
-                </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: "82%" }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Insight Badge */}
-            <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Adaptive difficulty enabled
-              </span>
-              <span className="font-semibold text-primary">Live Feedback Ready</span>
+            <div className="rounded-xl bg-gray-50 p-4 text-sm text-gray-600">
+              <p className="font-semibold text-gray-800">Practice suggestion</p>
+              <p className="mt-2">Explain your approach, why you chose it, and an example or observed result. This preview is illustrative; it does not evaluate an answer.</p>
             </div>
           </div>
 
@@ -176,8 +129,8 @@ export default function Hero() {
               </svg>
             </div>
             <div>
-              <p className="text-xs font-bold text-gray-900">Instant Scorecard</p>
-              <p className="text-[10px] text-gray-400">PDF download on completion</p>
+              <p className="text-xs font-bold text-gray-900">Saved practice report</p>
+              <p className="text-[10px] text-gray-400">Print or save as PDF</p>
             </div>
           </div>
         </div>

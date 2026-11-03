@@ -40,7 +40,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden lg:flex items-center gap-7">
+        <div className="hidden xl:flex items-center gap-7">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.to
             return (
@@ -95,8 +95,9 @@ export default function Navbar() {
         {/* Mobile Toggle */}
         <button
           onClick={() => setOpen(!open)}
-          className="lg:hidden p-2 text-gray-600 hover:text-gray-900 rounded-lg focus:outline-none"
+          className="xl:hidden p-2 text-gray-600 hover:text-gray-900 rounded-lg focus:outline-none"
           aria-label="Toggle menu"
+          aria-expanded={open}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {open ? (
@@ -110,7 +111,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {open && (
-        <div className="lg:hidden bg-white/95 backdrop-blur-xl border-b border-gray-100 px-6 py-5 space-y-3 animate-modal-pop shadow-xl">
+        <div className="xl:hidden bg-white/95 backdrop-blur-xl border-b border-gray-100 px-6 py-5 space-y-3 animate-modal-pop shadow-xl">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.to
             return (

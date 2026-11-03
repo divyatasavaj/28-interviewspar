@@ -84,15 +84,18 @@ export default function Signup() {
           <p className="text-gray-500 mt-2 mb-8">Start your interview practice today.</p>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 mb-6">
+            <div role="alert" className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 mb-6">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+              <label htmlFor="signup-name" className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
               <input
+                id="signup-name"
+                name="name"
+                autoComplete="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
@@ -101,8 +104,11 @@ export default function Signup() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <label htmlFor="signup-email" className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
               <input
+                id="signup-email"
+                name="email"
+                autoComplete="username"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -112,8 +118,11 @@ export default function Signup() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+              <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
               <input
+                id="signup-password"
+                name="password"
+                autoComplete="new-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
