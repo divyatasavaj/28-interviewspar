@@ -8,7 +8,7 @@ const features = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
       </svg>
     ),
-    badge: "Voice & Behavioral",
+    badge: "Optional Voice & Behavioral Practice",
     title: "Campus & Tech Mock Interviews",
     description:
       "Practice realistic conversational interviews with adaptive questions covering DSA, systems design, and behavioral STAR stories.",
@@ -20,10 +20,10 @@ const features = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
     ),
-    badge: "Resume Verification",
-    title: "Project-Specific Deep Dives",
+    badge: "Resume Evidence",
+    title: "Questions from Resume Context",
     description:
-      "Upload your college projects and resume to be cross-examined on your actual tech stack, architectural choices, and contributions.",
+      "Upload a resume to extract documented skills and projects. A listed project or skill can provide context for an interview question.",
   },
   {
     iconBg: "bg-emerald-50 text-emerald-600 border border-emerald-100",
@@ -35,7 +35,7 @@ const features = [
     badge: "Diagnostic Scorecard",
     title: "Granular Feedback & Rubrics",
     description:
-      "Receive executive-grade evaluation on problem-solving rigor, verbal articulation, and concise action steps before your placement day.",
+      "Review recorded answers and text structure cues. Technical correctness is shown separately when evaluated; AI feedback is optional.",
   },
 ]
 

@@ -49,7 +49,7 @@ export default function Signup() {
             Start practicing with AI.
           </h2>
           <p className="text-gray-500 mt-4 leading-relaxed">
-            Get unlimited interview practice with real-time AI feedback tailored to your skills.
+            Practice interview rounds with saved feedback and optional AI assessment.
           </p>
           <div className="mt-8 flex -space-x-3">
             {[1, 2, 3].map((i) => (

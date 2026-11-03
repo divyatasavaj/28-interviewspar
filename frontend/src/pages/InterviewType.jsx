@@ -10,7 +10,7 @@ const types = [
     subtitle: "Behavioral & Culture Fit",
     description:
       "Practice standard HR inquiries, leadership scenarios, and situational responses. Master the 'Tell me about yourself' opener and the STAR framework.",
-    features: ["STAR method coaching", "Conflict & team dynamics", "Situational problem-solving", "Culture fit evaluation"],
+    features: ["STAR method coaching", "Conflict & team dynamics", "Situational problem-solving", "Behavioral practice"],
     gradient: "from-purple-600 to-indigo-700",
     badge: "Recommended for all roles",
     icon: (
@@ -25,7 +25,7 @@ const types = [
     subtitle: "Engineering & Architecture",
     description:
       "Tackle system architecture, concurrency, database indexing, caching strategies, and technical trade-offs tailored to your domain and target role.",
-    features: ["System design trade-offs", "API & data modeling", "Debugging & bottlenecks", "Adaptive follow-up probes"],
+    features: ["System design trade-offs", "API & data modeling", "Debugging & bottlenecks", "Difficulty based on evaluated technical answers"],
     gradient: "from-blue-600 to-cyan-700",
     badge: "Coding & System Design",
     icon: (
@@ -40,6 +40,7 @@ export default function InterviewType() {
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [hasResume, setHasResume] = useState(false)
+  const [loadError, setLoadError] = useState("")
 
   useEffect(() => {
     getMe()
@@ -47,15 +48,15 @@ export default function InterviewType() {
         setUser(u)
         return getLatestResume()
           .then(() => setHasResume(true))
-          .catch(() => setHasResume(false))
+          .catch(error => { setHasResume(false); if (error.status !== 404) setLoadError(error.message); })
       })
-      .catch(() => {
-        clearToken()
-        navigate("/login")
+      .catch(error => {
+        if (error.status === 401) { clearToken(); navigate("/login"); }
+        else setLoadError(error.message);
       })
   }, [navigate])
 
-  if (!user) return null
+  if (!user) return <main className="p-10 text-gray-900"><p role="status">{loadError || "Loading account…"}</p><Link to="/login">Sign in</Link></main>
 
   return (
     <div className="min-h-screen font-sans bg-[#fbfaff]">
@@ -77,10 +78,11 @@ export default function InterviewType() {
             What kind of interview <span className="text-primary">are you preparing for?</span>
           </h1>
           <p className="mt-3 text-gray-500 max-w-xl mx-auto text-sm sm:text-base">
-            Select a specialized simulation track. The AI interviewer adapts dynamically to your answers in real time.
+            Choose an HR or technical practice track. You can opt into AI assessment when starting your interview.
           </p>
         </div>
 
+        {loadError && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-4 text-red-700">{loadError}</p>}
         {/* Resume status notification */}
         <div className={`mb-10 p-5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
           hasResume
@@ -109,7 +111,7 @@ export default function InterviewType() {
               </p>
               <p className="text-xs text-gray-600 mt-0.5">
                 {hasResume
-                  ? "Questions will cross-examine your actual academic projects, git repos, and technical stack."
+                  ? "A question can reference a project or skill found in your resume. Git repositories are not inspected."
                   : "You can start immediately with campus calibration drills, or upload a resume for targeted project questioning."}
               </p>
             </div>

@@ -7,6 +7,7 @@ Current implementation references:
 - [Supported API](API.md)
 - [Deployment](DEPLOYMENT.md)
 - [Repair TODO and verification](../TODO.md)
+- [Follow-up quality findings](QUALITY_REVIEW.md)
 - [Resume intelligence design/history](RESUME_INTELLIGENCE_IMPLEMENTATION_PLAN.md)
 - [ML guide](../ml/README.md)
 

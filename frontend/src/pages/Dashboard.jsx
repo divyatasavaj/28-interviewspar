@@ -153,7 +153,7 @@ export default function Dashboard() {
                 Target Role:{" "}
                 <strong className="text-gray-900 font-semibold">{user.target_role || "Software Engineer"}</strong>.
                 {resumeData
-                  ? " Your resume intelligence and project evidence are indexed for skill matching and targeted AI sparring."
+                  ? " Your resume evidence is available for skill matching and a project-specific interview question."
                   : " Upload your resume to unlock deterministic role match scoring and tailored project questions."}
               </p>
             </div>
@@ -184,7 +184,7 @@ export default function Dashboard() {
         {/* Stats Row */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <p className="text-xs font-medium text-gray-400">Total Interviews</p>
+            <p className="text-xs font-medium text-gray-400">Recent Completed Interviews</p>
             <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-1">{completedSessions.length}</p>
             <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 font-semibold mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -193,12 +193,12 @@ export default function Dashboard() {
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <p className="text-xs font-medium text-gray-400">Avg Performance Score</p>
+            <p className="text-xs font-medium text-gray-400">Avg Text Structure</p>
             <p className="text-2xl sm:text-3xl font-extrabold text-primary mt-1">
-              {averageScore !== null ? `${averageScore}%` : "—"}
+              {averageScore !== null ? `${averageScore}/100` : "—"}
             </p>
             <p className="text-[11px] text-gray-400 mt-1">
-              {averageScore ? "Across completed sessions" : "Complete first session"}
+              {averageScore !== null ? "Latest 5 completed interviews" : "Complete first session"}
             </p>
           </div>
 
@@ -232,7 +232,7 @@ export default function Dashboard() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100">
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary mb-1">
-                <span>AI Career Intelligence</span>
+                <span>Resume Evidence</span>
                 <span className="text-gray-300">•</span>
                 <span className="text-gray-500">Resume Match & Skill Gap Radar</span>
               </div>
@@ -280,7 +280,7 @@ export default function Dashboard() {
               </div>
               <h3 className="text-base font-bold text-gray-900">Upload your resume to activate Skill Intelligence</h3>
               <p className="text-xs text-gray-600 max-w-md mx-auto mt-1 leading-relaxed">
-                InterviewSpar extracts your verified skills and practical evidence from PDF or DOCX to run gap analysis against target engineering roles.
+                InterviewSpar extracts your documented skills and project evidence from PDF or DOCX to run gap analysis against target engineering roles.
               </p>
               <Link
                 to="/account?tab=resume"
@@ -603,7 +603,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Choose Practice Track</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Simulate actual company hiring loops with adaptive difficulty</p>
+              <p className="text-xs text-gray-400 mt-0.5">Practice technical and behavioral questions by domain</p>
             </div>
             <Link to="/interview-type" className="text-xs font-semibold text-primary hover:underline">
               View All Tracks →
@@ -616,15 +616,15 @@ export default function Dashboard() {
                 <span className="bg-white/10 text-purple-200 text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
                   Behavioral & Leadership
                 </span>
-                <h3 className="text-2xl font-bold text-white mt-3">HR & Culture Fit</h3>
+                <h3 className="text-2xl font-bold text-white mt-3">HR & Behavioral Practice</h3>
                 <p className="text-purple-200/80 text-sm mt-2 leading-relaxed">
                   Master standard HR inquiries, the STAR method, conflict resolution, and career trajectory discussions with real-time feedback.
                 </p>
               </div>
               <div className="relative z-10 mt-6 flex items-center justify-between">
-                <span className="text-xs text-purple-300">6 Core Questions • ~10 mins</span>
+                <span className="text-xs text-purple-300">9 Questions • Self-paced</span>
                 <Link
-                  to="/interview/start"
+                  to="/interview/start?persona=hr"
                   className="bg-white text-gray-900 hover:bg-gray-100 font-bold text-xs px-5 py-2.5 rounded-full transition-all shadow-md"
                 >
                   Start HR Spar →
@@ -643,9 +643,9 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="relative z-10 mt-6 flex items-center justify-between">
-                <span className="text-xs text-blue-300">Adaptive Engine • ~15 mins</span>
+                <span className="text-xs text-blue-300">Up to 13 Questions • Self-paced</span>
                 <Link
-                  to="/interview/start"
+                  to="/interview/start?persona=technical"
                   className="bg-white text-gray-900 hover:bg-gray-100 font-bold text-xs px-5 py-2.5 rounded-full transition-all shadow-md"
                 >
                   Start Tech Spar →
@@ -660,7 +660,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Recent Interview Reports</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Track your scorecard history and actionable AI feedback</p>
+              <p className="text-xs text-gray-400 mt-0.5">Review saved answers and feedback sources</p>
             </div>
             <Link to="/account?tab=reports" className="text-xs font-semibold text-primary hover:underline">
               All Reports ({sessions.length}) →
@@ -681,7 +681,7 @@ export default function Dashboard() {
               </div>
               <p className="text-sm font-bold text-gray-900">No mock interviews completed yet</p>
               <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto leading-relaxed">
-                Take your first interview to generate an instant AI performance scorecard with strength and weakness analysis.
+                Complete an interview to review your answers, text structure indicators, and optional AI feedback.
               </p>
               <Link
                 to="/interview-type"
@@ -729,7 +729,7 @@ export default function Dashboard() {
                                 : "text-rose-500"
                             }`}
                           >
-                            {fb.overall_score}%
+                            {fb.overall_score}/100
                           </span>
                           <span className="text-[10px] text-gray-400 block">Score</span>
                         </div>

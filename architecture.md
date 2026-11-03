@@ -71,8 +71,8 @@ not in a process-local session manager.
 | Reflection | What to improve and practice next |
 
 Technical interviews usually contain 13 questions; HR interviews contain 9.
-Ability uses an exponential update from observed communication/correctness, not a
-validated psychometric scale. The experience field is stored as context; it does
+Ability uses an exponential update, not a validated psychometric scale. Technical
+ability requires evaluated correctness; behavioral practice uses text structure cues. The experience field is stored as context; it does
 not currently select an experience-specific question bank. The bank is finite,
 so repeated interviews can repeat questions.
 
@@ -111,7 +111,7 @@ labels do not decide hiring eligibility or certification.
 | `components/ProtectedRoute.jsx`, `DashboardNavbar.jsx`, `Navbar.jsx` | Token presence guard and navigation/logout |
 | `components/Hero.jsx`, `Features.jsx`, `FeatureCard.jsx`, `TrustedCompanies.jsx`, `DashboardHero.jsx`, `ProfileCard.jsx` | Presentational sections/cards; usage claims corrected where reviewed |
 | `components/interview/CodeEditor.jsx` | Current JS/Python editor and owned isolated-code-run request |
-| `utils/naturalSpeech.js` | Abortable speech playback and browser fallback; cancellation resolves pending work |
+| `utils/naturalSpeech.js`, `utils/dictation.js` | Saved voice preferences, abortable playback, one-shot fallback, and invalidated dictation callbacks |
 | `src/api.js`, `AuthContext.jsx` | Old Express client/auth context; not mounted by `main.jsx` |
 | `pages/Interview.jsx`, `components/SessionView.jsx`, `AuthPage.jsx`, `Home.jsx`, `Dashboard.jsx` | Earlier UI generations, outside the current route tree |
 | `components/interview/{HRRound,TechnicalRound,InterviewLayout,ProgressIndicator,ValidationToast,index}` | Experimental v2 UI contracts; not the current interview page |
@@ -238,3 +238,5 @@ contracts, build, lint, and JS syntax. Live MongoDB behavior under load, Groq/Ju
 TTS availability, browser media/accessibility, Docker deployment, and Solidity
 compilation/testnet transactions require separate acceptance. See `TODO.md` for
 actual results; none of these external checks are implied by unit-test success.
+
+Follow-up corrections and current verification counts are recorded in [docs/QUALITY_REVIEW.md](docs/QUALITY_REVIEW.md). Historical stored evaluations have not been retroactively regraded.

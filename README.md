@@ -54,7 +54,7 @@ when the virtual environment is activated; Node dependencies are not required fo
    Resume deletion also removes saved resume assessments.
 
 Without Groq, the interview still runs using curated prompts and an explicitly
-labeled communication rubric. Without Judge0, code is saved but correctness is
+labeled keyword/length structure indicator. Without Judge0, code is saved but correctness is
 **not evaluated**. Submitted code never executes on the application host.
 
 ## Configuration
@@ -94,6 +94,7 @@ See [TODO.md](TODO.md) for the exact verification record and outstanding tasks.
 ## Project reference
 
 - [Architecture and source map](architecture.md): folders, important files, database, execution flows, and risks.
+- [Follow-up quality review](docs/QUALITY_REVIEW.md): confirmed bugs, accuracy corrections, and test results.
 - [API contract](docs/API.md): supported endpoints, payloads, errors, and lifecycle.
 - [Deployment](docs/DEPLOYMENT.md): container build, reverse proxy, storage, and service requirements.
 - [ML guide](ml/README.md): features, training, evaluation, and limitations.

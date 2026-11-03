@@ -105,13 +105,21 @@ def change_password(
 ):
     if not verify_password(body.old_password, user["hashed_password"]):
         raise HTTPException(400, "Current password is incorrect")
-    db.users.update_one(
-        {"_id": user["_id"]},
+    updated = db.users.update_one(
+        {
+            "_id": user["_id"],
+            "hashed_password": user["hashed_password"],
+            "token_version": user.get("token_version"),
+        },
         {
             "$set": {"hashed_password": hash_password(body.new_password)},
             "$inc": {"token_version": 1},
         },
     )
+    if updated.modified_count != 1:
+        raise HTTPException(
+            409, "Account credentials changed. Sign in again before retrying."
+        )
     return {
         "message": "Password updated.",
         "access_token": create_access_token(

@@ -56,3 +56,21 @@ test('multipart resume upload requires consent and lets fetch set its boundary',
   };
   assert.equal((await uploadResume(file, true)).id, 'synthetic-resume');
 });
+
+test('HTML success responses and missing tokens cannot create a fake authenticated session', async () => {
+  globalThis.fetch = async () => new Response('<html>SPA fallback</html>', {status:200});
+  await assert.rejects(apiRequest('/auth/me'), {status:502});
+  globalThis.fetch = async () => Response.json({});
+  await assert.rejects(signup('Candidate','candidate@example.com','synthetic-password'), {status:502});
+  assert.equal(getToken(), null);
+});
+
+test('an old unauthorized response cannot clear a newly issued token', async () => {
+  setToken('old-token');
+  globalThis.fetch = async () => {
+    setToken('fresh-token');
+    return Response.json({detail:'Expired'}, {status:401});
+  };
+  await assert.rejects(apiRequest('/auth/me'), {status:401});
+  assert.equal(getToken(), 'fresh-token');
+});

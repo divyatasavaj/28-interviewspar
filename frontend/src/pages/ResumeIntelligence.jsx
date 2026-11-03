@@ -601,14 +601,14 @@ export default function ResumeIntelligence() {
 
                 {/* Score Section: STRICT UNAVAILABLE SCORE HANDLING */}
                 <div className="flex items-center gap-4">
-                  {assessment.score_status === "unavailable" || assessment.score === null ? (
+                  {assessment.score_status === "unavailable" || !Number.isFinite(assessment.score) ? (
                     <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 max-w-md">
                       <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
                         <span className="w-2 h-2 rounded-full bg-amber-500" />
                         <span>Numerical Score Unavailable</span>
                       </div>
                       <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                        Your role-based assessment is available, but a validated numerical score cannot be calculated yet because this role's rubric does not have sufficient supporting evidence.
+                        {assessment.score_explanation || (assessment.assessment_mode === "job_description" ? "This description does not provide enough recognized requirements for a coverage score. Review the findings and limitations below." : "This role rubric has not been validated for a numerical score. Review the evidence findings below.")}
                       </p>
                     </div>
                   ) : (

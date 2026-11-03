@@ -110,7 +110,11 @@ the stored revision. There is no paid/billing guarantee tied to evaluation count
 
 Reports expose `overall_score`, `score_label`, `score_note`, `round_scores`,
 `qa_pairs`, `strengths`, `weaknesses`, `suggested_improvements`, and answer/skip
-counts. Communication and correctness are distinct. No evaluated correctness
+counts. The legacy `communication_score` field now displays as an answer structure indicator
+(keyword/length cues); it does not verify relevance or spoken fluency. Correctness is distinct.
+Skipped answers have null scores and are excluded from coaching summaries.
+Behavioral questions never receive technical correctness, and technical difficulty
+requires evaluated correctness. No evaluated correctness
 means **null**, not zero or a passing grade. Reports can be requested while active.
 
 ## Code and speech
@@ -125,7 +129,7 @@ means **null**, not zero or a passing grade. Reports can be requested while acti
 
 Code results use `status: evaluated|unavailable|invalid`, `passed`, `total`,
 `results`, and an optional message. Unconfigured/pending/unreachable provider
-means unavailable. Compilation/runtime errors and non-JSON output are failed
+means unavailable. Compilation/runtime errors and invalid, non-finite, or excessively nested JSON output are failed
 tests. Two Sum accepts indices in either order. No expected outputs are sent
 to submitted programs; the API compares the returned values itself.
 

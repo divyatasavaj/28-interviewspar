@@ -10,25 +10,39 @@ export function errorMessage(data, fallback = "Request failed") {
   return detail?.message || fallback;
 }
 export async function apiRequest(path, options = {}) {
+  const requestToken = getToken();
   const response = await fetch(`${API}${path}`, {
     ...options,
     headers: { ...(options.body && !(options.body instanceof FormData) ? {"Content-Type":"application/json"} : {}),
-      ...(getToken() ? {Authorization:`Bearer ${getToken()}`} : {}), ...options.headers },
+      ...(requestToken ? {Authorization:`Bearer ${requestToken}`} : {}), ...options.headers },
   });
-  const data = await response.json().catch(() => ({}));
+  const data = await response.json().catch(() => null);
   if (!response.ok) {
-    if (response.status === 401) clearToken();
+    if (response.status === 401 && getToken() === requestToken) clearToken();
     const error = new Error(errorMessage(data)); error.status = response.status; throw error;
+  }
+  if (response.status !== 204 && (data === null || typeof data !== 'object')) {
+    const error = new Error('The server returned an invalid API response. Please retry.');
+    error.status = 502;
+    throw error;
   }
   return data;
 }
+function authResult(data) {
+  if (typeof data?.access_token !== 'string' || !data.access_token.trim()) {
+    const error = new Error('The server did not return a valid sign-in token. Please retry.');
+    error.status = 502;
+    throw error;
+  }
+  return {...data, token:data.access_token};
+}
 export async function signup(name, email, password) {
   const data = await apiRequest("/auth/signup", {method:"POST",body:JSON.stringify({name,email,password})});
-  return {...data, token:data.access_token};
+  return authResult(data);
 }
 export async function login(email,password) {
   const data = await apiRequest("/auth/login", {method:"POST",body:JSON.stringify({email,password})});
-  return {...data, token:data.access_token};
+  return authResult(data);
 }
 export const getMe = () => apiRequest("/auth/me");
 export async function uploadResume(file, consent = false) {

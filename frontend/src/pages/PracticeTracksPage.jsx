@@ -5,76 +5,67 @@ import { getToken } from "../api/auth"
 
 const tracks = [
   {
-    id: "hr",
-    title: "Campus HR & Culture Assessment",
-    badge: "Universal Round 1",
-    accent: "border-purple-200 bg-purple-50/30",
-    gradient: "from-purple-600 to-indigo-600",
-    duration: "10-15 Mins",
-    questionsCount: "6 Core Inquiries",
-    difficulty: "Foundational",
-    description:
-      "Essential for every college placement drive. Evaluates communication clarity, conflict resolution, behavioral ethics, and the classic 'Tell me about yourself' opener.",
-    curriculum: [
-      "STAR framework structuring (Situation, Task, Action, Result)",
-      "Leadership in college societies & hackathon team conflicts",
-      "Handling unexpected failures, deadlines & scope creep",
-      "Career vision, company values alignment & ethics",
+    "id": "hr",
+    "title": "HR & Behavioral Practice",
+    "badge": "HR Track",
+    "duration": "Self-paced",
+    "questionsCount": "9 questions",
+    "difficulty": "Communication practice",
+    "description": "Practice screening, HR calibration, project ownership, team situations, and reflection. Feedback highlights text structure cues; external AI feedback is optional.",
+    "curriculum": [
+      "Explain your role and practice goals",
+      "Describe your own project contribution",
+      "Discuss team conflict and learning from mistakes",
+      "Reflect on what to improve next"
     ],
-    sampleQuestions: [
-      "Walk me through a challenging technical roadblock during a college project and how you resolved it.",
-      "Describe a situation where a team member wasn't delivering their part before a demo. What did you do?",
-      "Why are you interested in our engineering culture, and where do you envision your technical growth in 2 years?",
-    ],
+    "sampleQuestions": [
+      "Tell me about yourself and your background.",
+      "Describe a challenge you faced and how you handled it.",
+      "Describe a disagreement within a team. Explain the situation, your actions, and the result."
+    ]
   },
   {
-    id: "technical",
-    title: "Software Engineering & Architecture",
-    badge: "Core Technical Round",
-    accent: "border-blue-200 bg-blue-50/30",
-    gradient: "from-blue-600 to-cyan-600",
-    duration: "15-20 Mins",
-    questionsCount: "Adaptive Follow-ups",
-    difficulty: "Intermediate to Rigorous",
-    description:
-      "Deep technical interrogation covering data structures, concurrency, database indexing, caching strategies, and system design trade-offs.",
-    curriculum: [
-      "Time & space complexity analysis (Big-O)",
-      "Database schema design: Normalization vs NoSQL key-value stores",
-      "REST APIs vs WebSockets and event-driven architecture",
-      "Distributed cache eviction strategies (LRU, LFU, TTL)",
+    "id": "technical",
+    "title": "Technical & Behavioral Practice",
+    "badge": "Technical Track",
+    "duration": "Self-paced",
+    "questionsCount": "Up to 13 questions",
+    "difficulty": "Domain selection at start",
+    "description": "Choose a domain for curated technical questions alongside HR and behavioral rounds. Eligible domains include a Two Sum coding question; execution requires a configured isolated provider.",
+    "curriculum": [
+      "Domain-specific calibration and technical questions",
+      "Explain trade-offs when prompted",
+      "Coding explanation and optional isolated tests",
+      "Review communication and correctness separately"
     ],
-    sampleQuestions: [
-      "How would you design a real-time leaderboard for a campus coding contest with 50,000 concurrent participants?",
-      "Explain the trade-offs between optimistic locking and pessimistic locking in a high-traffic ticket booking service.",
-      "What happens under the hood when a browser requests an endpoint: from DNS lookup to TCP handshake and TLS negotiation?",
-    ],
+    "sampleQuestions": [
+      "Explain the difference between a process and a thread, with a short example.",
+      "What is the time complexity of binary search, and when can you use it?",
+      "Describe how you would debug a service that suddenly returns 500 errors in production."
+    ]
   },
   {
-    id: "resume-project",
-    targetType: "technical",
-    title: "Project & Resume Cross-Examination",
-    badge: "Final Placement Round",
-    accent: "border-emerald-200 bg-emerald-50/30",
-    gradient: "from-emerald-600 to-teal-600",
-    duration: "15 Mins",
-    questionsCount: "Contextual to Resume",
-    difficulty: "Tailored to Your Stack",
-    description:
-      "Recreates the intense scrutiny of senior campus tech leads interrogating your academic capstone projects and internships described in your resume.",
-    curriculum: [
-      "Defense of architectural and technology stack choices",
-      "Scale limitations of college-built prototypes",
-      "Authentication, authorization & security flaws (JWT, CSRF, SQLi)",
-      "Live refactoring discussion of your personal contributions",
+    "id": "resume-project",
+    "targetType": "technical",
+    "title": "Add Resume Context to Practice",
+    "badge": "Optional preparation",
+    "duration": "Upload before practice",
+    "questionsCount": "One resume-context question",
+    "difficulty": "Uses a listed project or skill",
+    "description": "Upload a resume to add context to the standard interview. This is not a separate project audit: source repositories and factual claims are not independently verified.",
+    "curriculum": [
+      "Upload a text PDF or DOCX with storage consent",
+      "Review extracted skills and projects",
+      "Start an HR or technical interview",
+      "Delete your saved resume and interviews when needed"
     ],
-    sampleQuestions: [
-      "I see you used MongoDB in your capstone project. Why MongoDB instead of PostgreSQL given your relational data?",
-      "If 100,000 users hit your authentication service simultaneously, what would fail first and how would you fix it?",
-      "Which specific component of this project did you personally author, and what would you re-architect from scratch today?",
-    ],
-  },
+    "sampleQuestions": [
+      "For a project listed in your resume: explain one decision you made and the evidence for its outcome.",
+      "For a listed skill when no project is found: describe where you used it and what you learned."
+    ]
+  }
 ]
+
 
 export default function PracticeTracksPage() {
   const navigate = useNavigate()
@@ -84,7 +75,7 @@ export default function PracticeTracksPage() {
     const isAuth = Boolean(getToken())
     const targetType = track.targetType || track.id
     if (isAuth) {
-      navigate(`/interview/start?persona=${targetType}`)
+      navigate(track.id === "resume-project" ? "/account?tab=resume" : `/interview/start?persona=${targetType}`)
     } else {
       navigate("/login")
     }
@@ -107,7 +98,7 @@ export default function PracticeTracksPage() {
             Practice Tracks Built For <span className="text-primary">Campus Placements</span>
           </h1>
           <p className="mt-5 text-base sm:text-lg text-gray-600 leading-relaxed">
-            From preliminary HR screening rounds to rigorous technical design and capstone defense, practice with adaptive questions tailored to student recruitments.
+            Choose HR or technical practice, with optional resume context. Review your answers and the limits of automated feedback.
           </p>
 
           {/* Filter Pills */}
@@ -168,7 +159,7 @@ export default function PracticeTracksPage() {
                     onClick={() => handleStartTrack(track)}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-[#5b22e0] text-white font-bold text-sm px-7 py-3.5 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all hover:-translate-y-0.5 cursor-pointer"
                   >
-                    <span>Launch This Simulation</span>
+                    <span>{track.id === "resume-project" ? "Upload Resume" : "Choose Interview Settings"}</span>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
@@ -180,7 +171,7 @@ export default function PracticeTracksPage() {
               <div className="grid md:grid-cols-2 gap-8 pt-6">
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
-                    Evaluation Matrix & Focus Areas
+                    Practice Focus Areas
                   </h4>
                   <ul className="space-y-2.5">
                     {track.curriculum.map((c, i) => (
@@ -196,8 +187,8 @@ export default function PracticeTracksPage() {
 
                 <div className="bg-slate-50/80 rounded-2xl p-5 border border-gray-100">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center justify-between">
-                    <span>Sample Live Questions</span>
-                    <span className="text-[10px] text-primary lowercase font-medium">adaptive difficulty</span>
+                    <span>Example Practice Prompts</span>
+                    <span className="text-[10px] text-primary lowercase font-medium">curated examples</span>
                   </h4>
                   <div className="space-y-2.5">
                     {track.sampleQuestions.map((q, i) => (
@@ -218,7 +209,7 @@ export default function PracticeTracksPage() {
           <div className="max-w-2xl">
             <h3 className="text-xl font-bold text-gray-900">Unsure which track to begin with?</h3>
             <p className="text-sm text-gray-600 mt-1">
-              We recommend starting with the <strong>Campus HR & Culture Assessment</strong> to calibrate your speaking pace and confidence before diving into technical rounds.
+              We recommend starting with the <strong>HR & Behavioral Practice</strong> to work on explaining your experience before diving into technical rounds.
             </p>
           </div>
           <Link

@@ -1,4 +1,4 @@
-import {getToken} from "./auth";
+import {getToken} from "./auth.js";
 const API = "/api";
 
 export async function fetchTtsVoices() {

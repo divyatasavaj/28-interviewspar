@@ -44,7 +44,7 @@ export default function Login() {
             Master every interview opportunity.
           </h2>
           <p className="text-gray-500 mt-4 leading-relaxed">
-            AI-powered practice sessions with real-time feedback tailored to your dream role.
+            Practice by domain with saved feedback and optional AI assessment.
           </p>
           <div className="mt-8 flex -space-x-3">
             {[1, 2, 3].map((i) => (

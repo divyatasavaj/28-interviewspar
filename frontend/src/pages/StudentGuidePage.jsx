@@ -7,11 +7,11 @@ const guidePhases = [
     phase: "Phase 01",
     title: "Resume & Project Presentation",
     tag: "Pre-Interview",
-    summary: "How to position your university projects to pass ATS filters and survive engineer scrutiny.",
+    summary: "How to explain your university projects with clear, truthful evidence. No ATS result is guaranteed.",
     tips: [
       {
         heading: "Quantify Impact Over Generic Task Descriptions",
-        detail: "Instead of writing 'Built a real-time chat application using React', write: 'Engineered an event-driven chat system handling 500+ simulated concurrent connections via WebSockets, reducing message delivery latency from 1.2s to 180ms.'",
+        detail: "Describe what you built, your contribution, and the measurements you actually collected. Include a concurrency or latency figure only if you can explain its test setup and evidence; do not invent metrics.",
       },
       {
         heading: "Know Every Library You Imported",
@@ -35,7 +35,7 @@ const guidePhases = [
       },
       {
         heading: "Action (60% of your time)",
-        detail: "The meat of your answer. Focus exclusively on 'I', not 'we'. Detail how you diagnosed the issue, what tools you evaluated, and the exact steps you executed to overcome the obstacle.",
+        detail: "Explain your own contribution while crediting collaborators. Describe how you diagnosed the issue, what tools you evaluated, and the steps you took.",
       },
       {
         heading: "Result (20% of your time)",
@@ -88,7 +88,7 @@ const guidePhases = [
 const faqs = [
   {
     q: "How many mock interviews should I take before campus placement week?",
-    a: "We recommend at least 4 to 6 sessions: 2 HR/STAR rounds to iron out pacing and vocal clarity, and 3 to 4 technical rounds to get comfortable with unscripted follow-up questions.",
+    a: "We recommend at least 4 to 6 sessions: 2 HR/STAR rounds to iron out pacing and vocal clarity, and 3 to 4 technical rounds to practice explaining curated questions in your own words.",
   },
   {
     q: "Can I practice if I don't have a completed resume yet?",
@@ -96,11 +96,11 @@ const faqs = [
   },
   {
     q: "What if the AI asks a question I don't know the answer to?",
-    a: "Do not guess or fabricate information. Be honest: 'I haven't worked with that specific message broker in production, but conceptually I understand pub/sub architecture and would approach it by...'. The AI rewards structural reasoning over fake confidence.",
+    a: "Do not guess or fabricate information. Be honest: 'I haven't worked with that specific message broker in production, but conceptually I understand pub/sub architecture and would approach it by...'. Explain what you know and what you would need to verify; automated feedback is not a guarantee of correctness.",
   },
   {
     q: "Can I share my scorecards with my university placement cell?",
-    a: "Yes. Every completed mock session generates an executive evaluation scorecard with an instant 'Export Scorecard PDF' button formatted cleanly for submission.",
+    a: "You can use 'Print / Save PDF' on a report and choose Save as PDF in your browser. Review the personal information before sharing, and include the report’s limitations.",
   },
 ]
 

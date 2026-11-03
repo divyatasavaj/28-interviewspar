@@ -78,3 +78,18 @@ The repair commits were pushed to `origin/b3` without force and fetched back at
 commit. No personal/runtime data or private environment values were found in
 the outgoing changes. GitHub Actions execution is not yet verified; the workflow
 is committed for subsequent remote validation.
+
+## Follow-up quality review
+
+- [x] T13: Reject non-finite/deep code output and malformed provider responses.
+- [x] T14: Prevent password-change writes after concurrent credential revocation.
+- [x] T15: Separate behavioral/technical evaluation and stop technical adaptation from unverified text cues.
+- [x] T16: Omit skipped answers from evaluation and report weaknesses.
+- [x] T17: Repair the HR start link, voice preferences, duplicate fallback, and late dictation callbacks.
+- [x] T18: Reject malformed API/auth responses and protect fresh tokens from stale 401 responses.
+- [x] T19: Correct unsupported product claims, track counts, sampled-score labels, and JD unavailability wording.
+- [x] T20: Run the full follow-up checks: 142 backend, 3 ML, and 17 frontend tests passed; build passed; lint retains 24 legacy warnings.
+
+See [quality review](docs/QUALITY_REVIEW.md) for confirmed findings, fixes,
+regression evidence, and remaining limitations. The earlier verification table
+is retained as the initial repair record.

@@ -16,7 +16,7 @@ export default function ResourcesPage() {
     {
       category: "star",
       title: "The Comprehensive STAR Method Guide",
-      description: "Master structuring answers for Situation, Task, Action, and Result questions to prevent rambling and score high on delivery metrics.",
+      description: "Master structuring answers for Situation, Task, Action, and Result questions to make your examples easier to follow.",
       readTime: "6 min read",
       tags: ["Behavioral", "Interview Prep", "STAR"],
       download: "Download PDF Cheat Sheet",
@@ -56,7 +56,7 @@ export default function ResourcesPage() {
     {
       category: "star",
       title: "Filler Words & Delivery Diagnostics",
-      description: "Understanding your verbal fluency metrics: reducing filler words ('um', 'like', 'you know'), managing pause cadence, and speaking with clarity.",
+      description: "Practice speaking clearly: notice filler words ('um', 'like', 'you know'), managing pause cadence, and speaking with clarity.",
       readTime: "4 min read",
       tags: ["Speech", "Fluency", "Delivery"],
       download: "Fluency Drill Audio",

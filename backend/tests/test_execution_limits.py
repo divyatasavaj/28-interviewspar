@@ -12,6 +12,33 @@ from app.safe_execution import execute_cases
 
 
 class ExecutionTests(unittest.TestCase):
+    def test_nonfinite_and_deep_outputs_cannot_break_the_api_response(self):
+        for output in (
+            "NaN",
+            "Infinity",
+            "1e999",
+            "[1, NaN]",
+            "[" * 1100 + "0" + "]" * 1100,
+        ):
+            with self.subTest(output=output[:30]):
+                result = self.execute(output)
+                self.assertEqual(result["status"], "evaluated")
+                self.assertEqual(result["passed"], 0)
+                json.dumps(result, allow_nan=False)
+
+    def test_malformed_provider_status_fails_closed(self):
+        for payload in ({"status": 3}, {"status": []}, {"status": {"id": 3.0}}, []):
+            with patch.dict(
+                os.environ, {"JUDGE0_API_URL": "https://judge.example.test"}
+            ), patch(
+                "app.safe_execution.urlopen",
+                return_value=io.BytesIO(json.dumps(payload).encode()),
+            ):
+                result = execute_cases(
+                    "pass", "python", [{"args": [], "expected": None}]
+                )
+                self.assertEqual(result["status"], "unavailable")
+
     def execute(self, output, status=3, expected=None, unordered_pair=False):
         payload = {
             "status": {"id": status, "description": "Synthetic status"},

@@ -3,12 +3,39 @@
 from __future__ import annotations
 import base64
 import json
+import math
 import os
 import re
 from urllib.error import URLError, HTTPError
 from urllib.request import Request, urlopen
 
 LANGUAGES = {"javascript": 63, "python": 71}
+
+
+def strict_json(text):
+    """Accept bounded, finite JSON that can safely be returned by the API."""
+
+    def reject_constant(value):
+        raise ValueError("Non-finite JSON value")
+
+    def finite_float(value):
+        number = float(value)
+        if not math.isfinite(number):
+            raise ValueError("Non-finite JSON number")
+        return number
+
+    value = json.loads(text, parse_constant=reject_constant, parse_float=finite_float)
+    pending = [(value, 0)]
+    while pending:
+        item, depth = pending.pop()
+        if depth > 50:
+            raise ValueError("JSON nesting limit exceeded")
+        if isinstance(item, dict):
+            pending.extend((child, depth + 1) for child in item.values())
+        elif isinstance(item, list):
+            pending.extend((child, depth + 1) for child in item)
+    json.dumps(value, ensure_ascii=False, allow_nan=False).encode("utf8")
+    return value
 
 
 def same_json_value(actual, expected):
@@ -101,9 +128,9 @@ def execute_cases(code, language, cases, function_name="solve"):
                 raw = response.read(131073)
             if len(raw) > 131072:
                 raise ValueError("Provider response too large")
-            data = json.loads(raw)
+            data = strict_json(raw)
             status = data["status"]["id"]
-            if status not in range(3, 13):
+            if type(status) is not int or status not in range(3, 13):
                 raise ValueError("Provider did not finish evaluation")
             output = (
                 base64.b64decode(data.get("stdout") or "", validate=True)
@@ -118,6 +145,7 @@ def execute_cases(code, language, cases, function_name="solve"):
             KeyError,
             OSError,
             TypeError,
+            RecursionError,
         ):
             return {
                 **unavailable,
@@ -127,9 +155,9 @@ def execute_cases(code, language, cases, function_name="solve"):
         valid_output = False
         if status == 3 and output:
             try:
-                actual = json.loads(output.splitlines()[-1])
+                actual = strict_json(output.splitlines()[-1])
                 valid_output = True
-            except ValueError:
+            except (ValueError, RecursionError):
                 pass
         matches = same_json_value(actual, case["expected"])
         if case.get("unordered_pair") and isinstance(actual, list) and len(actual) == 2:
@@ -139,7 +167,7 @@ def execute_cases(code, language, cases, function_name="solve"):
             {
                 "passed": success,
                 "actual": actual,
-                "status": data["status"].get("description", "Unknown"),
+                "status": str(data["status"].get("description", "Unknown"))[:200],
             }
         )
     return {

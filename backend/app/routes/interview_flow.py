@@ -13,6 +13,7 @@ from app.interview_flow import (
     public_session,
     compile_report,
     now,
+    evaluation_kind,
 )
 from app.safe_execution import run_problem
 
@@ -121,6 +122,9 @@ def answer(body: AnswerRequest, db=Depends(get_db), user=Depends(require_user)):
     if session["status"] != "active":
         raise HTTPException(409, "Interview is already completed")
     question = session["questions"][session["index"]]
+    question["evaluation_kind"] = evaluation_kind(
+        question["round"], session["domain"], session["persona"]
+    )
     if body.version != session["version"] or body.question_id != question["id"]:
         raise HTTPException(
             409, "This question has already changed. Reload the interview."
@@ -136,12 +140,24 @@ def answer(body: AnswerRequest, db=Depends(get_db), user=Depends(require_user)):
     code_result = None
     if question["type"] == "coding" and not body.skipped:
         code_result = run_problem(question["problem_id"], body.code, body.language)
-    evaluation = evaluate_answer(
-        question,
-        body.answer.strip(),
-        body.latency_ms,
-        session.get("allow_ai", False) and not body.skipped,
-        code_result,
+    evaluation = (
+        {
+            "communication_score": None,
+            "correctness_score": None,
+            "source": "skipped",
+            "feedback": "Question skipped; no evaluation assigned.",
+            "evidence": {},
+            "code_result": None,
+            "mistake_tag": None,
+        }
+        if body.skipped
+        else evaluate_answer(
+            question,
+            body.answer.strip(),
+            body.latency_ms,
+            session.get("allow_ai", False),
+            code_result,
+        )
     )
     entry = {
         "question_id": question["id"],
@@ -163,12 +179,13 @@ def answer(body: AnswerRequest, db=Depends(get_db), user=Depends(require_user)):
         old = session["ability"].get(question["round"], 0.5)
         measured = (
             evaluation["correctness_score"]
-            if evaluation["correctness_score"] is not None
+            if question["evaluation_kind"] in ("technical", "coding")
             else evaluation["communication_score"]
         )
-        session["ability"][question["round"]] = round(
-            0.6 * old + 0.4 * measured / 100, 3
-        )
+        if measured is not None:
+            session["ability"][question["round"]] = round(
+                0.6 * old + 0.4 * measured / 100, 3
+            )
     if session["index"] == len(session["questions"]):
         session.update(status="completed", completed_at=now())
     else:

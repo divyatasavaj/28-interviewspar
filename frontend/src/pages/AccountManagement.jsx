@@ -232,7 +232,7 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
         <div className="lg:w-[30%] bg-white rounded-3xl shadow-sm border border-l-4 border-l-primary p-8 flex flex-col justify-center">
           <h2 className="text-sm font-bold text-gray-900 mb-2">Practice Advice</h2>
           <p className="text-xs text-gray-500 leading-relaxed italic">
-            "Reviewing each AI scorecard for 10 minutes following an interview session boosts answer structure and STAR fluency by over 25%."
+            Review your saved answers, choose one improvement, and practice explaining the same example again. The report is a practice aid, not a validated measure of improvement.
           </p>
         </div>
       </div>
@@ -437,11 +437,11 @@ function ResumeView() {
       </div>
 
       <div className="lg:w-[30%] bg-white rounded-3xl shadow-sm border border-l-4 border-l-primary p-8 flex flex-col justify-center">
-        <h2 className="text-sm font-bold text-gray-900 mb-3">AI Personalization</h2>
+        <h2 className="text-sm font-bold text-gray-900 mb-3">Resume context</h2>
         <p className="text-xs text-gray-500 leading-relaxed">
-          When an interview starts, our engine analyzes your extracted projects to formulate challenging technical questions like:
+          An interview can include a question about a project or skill found in your resume. For a listed project, the prompt asks:
           <span className="block mt-2 font-medium text-gray-700 italic">
-            "I noticed you built a distributed caching layer in your project. How did you handle cache invalidation and race conditions?"
+            "Explain one decision you made and the evidence for its outcome."
           </span>
         </p>
       </div>
@@ -539,9 +539,9 @@ function ReportsView() {
                   <span className={`text-xl font-extrabold ${
                     fb.overall_score >= 80 ? "text-emerald-600" : fb.overall_score >= 60 ? "text-amber-500" : "text-rose-500"
                   }`}>
-                    {fb.overall_score}%
+                    {fb.overall_score}/100
                   </span>
-                  <span className="text-[10px] text-gray-400 block font-medium">Score</span>
+                  <span className="text-[10px] text-gray-400 block font-medium">Text structure</span>
                 </div>
               )}
 
@@ -578,6 +578,8 @@ function PreferencesView() {
       if (res && res.voices) setVoices(res.voices)
     })
   }, [])
+
+  useEffect(() => () => stopAnySpeech(), [])
 
   function handleSavePreferences() {
     localStorage.setItem("interviewer_voice", voice)

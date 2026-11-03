@@ -77,6 +77,49 @@ class Collection:
 
 
 class InterviewApiTests(unittest.TestCase):
+    def test_skipping_does_not_create_evaluation_or_report_weaknesses(self):
+        session = self.start()
+        with patch("app.routes.interview_flow.evaluate_answer") as evaluate:
+            response, _ = self.submit(session, answer="", skipped=True)
+            self.assertEqual(response.status_code, 200)
+            evaluate.assert_not_called()
+        report = self.client.get(
+            "/api/interview/" + session["id"] + "/feedback", headers=self.headers
+        ).json()
+        self.assertEqual(report["weaknesses"], [])
+        self.assertIsNone(report["overall_score"])
+
+    def test_communication_alone_does_not_increase_technical_difficulty(self):
+        session = self.start()
+        while session["current_round"] != "technical":
+            session = self.submit(session)[0].json()
+        answer = (
+            "For example I built a project because it mattered and the result improved. "
+            * 5
+        )
+        session = self.submit(session, answer=answer)[0].json()
+        self.assertEqual(session["current_question"]["difficulty"], "medium")
+        self.assertNotIn("technical", session["ability"])
+
+    def test_password_change_cannot_overwrite_a_concurrent_revocation(self):
+        previous_hash = self.db.users.docs[0]["hashed_password"]
+
+        def revoke(*args):
+            self.db.users.docs[0]["token_version"] += 1
+            return True
+
+        with patch("app.routes.auth.verify_password", side_effect=revoke):
+            response = self.client.post(
+                "/api/auth/change-password",
+                headers=self.headers,
+                json={
+                    "old_password": "old-password",
+                    "new_password": "New-test-password-321",
+                },
+            )
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(self.db.users.docs[0]["hashed_password"], previous_hash)
+
     def setUp(self):
         self.db = SimpleNamespace(
             **{
@@ -382,6 +425,25 @@ class InterviewApiTests(unittest.TestCase):
 
 
 class PureFlowTests(unittest.TestCase):
+    def test_hr_calibration_never_receives_technical_correctness(self):
+        from app.interview_flow import evaluate_answer
+
+        question = make_questions("Software Engineering", "hr")[2]
+        with patch.dict(os.environ, {"GROQ_API_KEY": "synthetic-test-key"}), patch(
+            "groq.Groq"
+        ) as groq:
+            groq.return_value.chat.completions.create.return_value = SimpleNamespace(
+                choices=[
+                    SimpleNamespace(
+                        message=SimpleNamespace(
+                            content='{"correctness_score":99,"feedback":"Synthetic feedback"}'
+                        )
+                    )
+                ]
+            )
+            result = evaluate_answer(question, "A behavioral example", allow_ai=True)
+        self.assertIsNone(result["correctness_score"])
+
     def test_hr_track_uses_behavioral_calibration(self):
         questions = make_questions("Software Engineering", "hr")
         self.assertIn("background", questions[2]["prompt"])

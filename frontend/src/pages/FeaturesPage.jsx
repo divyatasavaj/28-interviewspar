@@ -21,12 +21,12 @@ const pillars = [
   },
   {
     category: "Campus Behavioral Assessment",
-    title: "STAR Framework Evaluation",
+    title: "Answer Structure Practice",
     description:
-      "Evaluates student answers based on Situation, Task, Action, and Result. Flags answers that omit key metrics, lack clear ownership, or suffer from rambling.",
+      "Highlights keyword and length cues that may help you review an answer. These indicators do not verify a complete STAR story, factual accuracy, or spoken fluency.",
     highlights: [
-      "Automated detection of quantifiable impact",
-      "Rambling and filler phrase detection",
+      "Outcome-related text cues",
+      "Experimental coaching and filler-word signals",
       "Examples, reasoning, and outcome signals",
       "Structured constructive feedback rubrics",
     ],
@@ -38,14 +38,14 @@ const pillars = [
   },
   {
     category: "Resume Intelligence",
-    title: "Project-Specific Deep Interrogation",
+    title: "Questions from Resume Context",
     description:
-      "Instead of generic questions, the engine scans your uploaded resume to cross-examine you on your actual college projects, database architecture, and technology choices.",
+      "The local parser extracts documented projects and skills. The interview can ask about a listed project or skill alongside curated questions.",
     highlights: [
       "Automatic parsing of skills, tools & project stacks",
-      "Challenges architectural decisions and bottlenecks",
+      "Asks about a project decision and its outcome",
       "Fallback baseline calibration when no resume is uploaded",
-      "Keeps missing evidence separate from verified skills",
+      "Separates missing evidence from documented skills",
     ],
     icon: (
       <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -57,11 +57,11 @@ const pillars = [
     category: "Technical & Systems Rigor",
     title: "Adaptive Question Complexity",
     description:
-      "Dynamic interviewer probes deeper if your answers are strong, or provides targeted guiding hints if you struggle, mirroring elite technical interviewers.",
+      "Technical prompts can ask for more detail after evaluated answers. Without technical evaluation, their difficulty stays at the default level.",
     highlights: [
-      "Follow-up inquiries on time/space complexity",
+      "Curated domain questions",
       "Systems trade-offs: Caching, CAP theorem, indexing",
-      "Real-world debugging scenarios & edge cases",
+      "Coding practice for eligible domains",
       "Difficulty prompts informed by previous answers",
     ],
     icon: (
@@ -88,14 +88,14 @@ const pillars = [
     ),
   },
   {
-    category: "Executive Scorecards",
+    category: "Practice Reports",
     title: "Printable practice reports",
     description:
       "Generate comprehensive evaluation cards detailing recorded answers, communication evidence, improvement steps, and print-ready PDF exports.",
     highlights: [
-      "Numerical performance scoring across categories",
+      "Separate structure and evaluated correctness indicators",
       "Recorded answers and evaluation sources",
-      "Tailored action plan before next interview",
+      "Recorded feedback to guide further practice",
       "Printable PDF format for college placement cells",
     ],
     icon: (
@@ -172,7 +172,7 @@ export default function FeaturesPage() {
               Test Your Placement Readiness Today
             </h2>
             <p className="text-purple-200/80 text-sm sm:text-base leading-relaxed mb-8">
-              Start with a calibration session, upload your resume for project questions, and review your executive score breakdown in 15 minutes.
+              Choose a domain, optionally upload a resume for a project question, and review your saved answers after practice.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link
