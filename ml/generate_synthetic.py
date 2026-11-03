@@ -5,8 +5,10 @@
 # writes to synthetic_answers.csv so it never pollutes the real collection file.
 import csv
 import random
+from pathlib import Path
+from feature_extractor import extract_features
 
-OUT = "data/synthetic_answers.csv"
+OUT = str(Path(__file__).resolve().parent / "data/synthetic_answers.csv")
 HEADER = [
     "answer_text", "star_present", "hedge_word_freq", "filler_word_count",
     "answer_length", "response_latency", "code_correct", "mistake_label",
@@ -67,6 +69,11 @@ def main(n_per_label=35):
                 sig.get("grammar", random.randint(0, 2)),
                 sig.get("fluency", 50 + random.randint(-10, 10)),
             ])
+    # Persist exactly the same features used at inference, never label-assigned text counts.
+    for row in rows:
+        features=extract_features(row[0],row[5],row[6],row[8],row[9],row[10])
+        for index,key in [(1,"star_present"),(2,"hedge_word_freq"),(3,"filler_word_count"),(4,"answer_length")]:
+            row[index]=features[key]
     random.shuffle(rows)
     with open(OUT, "w", newline="") as f:
         w = csv.writer(f)

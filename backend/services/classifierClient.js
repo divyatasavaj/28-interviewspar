@@ -18,13 +18,13 @@ export function classifyAnswer({ answerText, responseLatency = 0, codeCorrect = 
       fluency_score: fluencyScore
     });
     const child = execFile(
-      "python3",
+      process.env.PYTHON_BIN || "python3",
       ["infer.py"],
       { cwd: ML_DIR, timeout: 15000 },
       (err, stdout) => {
         if (err) {
           console.warn("classifier subprocess failed:", err.message);
-          return resolve({ label: null, error: err.message });
+          return resolve({ label: null, error: "classifier unavailable" });
         }
         try {
           const parsed = JSON.parse(stdout.trim().split("\n").pop());

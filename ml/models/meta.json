@@ -1,4 +1,5 @@
 {
+  "feature_schema_version": 2,
   "model": "logreg",
   "features": [
     "star_present",
@@ -19,6 +20,10 @@
     "silent-coding",
     "underselling"
   ],
+  "validation_accuracy": {
+    "logreg": 0.9761904761904762,
+    "randomforest": 0.9761904761904762
+  },
   "accuracy": 1.0,
   "confusion_matrix": [
     [
@@ -70,16 +75,11 @@
       7
     ]
   ],
-  "feature_importance": {
-    "star_present": 0.08578109152512244,
-    "hedge_word_freq": 0.28745851231345904,
-    "filler_word_count": 0.04228184677060764,
-    "answer_length": 0.41572861951737705,
-    "response_latency": 0.1723891706546304,
-    "code_correct": 0.09660153767701052,
-    "pause_count": 0.20081712529420384,
-    "grammar_errors": 0.08464923206826058,
-    "fluency_score": 0.2307985168349178
-  },
-  "n_samples": 211
+  "n_samples": 211,
+  "test_samples": 43,
+  "real_samples": 1,
+  "synthetic_samples": 210,
+  "data_provenance": "synthetic bootstrap; not validated for candidate assessment",
+  "production_validated": false,
+  "artifact_sha256": "aab3a9916ecfa27aa11bf2ddedc2d1747c12d1c0fb36a5f948f702eed7098c41"
 }

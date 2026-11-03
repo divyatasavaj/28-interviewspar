@@ -12,16 +12,16 @@ const HEDGE_WORDS = [
 ];
 const STAR_WORDS = ["situation", "task", "action", "result", "when i", "we ", "because"];
 
-export function extractFeatures(text = "", { responseLatency = 0, codeCorrect = 0 } = {}) {
+export function extractFeatures(text = "", { responseLatency = 0, codeCorrect = 0, pauseCount = 0, grammarErrors = 0, fluencyScore = 100 } = {}) {
   const lower = ` ${text.toLowerCase()} `;
   const words = text.trim().split(/\s+/).filter(Boolean);
 
   const fillerWordCount = FILLER_WORDS.reduce(
-    (n, w) => n + (lower.split(w).length - 1),
+    (n, w) => n + (Array.from(lower.matchAll(new RegExp(`(?<![\\w])${w}(?![\\w])`, "g"))).length),
     0
   );
   const hedgeWordFreq = HEDGE_WORDS.reduce(
-    (n, w) => n + (lower.split(w).length - 1),
+    (n, w) => n + (Array.from(lower.matchAll(new RegExp(`(?<![\\w])${w}(?![\\w])`, "g"))).length),
     0
   );
   const starPresent = STAR_WORDS.some((w) => lower.includes(w)) ? 1 : 0;
@@ -33,6 +33,7 @@ export function extractFeatures(text = "", { responseLatency = 0, codeCorrect = 
     answer_length: words.length,
     response_latency: responseLatency,
     code_correct: codeCorrect,
+    pause_count: pauseCount, grammar_errors: grammarErrors, fluency_score: fluencyScore,
   };
 }
 
