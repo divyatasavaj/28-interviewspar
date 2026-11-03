@@ -1,9 +1,10 @@
 // Deploy the Certificate contract to Sepolia testnet.
 // Usage (after `npm install` in blockchain/ and filling .env):
 //   npx hardhat run scripts/deploy.js --network sepolia
-import { ethers } from "hardhat";
+const { ethers, network } = require("hardhat");
 
 async function main() {
+  if (!["sepolia", "hardhat", "localhost"].includes(network.name)) throw new Error("Test networks only");
   const Certificate = await ethers.getContractFactory("Certificate");
   const cert = await Certificate.deploy();
   await cert.waitForDeployment();

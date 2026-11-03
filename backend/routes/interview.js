@@ -7,6 +7,15 @@ import { createSession, getSession, updateSession, categorizeQuestion } from "..
 import { authRequired } from "../middleware/auth.js";
 
 const router = Router();
+router.use(authRequired);
+router.use((req, res, next) => {
+  const sessionId = req.body?.sessionId;
+  if (sessionId) {
+    const session = getSession(sessionId);
+    if (!session || session.ownerId !== req.user.id) return res.status(404).json({error:"session not found"});
+  }
+  next();
+});
 
 // STEP 2 — start a session: collect basic info, return screening questions first.
 // POST /api/interview/start  body: {name, domain, experience, persona, mode}
@@ -154,7 +163,7 @@ router.post("/calibration", (req, res) => {
             codeCorrect: codeCorrect || 0,
             pauseCount: fluency?.pauses || 0,
             grammarErrors: fluency?.grammarErrors || 0,
-            fluencyScore: fluency?.score || 100
+            fluencyScore: fluency?.score ?? 100
           })
         : { label: null };
 
@@ -277,9 +286,9 @@ router.get("/:sessionId/feedback", authRequired, (req, res) => {
       CulturalFit: Math.round((session.ability?.['Cultural Alignment'] || 0.5) * 100)
     },
     ramblingDetected,
-    qaPairs: session.history?.filter((m, i) => i % 2 === 0).slice(0, 5).map(m => ({
+    qaPairs: session.history?.filter((m, i) => i % 2 === 0).slice(0, 5).map((m, pairIndex) => ({
       question: m.content,
-      answer: session.history[i + 1]?.content || ''
+      answer: session.history[pairIndex * 2 + 1]?.content || ''
     })) || [],
     weakClaims: [],
     suggestedImprovements: weaknesses.length ? weaknesses.map(w => `Improve ${w}`) : ['Keep practicing!']

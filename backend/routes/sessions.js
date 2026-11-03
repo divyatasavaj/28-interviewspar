@@ -10,7 +10,7 @@ const router = Router();
 router.post("/end", authRequired, (req, res) => {
   const { sessionId } = req.body;
   const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: "session not found" });
+  if (!session || session.ownerId !== req.user.id) return res.status(404).json({ error: "session not found" });
   const rec = completeSession(session);
   res.json({ ok: true, id: rec.id });
 });
@@ -19,7 +19,7 @@ router.post("/end", authRequired, (req, res) => {
 // admin/company see all (candidate reports); student sees only their own; developer sees none.
 router.get("/", authRequired, (req, res) => {
   let list = listSessions();
-  if (req.user.role === "student") list = list.filter((s) => s.ownerId === req.user.id);
+  if (req.user.role !== "admin") list = list.filter((s) => s.ownerId === req.user.id);
   if (req.user.role === "developer") list = [];
   res.json(list);
 });
@@ -30,7 +30,6 @@ router.get("/:id", authRequired, (req, res) => {
   if (!rec) return res.status(404).json({ error: "not found" });
   const allowed =
     req.user.role === "admin" ||
-    req.user.role === "company" ||
     rec.ownerId === req.user.id;
   if (!allowed) return res.status(403).json({ error: "forbidden" });
   res.json(rec);

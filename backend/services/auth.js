@@ -9,8 +9,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 export const ROLES = ["student", "developer", "company", "admin"];
-const JWT_SECRET = process.env.JWT_SECRET || "dev-interspar-secret-change-me";
-const USERS_FILE = path.join(process.cwd(), "data", "users.json");
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error("JWT_SECRET must be configured for the legacy server");
+const USERS_FILE = path.resolve(new URL("../data/users.json", import.meta.url).pathname);
 
 function ensureStore() {
   const dir = path.dirname(USERS_FILE);

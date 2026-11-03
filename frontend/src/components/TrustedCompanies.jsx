@@ -11,7 +11,7 @@ export default function TrustedCompanies() {
     <section className="py-14 px-6 border-y border-gray-100 bg-slate-50/50">
       <div className="max-w-5xl mx-auto text-center">
         <p className="text-[11px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-8">
-          Alumni & Students Prepared For Top Placements & Tech Leaders
+          Example employers students may prepare for — no affiliation implied
         </p>
         <div className="flex flex-wrap items-center justify-center gap-8 md:gap-14">
           {companies.map((c) => (

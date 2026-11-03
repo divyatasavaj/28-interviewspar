@@ -1,8 +1,8 @@
 import os
 import json
 import asyncio
-import tempfile
-import subprocess
+
+import re
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
@@ -61,258 +61,29 @@ class CodeEvaluation:
 
 
 class CodeExecutor:
-    """Executes code in a sandboxed environment"""
-    
-    def __init__(self, timeout_seconds: int = 10, memory_limit_mb: int = 256):
-        self.timeout_seconds = timeout_seconds
-        self.memory_limit_mb = memory_limit_mb
-    
-    def execute(self, code: str, language: Language, test_cases: List[TestCase], function_signature: str = None) -> ExecutionResult:
-        if language == Language.JAVASCRIPT or language == Language.TYPESCRIPT:
-            return self._execute_javascript(code, test_cases, function_signature)
-        elif language == Language.PYTHON:
-            return self._execute_python(code, test_cases, function_signature)
-        else:
-            return ExecutionResult(
-                status=ExecutionStatus.RUNTIME_ERROR,
-                error_message=f"Language {language} not supported yet"
-            )
-    
-    def _execute_javascript(self, code: str, test_cases: List[TestCase], function_signature: str = None) -> ExecutionResult:
-        # Create a test runner
-        test_runner = self._build_js_test_runner(code, test_cases, function_signature)
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
-            f.write(test_runner)
-            temp_file = f.name
-        
-        try:
-            import time
-            start = time.time()
-            result = subprocess.run(
-                ['node', temp_file],
-                capture_output=True,
-                text=True,
-                timeout=self.timeout_seconds
-            )
-            execution_time = (time.time() - start) * 1000
-            
-            return self._parse_js_result(result, execution_time, len(test_cases))
-        except subprocess.TimeoutExpired:
-            return ExecutionResult(
-                status=ExecutionStatus.TIMEOUT,
-                error_message=f"Execution timed out after {self.timeout_seconds}s"
-            )
-        except Exception as e:
-            return ExecutionResult(
-                status=ExecutionStatus.RUNTIME_ERROR,
-                error_message=str(e)
-            )
-        finally:
-            try:
-                os.unlink(temp_file)
-            except:
-                pass
-    
-    def _build_js_test_runner(self, code: str, test_cases: List[TestCase], function_signature: str = None) -> str:
-        # Extract function name from signature or use default
-        func_name = "solution"
-        if function_signature:
-            import re
-            match = re.search(r'function\s+(\w+)|(\w+)\s*=', function_signature)
-            if match:
-                func_name = match.group(1) or match.group(2)
-        
-        test_code = f"""
-{code}
+    """Compatibility adapter for the isolated execution service; never executes locally."""
+    def __init__(self, timeout_seconds=10, memory_limit_mb=256):
+        self.timeout_seconds=timeout_seconds
+        self.memory_limit_mb=memory_limit_mb
 
-const testCases = {json.dumps([{'input': tc.input, 'expected': tc.expected_output, 'description': tc.description} for tc in test_cases])};
-
-let passed = 0;
-let total = testCases.length;
-const results = [];
-
-for (let i = 0; i < testCases.length; i++) {{
-    const tc = testCases[i];
-    try {{
-        let result;
-        if (Array.isArray(tc.input)) {{
-            result = {func_name}(...tc.input);
-        }} else if (typeof tc.input === 'object' && tc.input !== null) {{
-            result = {func_name}(tc.input);
-        }} else {{
-            result = {func_name}(tc.input);
-        }}
-        
-        const isEqual = JSON.stringify(result) === JSON.stringify(tc.expected);
-        if (isEqual) passed++;
-        
-        results.push({{
-            testCase: i + 1,
-            description: tc.description,
-            input: tc.input,
-            expected: tc.expected,
-            actual: result,
-            passed: isEqual
-        }});
-    }} catch (e) {{
-        results.push({{
-            testCase: i + 1,
-            description: tc.description,
-            input: tc.input,
-            expected: tc.expected,
-            actual: null,
-            passed: false,
-            error: e.message
-        }});
-    }}
-}}
-
-console.log(JSON.stringify({{ passed, total, results }}));
-"""
-        return test_code
-    
-    def _parse_js_result(self, result: subprocess.CompletedProcess, execution_time: float, total_tests: int) -> ExecutionResult:
-        if result.returncode != 0:
-            return ExecutionResult(
-                status=ExecutionStatus.RUNTIME_ERROR,
-                stderr=result.stderr,
-                execution_time_ms=execution_time,
-                error_message=result.stderr[:500]
-            )
-        
-        try:
-            output = json.loads(result.stdout.strip().split('\n')[-1])
-            passed = output.get('passed', 0)
-            results = output.get('results', [])
-            
-            return ExecutionResult(
-                status=ExecutionStatus.SUCCESS,
-                stdout=result.stdout,
-                execution_time_ms=execution_time,
-                passed=passed,
-                total=total_tests,
-                test_results=results
-            )
-        except json.JSONDecodeError:
-            return ExecutionResult(
-                status=ExecutionStatus.RUNTIME_ERROR,
-                stdout=result.stdout,
-                execution_time_ms=execution_time,
-                error_message="Failed to parse test output"
-            )
-    
-    def _execute_python(self, code: str, test_cases: List[TestCase], function_signature: str = None) -> ExecutionResult:
-        func_name = "solution"
-        if function_signature:
-            import re
-            match = re.search(r'def\s+(\w+)', function_signature)
-            if match:
-                func_name = match.group(1)
-        
-        test_code = f"""
-{code}
-
-import json
-
-test_cases = {json.dumps([{'input': tc.input, 'expected': tc.expected_output, 'description': tc.description} for tc in test_cases])}
-
-passed = 0
-total = len(test_cases)
-results = []
-
-for i, tc in enumerate(test_cases):
-    try:
-        if isinstance(tc['input'], list):
-            result = {func_name}(*tc['input'])
-        elif isinstance(tc['input'], dict):
-            result = {func_name}(**tc['input'])
-        else:
-            result = {func_name}(tc['input'])
-        
-        is_equal = result == tc['expected']
-        if is_equal:
-            passed += 1
-        
-        results.append({{
-            'testCase': i + 1,
-            'description': tc['description'],
-            'input': tc['input'],
-            'expected': tc['expected'],
-            'actual': result,
-            'passed': is_equal
-        }})
-    except Exception as e:
-        results.append({{
-            'testCase': i + 1,
-            'description': tc['description'],
-            'input': tc['input'],
-            'expected': tc['expected'],
-            'actual': None,
-            'passed': False,
-            'error': str(e)
-        }})
-
-print(json.dumps({{'passed': passed, 'total': total, 'results': results}}))
-"""
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write(test_code)
-            temp_file = f.name
-        
-        try:
-            import time
-            start = time.time()
-            result = subprocess.run(
-                ['python3', temp_file],
-                capture_output=True,
-                text=True,
-                timeout=self.timeout_seconds
-            )
-            execution_time = (time.time() - start) * 1000
-            
-            if result.returncode != 0:
-                return ExecutionResult(
-                    status=ExecutionStatus.RUNTIME_ERROR,
-                    stderr=result.stderr,
-                    execution_time_ms=execution_time,
-                    error_message=result.stderr[:500]
-                )
-            
-            output = json.loads(result.stdout.strip().split('\n')[-1])
-            passed = output.get('passed', 0)
-            results = output.get('results', [])
-            
-            return ExecutionResult(
-                status=ExecutionStatus.SUCCESS,
-                stdout=result.stdout,
-                execution_time_ms=execution_time,
-                passed=passed,
-                total=total_tests,
-                test_results=results
-            )
-        except subprocess.TimeoutExpired:
-            return ExecutionResult(
-                status=ExecutionStatus.TIMEOUT,
-                error_message=f"Execution timed out after {self.timeout_seconds}s"
-            )
-        except Exception as e:
-            return ExecutionResult(
-                status=ExecutionStatus.RUNTIME_ERROR,
-                error_message=str(e)
-            )
-        finally:
-            try:
-                os.unlink(temp_file)
-            except:
-                pass
+    def execute(self, code, language, test_cases, function_signature=None):
+        from app.safe_execution import execute_cases
+        signature=function_signature or "solve()"
+        match=re.search(r"(?:function\s+|def\s+)?([A-Za-z_]\w*)\s*\(", signature)
+        name=match.group(1) if match else "solve"
+        # v2 banks describe one structured input per case. Unsupported descriptive tests fail closed.
+        cases=[{"args": [tc.input], "expected": tc.expected_output} for tc in test_cases]
+        result=execute_cases(code,language.value,cases,name)
+        return ExecutionResult(status=ExecutionStatus.SUCCESS if result["status"]=="evaluated" else ExecutionStatus.RUNTIME_ERROR,
+            passed=result["passed"], total=result["total"], test_results=result["results"],
+            error_message=result.get("message", ""))
 
 
 class AICodeReviewer:
     """Uses LLM to review code quality"""
     
     def __init__(self):
-        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+        self.client = Groq(api_key=os.environ["GROQ_API_KEY"], timeout=12, max_retries=0) if os.environ.get("GROQ_API_KEY") else None
         self.model = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
     
     def review_code(
@@ -375,7 +146,7 @@ Return ONLY valid JSON, no markdown."""
                 "style_score": 0,
                 "edge_case_score": 0,
                 "overall_score": 0,
-                "feedback": f"AI review failed: {str(e)}",
+                "feedback": "AI review unavailable; no quality score assigned.",
                 "suggestions": ["Unable to perform AI review"],
                 "strengths": []
             }
@@ -432,7 +203,7 @@ class CodeEvaluator:
             complexity_score = 0
             style_score = 0
             edge_case_score = 0
-            overall_score = correctness_score * 0.4  # Only correctness if no AI review
+            overall_score = correctness_score  # Only correctness if no AI review
             feedback = "Code executed but AI review unavailable"
             suggestions = ["Enable AI review for detailed feedback"]
         

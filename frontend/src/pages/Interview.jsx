@@ -134,30 +134,7 @@ export default function Interview() {
     }
   }, [cameraStream])
 
-  useEffect(() => {
-    if (!videoSessionId || !cameraActive) return
-    const interval = setInterval(() => {
-      if (!videoRef.current) return
-      const canvas = document.createElement("canvas")
-      canvas.width = videoRef.current.videoWidth || 320
-      canvas.height = videoRef.current.videoHeight || 240
-      const ctx = canvas.getContext("2d")
-      if (!ctx) return
-      ctx.drawImage(videoRef.current, 0, 0)
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.2)
-      fetch(`${API}/video/analyze-frame`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({
-          video_session_id: videoSessionId,
-          frame_data: dataUrl,
-          face_detected: analytics.faceDetected,
-          face_count: analytics.faceCount,
-        }),
-      }).catch(() => {})
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [videoSessionId, cameraActive, analytics.faceDetected, analytics.faceCount])
+  // Camera frames stay local; the retired video-upload effect has been removed.
 
   const speakQuestion = useCallback((text) => {
     return new Promise((resolve) => {

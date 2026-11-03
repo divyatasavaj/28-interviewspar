@@ -63,6 +63,19 @@ export default function ResourcesPage() {
     },
   ]
 
+  function downloadNotes(item) {
+    const checklists = {
+      star: ["Situation: explain the context in one sentence.", "Task: identify your responsibility.", "Action: explain what you did and why.", "Result: give an observed outcome; do not invent metrics.", "Practice: answer aloud, then remove details that do not support your example."],
+      "system-design": ["Clarify users, traffic, storage, and reliability requirements.", "Sketch components and trace one request through them.", "Define the data model and access patterns.", "Explain cache invalidation, retries, and failure recovery.", "Compare alternatives using latency, consistency, cost, and operational complexity."],
+      algorithms: ["Restate inputs, outputs, and constraints.", "Walk through a small example before coding.", "Explain a correct baseline and its complexity.", "Implement one improvement and test empty, boundary, and duplicate inputs.", "Explain time and space costs; distinguish passing examples from proof of correctness."],
+      behavioral: ["Choose a real example of collaboration or disagreement.", "Describe your own actions without blaming others.", "Explain the trade-off and the feedback you received.", "State what happened and what you learned.", "Connect the lesson to how you would approach the next situation."],
+    };
+    const content = `# ${item.title}\n\n${item.description}\n\n` + checklists[item.category].map((line,index)=>`${index+1}. ${line}`).join("\n") + "\n";
+    const url = URL.createObjectURL(new Blob([content], {type:"text/markdown;charset=utf-8"}));
+    const link = document.createElement("a"); link.href=url; link.download=item.title.toLowerCase().replace(/[^a-z0-9]+/g,"-")+".md"; link.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+
   const filtered = selectedCategory === "all"
     ? resources
     : resources.filter((r) => r.category === selectedCategory)
@@ -111,7 +124,7 @@ export default function ResourcesPage() {
                   <span className="uppercase tracking-wider text-primary font-bold">
                     {item.category.replace("-", " ")}
                   </span>
-                  <span>{item.readTime}</span>
+                  <span>Practice checklist</span>
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2 leading-snug">
                   {item.title}
@@ -133,10 +146,10 @@ export default function ResourcesPage() {
                   ))}
                 </div>
                 <button
-                  onClick={() => alert(`Starting download for: ${item.title}`)}
+                  onClick={() => downloadNotes(item)}
                   className="w-full text-center text-xs font-bold text-primary hover:text-white bg-primary/10 hover:bg-primary py-2.5 rounded-xl transition-all"
                 >
-                  {item.download}
+                  Download study notes (.md)
                 </button>
               </div>
             </div>

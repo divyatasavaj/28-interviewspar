@@ -20,15 +20,8 @@ SUPPORTED_LANGUAGES = {
 }
 
 INDIAN_LANGUAGE_PATTERNS = {
-    'gu': [
-        r'\b(hu|chhe|chho|chhi|chhiye|nathi|nathi|kare|karta|karti|j|ta|to|ne|ma|se|tha|thi|che|chhu|chhe|chho)\b',
-        r'\b(mara|tara|ama|tame|tamne|tamara|amne|amara)\b',
-        r'\b(naam|naan|nam|che|chhe|hun|hu)\b',
-    ],
-    'hi': [
-        r'\b(main|mera|meri|tere|tera|teri|hamara|hamari|aap|tum|tumhara|tumhari)\b',
-        r'\b(naam|nam|hai|hun|hoon|karta|karti|karte|hai|hain|tha|thi|the)\b',
-    ],
+    'gu': [r'[\u0A80-\u0AFF]'],
+    'hi': [r'[\u0900-\u097F]'],
 }
 
 class LanguageValidator:

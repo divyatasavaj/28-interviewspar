@@ -63,7 +63,7 @@ export default function Hero() {
             </div>
             <div className="h-4 w-px bg-gray-200" />
             <p className="text-xs text-gray-500">
-              Trusted by <strong className="text-gray-800 font-semibold">+15,000 engineering students</strong> preparing for top tech roles
+              Designed for <strong className="text-gray-800 font-semibold">engineering students</strong> preparing for top tech roles
             </p>
           </div>
         </div>

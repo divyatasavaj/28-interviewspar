@@ -65,47 +65,8 @@ export default function CameraView({ interviewSessionId, onFaceEvent }) {
     }
   }, [videoSessionId])
 
-  const captureAndAnalyze = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || !videoSessionId) return
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    canvas.width = video.videoWidth || 320
-    canvas.height = video.videoHeight || 240
-    const ctx = canvas.getContext("2d")
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-    canvas.toBlob(async (blob) => {
-      if (!blob) return
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        const base64data = reader.result
-        try {
-          const res = await fetch(`${API}/video/analyze-frame`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${getToken()}`,
-            },
-            body: JSON.stringify({
-              video_session_id: videoSessionId,
-              frame_data: base64data,
-              face_detected: faceDetected,
-              face_count: faceDetected ? 1 : 0,
-            }),
-          })
-          if (res.ok) {
-            const data = await res.json()
-            if (!data.face_detected && onFaceEvent) {
-              onFaceEvent("face_not_detected")
-            }
-          }
-        } catch (e) {
-          // silent
-        }
-      }
-      reader.readAsDataURL(blob)
-    }, "image/jpeg", 0.3)
-  }, [videoSessionId, faceDetected, onFaceEvent])
+  // Legacy preview only: never upload camera frames or infer face presence from brightness.
+  const captureAndAnalyze = useCallback(async () => {}, []);
 
   useEffect(() => {
     if (cameraActive && videoSessionId) {

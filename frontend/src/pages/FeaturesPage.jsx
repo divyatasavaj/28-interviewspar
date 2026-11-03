@@ -6,12 +6,12 @@ const pillars = [
     category: "Speech & Audio Engine",
     title: "Conversational Neural Voice",
     description:
-      "Unlike robotic TTS engines, our speech system synthesizes voice with human conversational cadence, natural pauses, pitch inflection, and customizable speaking rates.",
+      "Read interview questions aloud through the speech service, with browser speech as a fallback. Voice availability depends on the configured service and your browser.",
     highlights: [
-      "Sub-800ms conversational response streaming",
-      "Dynamic prosody & breathing cadence pauses",
+      "Read questions aloud on demand",
+      "Browser speech fallback",
       "Ava, Andrew, Emma & Brian vocal personas",
-      "Custom tone warmness and speed modulation",
+      "Voice and speed preferences",
     ],
     icon: (
       <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -27,7 +27,7 @@ const pillars = [
     highlights: [
       "Automated detection of quantifiable impact",
       "Rambling and filler phrase detection",
-      "Conflict resolution & team dynamics scoring",
+      "Examples, reasoning, and outcome signals",
       "Structured constructive feedback rubrics",
     ],
     icon: (
@@ -45,7 +45,7 @@ const pillars = [
       "Automatic parsing of skills, tools & project stacks",
       "Challenges architectural decisions and bottlenecks",
       "Fallback baseline calibration when no resume is uploaded",
-      "Pinpoints weak claims before real recruiters do",
+      "Keeps missing evidence separate from verified skills",
     ],
     icon: (
       <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -62,7 +62,7 @@ const pillars = [
       "Follow-up inquiries on time/space complexity",
       "Systems trade-offs: Caching, CAP theorem, indexing",
       "Real-world debugging scenarios & edge cases",
-      "Non-linear conversational branch exploration",
+      "Difficulty prompts informed by previous answers",
     ],
     icon: (
       <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -72,14 +72,14 @@ const pillars = [
   },
   {
     category: "Integrity & Fluency Analytics",
-    title: "Live Camera & Presence Analysis",
+    title: "Consent and privacy controls",
     description:
-      "Optional on-device client computer vision measures attention focus, eye direction, and speaking composure without sending video frames to external servers.",
+      "Choose whether to enable external AI assessment. Resume parsing stays local, camera frames are not uploaded, and saved resumes and interviews can be deleted.",
     highlights: [
-      "100% on-device client inference for privacy",
-      "Eye gaze & attention metric monitoring",
-      "Speech fluency and hesitation tracking",
-      "Full session integrity timeline report",
+      "Local resume parsing",
+      "Explicit consent for AI assessment",
+      "Typed answers or optional browser dictation",
+      "Delete saved interviews and resumes",
     ],
     icon: (
       <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -89,12 +89,12 @@ const pillars = [
   },
   {
     category: "Executive Scorecards",
-    title: "Placement Cell & Recruiter Reports",
+    title: "Printable practice reports",
     description:
-      "Generate comprehensive evaluation cards detailing percentiles, strength pillars, precise improvement steps, and print-ready PDF exports.",
+      "Generate comprehensive evaluation cards detailing recorded answers, communication evidence, improvement steps, and print-ready PDF exports.",
     highlights: [
       "Numerical performance scoring across categories",
-      "Exact quote extraction of weak arguments",
+      "Recorded answers and evaluation sources",
       "Tailored action plan before next interview",
       "Printable PDF format for college placement cells",
     ],

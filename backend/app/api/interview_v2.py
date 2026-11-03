@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from pymongo.database import Database
 from pydantic import BaseModel
 from typing import Optional, List
@@ -39,7 +39,7 @@ def get_question_bank():
         from app.lib.interview.rounds.hr.questions import get_hr_questions
         from app.lib.interview.rounds.technical import get_theory_questions_for_role, get_challenges_for_role
         
-        all_questions = get_hr_questions()
+        all_questions = list(get_hr_questions())
         for role in TechnicalRole:
             all_questions.extend(get_theory_questions_for_role(role))
             all_questions.extend(get_challenges_for_role(role))
@@ -55,7 +55,7 @@ def get_session_manager():
     return session_manager
 
 
-def require_token(authorization: str = None):
+def require_token(authorization: str = Header(default=None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authorization header")
     token = authorization.removeprefix("Bearer ")

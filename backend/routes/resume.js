@@ -9,19 +9,25 @@ const router = Router();
 // POST /api/resume/upload?sessionId=xxx   body: <raw pdf bytes>
 router.post("/upload", async (req, res) => {
   const sessionId = req.query && req.query.sessionId;
+  const session = sessionId ? getSession(sessionId) : null;
+  if (!session || session.ownerId !== req.user.id) return res.status(404).json({error:"session not found"});
   const chunks = [];
-  req.on("data", (c) => chunks.push(c));
+  let received = 0;
+  let tooLarge = false;
+  req.on("data", (c) => { received += c.length; if (received > 10 * 1024 * 1024) { tooLarge = true; chunks.length = 0; } else if (!tooLarge) chunks.push(c); });
   req.on("end", async () => {
+    if (tooLarge) return res.status(413).json({error:"PDF exceeds 10 MB"});
     try {
       const buf = Buffer.concat(chunks);
       if (buf.slice(0, 5).toString() !== "%PDF-") {
         return res.status(400).json({ error: "not a PDF (or malformed file)" });
       }
-      const session = sessionId ? getSession(sessionId) : null;
+
 
       // Primary: pdf-parse (pdf.js). Falls back to a lenient regex extractor if the
       // strict xref parser chokes on a malformed/oddly-exported PDF (rules.md §3).
       let text = null;
+      let source = "pdf-parse";
       try {
         const pdfParse = (await import("pdf-parse")).default;
         const result = await pdfParse(buf);
@@ -29,6 +35,7 @@ router.post("/upload", async (req, res) => {
       } catch (e) {
         console.warn("pdf-parse failed, using lenient fallback:", e.message);
         text = extractTextLenient(buf);
+        source = "lenient-fallback";
       }
 
       if (!text || text.length < 20) {
@@ -41,7 +48,7 @@ router.post("/upload", async (req, res) => {
 
       const summary = buildSummary(text);
       if (session) updateSession(sessionId, { resumeText: text });
-      res.json({ ok: true, resumeText: text, summary, source: "lenient-fallback" });
+      res.json({ ok: true, resumeText: text, summary, source });
     } catch (err) {
       console.error("resume parse failed", err);
       res.status(500).json({ error: "resume parsing failed", detail: err.message });

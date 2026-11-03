@@ -1,9 +1,11 @@
+import { requireRole } from "../middleware/auth.js";
 import { Router } from "express";
 import { readFile, writeFile, appendFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { CSV_HEADER, extractFeatures } from "../services/featureExtractor.js";
 
 const router = Router();
+router.use(requireRole("admin"));
 
 // STEP 5 — mistake-classifier data collection.
 // The team/testers submit an answer + hand-assigned mistake label; basic features are

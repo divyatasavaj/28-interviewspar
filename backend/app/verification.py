@@ -19,23 +19,12 @@ def route_verification_method(question_type: str) -> str:
 
 
 def run_code_test_cases(code: str, test_cases: list[dict]) -> dict:
-    results = []
-    passed = 0
-    for tc in test_cases:
-        result = {"input": tc.get("input"), "expected": tc.get("expected_output"), "passed": False}
-        try:
-            local_vars = {}
-            exec(code, {"__builtins__": __builtins__}, local_vars)
-            func_name = list(local_vars.keys())[0] if local_vars else None
-            if func_name:
-                output = local_vars[func_name](*tc.get("input", []))
-                result["passed"] = str(output) == str(tc.get("expected_output"))
-            if result["passed"]:
-                passed += 1
-        except Exception as e:
-            result["error"] = str(e)
-        results.append(result)
-    return {"passed": passed == len(test_cases), "test_case_results": results}
+    from app.safe_execution import execute_cases
+    cases=[{"args": tc.get("input",[]), "expected": tc.get("expected_output")} for tc in test_cases]
+    result=execute_cases(code,"python",cases)
+    return {"passed": result["passed"] == result["total"] if result["status"] == "evaluated" else None,
+            "score": round(100*result["passed"]/result["total"]) if result["status"] == "evaluated" else None,
+            "test_case_results": result["results"], "status": result["status"]}
 
 
 def keyword_precheck(answer_text: str, checklist_terms: list[str]) -> dict:
@@ -76,10 +65,10 @@ def _call_groq_json(client: Groq, prompt: str) -> str:
 def llm_verify_answer(question: str, reference_answer: str, student_answer: str) -> dict:
     groq_key = os.environ.get("GROQ_API_KEY", "")
     if not groq_key or groq_key.startswith("your"):
-        return {"passed": True, "score": 80, "feedback": "Answer addresses the question well.", "missing_points": []}
+        return {"passed": None, "score": None, "status": "unavailable", "feedback": "Automated verification unavailable; no score assigned."}
 
     try:
-        client = Groq(api_key=groq_key)
+        client = Groq(api_key=groq_key, timeout=12, max_retries=0)
         prompt = (
             "You are an answer verifier. Compare the student's answer to the reference answer and criteria.\n\n"
             f"Question: {question}\n\n"
@@ -93,16 +82,16 @@ def llm_verify_answer(question: str, reference_answer: str, student_answer: str)
         return json.loads(text)
     except Exception as e:
         print(f"llm_verify_answer fallback: {e}")
-        return {"passed": True, "score": 80, "feedback": "Good response given context.", "missing_points": []}
+        return {"passed": None, "score": None, "status": "unavailable", "feedback": "Automated verification unavailable; no score assigned."}
 
 
 def verify_logical_puzzle(question: str, reference_reasoning_path: str, student_answer: str) -> dict:
     groq_key = os.environ.get("GROQ_API_KEY", "")
     if not groq_key or groq_key.startswith("your"):
-        return {"passed": True, "correct_final_answer": True, "reasoning_quality": 80, "feedback": "Logical steps demonstrated."}
+        return {"passed": None, "score": None, "status": "unavailable", "feedback": "Automated verification unavailable; no score assigned."}
 
     try:
-        client = Groq(api_key=groq_key)
+        client = Groq(api_key=groq_key, timeout=12, max_retries=0)
         prompt = (
             "You are verifying a puzzle/logic question answer.\n\n"
             f"Question: {question}\n\n"
@@ -116,16 +105,16 @@ def verify_logical_puzzle(question: str, reference_reasoning_path: str, student_
         return json.loads(text)
     except Exception as e:
         print(f"verify_logical_puzzle fallback: {e}")
-        return {"passed": True, "correct_final_answer": True, "reasoning_quality": 75, "feedback": "Sound reasoning process."}
+        return {"passed": None, "score": None, "status": "unavailable", "feedback": "Automated verification unavailable; no score assigned."}
 
 
 def verify_trick_question(question: str, key_insight: str, student_answer: str) -> dict:
     groq_key = os.environ.get("GROQ_API_KEY", "")
     if not groq_key or groq_key.startswith("your"):
-        return {"caught_trap": True, "explanation": "Identified the core edge case.", "score": 85}
+        return {"passed": None, "score": None, "status": "unavailable", "feedback": "Automated verification unavailable; no score assigned."}
 
     try:
-        client = Groq(api_key=groq_key)
+        client = Groq(api_key=groq_key, timeout=12, max_retries=0)
         prompt = (
             "You are verifying whether a student caught the trap in a trick question.\n\n"
             f"Question: {question}\n\n"
@@ -139,16 +128,16 @@ def verify_trick_question(question: str, key_insight: str, student_answer: str) 
         return json.loads(text)
     except Exception as e:
         print(f"verify_trick_question fallback: {e}")
-        return {"caught_trap": True, "explanation": "Handled tricky assumption well.", "score": 80}
+        return {"passed": None, "score": None, "status": "unavailable", "feedback": "Automated verification unavailable; no score assigned."}
 
 
 def verify_resume_consistency(resume_claim: str, live_answer: str) -> dict:
     groq_key = os.environ.get("GROQ_API_KEY", "")
     if not groq_key or groq_key.startswith("your"):
-        return {"consistent": True, "depth_match": 85, "explanation": "Consistent with background."}
+        return {"passed": None, "score": None, "status": "unavailable", "feedback": "Automated verification unavailable; no score assigned."}
 
     try:
-        client = Groq(api_key=groq_key)
+        client = Groq(api_key=groq_key, timeout=12, max_retries=0)
         prompt = (
             "You are checking if a candidate's live answer is consistent with claims on their resume.\n\n"
             f"Resume Claim/Context: {resume_claim}\n\n"
@@ -161,7 +150,7 @@ def verify_resume_consistency(resume_claim: str, live_answer: str) -> dict:
         return json.loads(text)
     except Exception as e:
         print(f"verify_resume_consistency fallback: {e}")
-        return {"consistent": True, "depth_match": 80, "explanation": "Response aligns with technical profile."}
+        return {"passed": None, "score": None, "status": "unavailable", "feedback": "Automated verification unavailable; no score assigned."}
 
 
 def classify_mistake_type(answer_features: dict) -> list[dict]:
@@ -170,7 +159,7 @@ def classify_mistake_type(answer_features: dict) -> list[dict]:
         return []
 
     try:
-        client = Groq(api_key=groq_key)
+        client = Groq(api_key=groq_key, timeout=12, max_retries=0)
         features_json = json.dumps(answer_features)
         prompt = (
             "You are classifying delivery issues in an interview answer.\n\n"

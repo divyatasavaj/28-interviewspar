@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 
@@ -12,7 +12,7 @@ from app.lib.interview.rounds.technical.code_challenges import get_challenge_by_
 router = APIRouter(prefix="/interview/v2/code", tags=["code-evaluation"])
 
 
-def require_token(authorization: str = None):
+def require_token(authorization: str = Header(default=None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authorization header")
     token = authorization.removeprefix("Bearer ")
@@ -85,14 +85,10 @@ def evaluate_code(
     
     evaluator = create_code_evaluator()
     
-    # Convert test cases if provided
-    test_cases = None
     if body.test_cases:
-        test_cases = [
-            TestCase(input=tc.get('input'), expected_output=tc.get('expected'), description=tc.get('description', ''))
-            for tc in body.test_cases
-        ]
-    
+        raise HTTPException(400, "Client-supplied grading cases are not accepted")
+    test_cases = None
+
     evaluation = evaluator.evaluate(
         code=body.code,
         language=body.language,

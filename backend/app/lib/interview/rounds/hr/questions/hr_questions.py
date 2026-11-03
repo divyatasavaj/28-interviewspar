@@ -340,7 +340,7 @@ HR_QUESTIONS = [
 
 
 def get_hr_questions() -> list[HRQuestion]:
-    return HR_QUESTIONS
+    return list(HR_QUESTIONS)
 
 
 def get_hr_question_by_id(question_id: str) -> HRQuestion | None:

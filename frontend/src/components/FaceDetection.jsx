@@ -241,53 +241,9 @@ export default function FaceDetection({ videoRef, onFacesDetected, active, onDeb
   // ── Tier 3 loop ──
 
   const runFallback = useCallback(() => {
-    if (!active) return
-    const video = videoRef.current
-    if (!video) { timerRef.current = setTimeout(runFallback, 200); return }
-    if (!videoReady(video)) { timerRef.current = setTimeout(runFallback, 200); return }
-
-    const sw = SAMPLE_W; const sh = Math.round(SAMPLE_W * (video.videoHeight / video.videoWidth))
-    const c = document.createElement("canvas"); c.width = sw; c.height = sh
-    const ctx = c.getContext("2d")
-    if (!ctx) { timerRef.current = setTimeout(runFallback, 200); return }
-    ctx.drawImage(video, 0, 0, sw, sh)
-    const imgData = ctx.getImageData(0, 0, sw, sh)
-    const r = analyzeFrameSimple(imgData)
-
-    cxRef.current = cxRef.current + (r.cx - cxRef.current) * 0.25
-    cyRef.current = cyRef.current + (r.cy - cyRef.current) * 0.25
-    setDebug({ confidence: r.confidence, variance: r.variance, rawCx: r.cx, rawCy: r.cy })
-
-    const svw = video.videoWidth; const svh = video.videoHeight
-
-    if (r.hasContent && r.confidence > CONFIDENCE_MIN) {
-      const boxW = svw * 0.3; const boxH = svh * 0.45
-      const boxX = cxRef.current * svw - boxW / 2; const boxY = cyRef.current * svh - boxH / 2
-      onFacesDetected?.([{ box: { x: boxX, y: boxY, width: boxW, height: boxH }, landmarks: [], confidence: r.confidence }])
-    } else {
-      onFacesDetected?.([])
-    }
-
-    if (canvasRef.current) {
-      const oc = canvasRef.current; const octx = oc.getContext("2d")
-      if (octx) {
-        oc.width = svw; oc.height = svh; octx.clearRect(0, 0, oc.width, oc.height)
-        if (r.hasContent && r.confidence > CONFIDENCE_MIN) {
-          const boxW = svw * 0.3; const boxH = svh * 0.45
-          const boxX = cxRef.current * svw - boxW / 2; const boxY = cyRef.current * svh - boxH / 2
-          octx.strokeStyle = "rgba(234, 179, 8, 0.5)"; octx.lineWidth = 1
-          octx.setLineDash([3, 3])
-          octx.beginPath(); octx.moveTo(svw / 2 - 8, svh / 2); octx.lineTo(svw / 2 + 8, svh / 2)
-          octx.moveTo(svw / 2, svh / 2 - 8); octx.lineTo(svw / 2, svh / 2 + 8); octx.stroke()
-          octx.setLineDash([])
-          octx.strokeStyle = "rgba(234, 179, 8, 0.6)"; octx.lineWidth = 2
-          octx.strokeRect(boxX, boxY, boxW, boxH); octx.fillStyle = "rgba(234, 179, 8, 0.08)"; octx.fillRect(boxX, boxY, boxW, boxH)
-        }
-      }
-    }
-
-    timerRef.current = setTimeout(runFallback, DETECT_INTERVAL)
-  }, [active, videoRef, onFacesDetected, videoReady])
+    // Unknown detection state: pixel brightness cannot establish that a face exists.
+    setDebug({ confidence: 0, variance: 0, rawCx: 0, rawCy: 0, available: false });
+  }, []);
 
   // ── Loop dispatcher ──
 

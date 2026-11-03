@@ -171,7 +171,7 @@ class ValidationEngine:
                 )
                 validation_results.append(vr)
                 language_score = 1.0 if lang_result['valid'] else 0.0
-                if not vr.is_valid:
+                if not vr.is_valid and vr.severity == "error":
                     overall_valid = False
                     flagged_issues.append(f"Language: {vr.message}")
             
@@ -191,7 +191,7 @@ class ValidationEngine:
                 )
                 validation_results.append(vr)
                 relevance_score = rel_result.score
-                if not vr.is_valid:
+                if not vr.is_valid and vr.severity == "error":
                     overall_valid = False
                     flagged_issues.append(f"Relevance: {vr.message}")
             
@@ -212,7 +212,7 @@ class ValidationEngine:
                 )
                 validation_results.append(vr)
                 completeness_score = comp_result.score
-                if not vr.is_valid:
+                if not vr.is_valid and vr.severity == "error":
                     overall_valid = False
                     flagged_issues.append(f"Completeness: {vr.message}")
 

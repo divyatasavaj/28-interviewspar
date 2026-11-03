@@ -10,7 +10,7 @@ router.post("/log", (req, res) => {
   const { sessionId, event, detail } = req.body;
   if (!sessionId) return res.status(400).json({ error: "sessionId required" });
   const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: "session not found" });
+  if (!session || session.ownerId !== req.user.id) return res.status(404).json({ error: "session not found" });
   session.integrityLog = session.integrityLog || [];
   const entry = { event, detail: detail || null, at: new Date().toISOString() };
   session.integrityLog.push(entry);
@@ -19,7 +19,7 @@ router.post("/log", (req, res) => {
 
 router.get("/:sessionId", (req, res) => {
   const session = getSession(req.params.sessionId);
-  if (!session) return res.status(404).json({ error: "session not found" });
+  if (!session || session.ownerId !== req.user.id) return res.status(404).json({ error: "session not found" });
   res.json({ log: session.integrityLog || [] });
 });
 

@@ -37,7 +37,7 @@ router.post("/role", authRequired, requireRole("company"), (req, res) => {
 router.post("/match", authRequired, (req, res) => {
   const { roleId } = req.body;
   const role = roles.get(roleId);
-  if (!role) return res.status(404).json({ error: "role not found" });
+  if (!role || (req.user.role !== "developer" && role.companyId !== req.user.id && req.user.role !== "admin")) return res.status(404).json({ error: "role not found" });
   const match = INTERVIEWERS.find((iv) => iv.domains.includes(role.domain)) || INTERVIEWERS[0];
   // anonymization: never expose real names cross-side
   res.json({
@@ -51,8 +51,9 @@ router.post("/match", authRequired, (req, res) => {
 // POST /api/marketplace/payment  {roleId, total} -> simulated split (₹2000 -> ₹1500/₹500 example). Auth required.
 router.post("/payment", authRequired, (req, res) => {
   const { roleId, total } = req.body;
-  if (!roles.get(roleId)) return res.status(404).json({ error: "role not found" });
-  const amount = Number(total) || 2000;
+  if (!roles.get(roleId) || roles.get(roleId).companyId !== req.user.id) return res.status(404).json({ error: "role not found" });
+  const amount = Number(total ?? 2000);
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 1000000) return res.status(400).json({error:"invalid amount"});
   const interviewerShare = Math.round(amount * 0.75);
   const platformFee = amount - interviewerShare;
   const id = randomUUID();
@@ -63,9 +64,10 @@ router.post("/payment", authRequired, (req, res) => {
 
 // Developer accepts a gig (simulated). Body: {roleId, handle}
 router.post("/accept", authRequired, requireRole("developer"), (req, res) => {
-  const { roleId, handle } = req.body;
+  const { roleId } = req.body;
+  const handle = req.user.handle;
   const role = roles.get(roleId);
-  if (!role) return res.status(404).json({ error: "role not found" });
+  if (!role || (req.user.role !== "developer" && role.companyId !== req.user.id && req.user.role !== "admin")) return res.status(404).json({ error: "role not found" });
   const list = assignments.get(handle) || [];
   list.push(roleId);
   assignments.set(handle, list);
@@ -77,8 +79,10 @@ router.get("/roles", authRequired, (req, res) => {
   let list = [...roles.values()];
   if (req.user.role === "company") list = list.filter((r) => r.companyId === req.user.id);
   if (req.user.role === "developer") {
-    list = list.filter((r) => (r.domain && req.user.domains?.includes(r.domain)) || true);
+    list = list.filter((r) => r.domain && req.user.domains?.includes(r.domain));
   }
+  if (req.user.role === "student") list = [];
+  if (req.user.role === "developer") list = list.map(({id,domain,level}) => ({id,domain,level}));
   res.json({ roles: list, assignments: assignments.get(req.user.handle) || [] });
 });
 

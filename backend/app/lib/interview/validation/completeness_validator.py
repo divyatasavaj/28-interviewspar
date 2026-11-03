@@ -45,6 +45,14 @@ class CompletenessValidator:
         }
 
     def _extract_field(self, text: str, field: str) -> Optional[str]:
+        if field in ("technology", "tech_stack"):
+            match = re.search(r"\b(python|java(?:script)?|typescript|react|sql|docker|node|go|rust|c\+\+)\b", text, re.I)
+            return match.group(0) if match else None
+        if field == "description":
+            return text.strip() if len(text.split()) >= 10 else None
+        if field == "project_name":
+            match = re.search(r"(?:project|application|app)\s+(?:called|named)?\s*([\w -]{3,60})", text, re.I)
+            return match.group(1).strip() if match else None
         patterns = self.field_patterns.get(field, [])
         for pattern in patterns:
             match = re.search(pattern, text, re.IGNORECASE)
@@ -56,14 +64,14 @@ class CompletenessValidator:
 
     def _detect_all_fields(self, text: str) -> dict[str, str]:
         detected = {}
-        for field in self.field_patterns:
+        for field in [*self.field_patterns, "technology", "tech_stack", "description", "project_name"]:
             value = self._extract_field(text, field)
             if value:
                 detected[field] = value
         return detected
 
     def validate(self, question: str, answer: str, expected_fields: list[str] = None) -> CompletenessResult:
-        if not answer or len(answer.strip()) < self.min_words:
+        if not answer or len(answer.split()) < self.min_words:
             return CompletenessResult(
                 score=0.0,
                 is_complete=False,

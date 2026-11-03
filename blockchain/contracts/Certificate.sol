@@ -5,7 +5,8 @@ pragma solidity ^0.8.20;
 /// @notice Mints a tamper-proof, publicly verifiable certificate record on Sepolia
 ///         when a student crosses a score threshold. Testnet only — no real funds.
 contract Certificate {
-    address public owner;
+    address public immutable owner;
+    uint256 public constant MINIMUM_SCORE = 70;
 
     struct CertRecord {
         address candidate;
@@ -31,6 +32,10 @@ contract Certificate {
         external
         returns (bool)
     {
+        require(msg.sender == owner, "issuer only");
+        require(candidate != address(0), "invalid candidate");
+        require(bytes(sessionId).length > 0 && bytes(sessionId).length <= 128, "invalid session");
+        require(score >= MINIMUM_SCORE && score <= 100, "invalid score");
         require(!certificates[sessionId].exists, "already minted");
         certificates[sessionId] = CertRecord({
             candidate: candidate,

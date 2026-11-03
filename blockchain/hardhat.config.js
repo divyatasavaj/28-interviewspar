@@ -1,10 +1,9 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
-import dotenv from "dotenv";
+require("@nomicfoundation/hardhat-toolbox");
+const dotenv = require("dotenv");
 
 dotenv.config({ path: "../.env" });
 
-const config: HardhatUserConfig = {
+const config = {
   solidity: "0.8.20",
   networks: {
     sepolia: {
@@ -19,4 +18,4 @@ const config: HardhatUserConfig = {
   },
 };
 
-export default config;
+module.exports = config;

@@ -68,6 +68,7 @@ class AnswerProcessor:
             return ProcessedAnswer(
                 evaluation=evaluation,
                 should_advance=False,
+                next_question_id=current_question.id,
                 retry_message=retry_message,
                 session_updates=session_updates
             )
@@ -123,7 +124,7 @@ class AnswerProcessor:
 
     def _get_next_question(self, session: SessionState, question_bank: 'QuestionBank'):
         questions = question_bank.get_questions_for_round(session.current_round, session.current_role)
-        next_index = session.current_question_index
+        next_index = session.current_question_index + 1
         if next_index < len(questions):
             return questions[next_index]
         return None

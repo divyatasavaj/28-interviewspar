@@ -1,76 +1,14 @@
-// STEP 4 — local sandboxed code runner. Runs user code against the problem's test cases
-// with a hard timeout. Supports JavaScript (node) and Python (python3).
-// NOTE: for production use Judge0's free API or a Docker sandbox (architecture.md §4).
-// This local runner is acceptable for local MVP dev only.
-import { execFile } from "node:child_process";
-import { writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { randomUUID } from "node:crypto";
-
-const TIMEOUT_MS = 5000;
-
-function harness(language, userCode, testCases) {
-  const casesJson = JSON.stringify(testCases);
-  if (language === "javascript") {
-    return [
-      userCode,
-      "(function() {",
-      "  const cases = " + casesJson + ";",
-      "  for (const c of cases) {",
-      "    let out;",
-      "    try {",
-      "      const args = JSON.parse(c.input);",
-      "      out = solve(...(Array.isArray(args) ? args : [args]));",
-      "    }",
-      "    catch (e) { out = '<error ' + e.message + '>'; }",
-      "    const exp = JSON.parse(c.expected);",
-      "    const pass = JSON.stringify(out) === JSON.stringify(exp);",
-      "    console.log(pass ? 'PASS' : 'FAIL ' + JSON.stringify(out) + ' expected ' + JSON.stringify(exp));",
-      "  }",
-      "})();",
-    ].join("\n");
-  }
-  // python
-  return [
-    userCode,
-    "import json",
-    "cases = " + casesJson,
-    "for c in cases:",
-    "    try:",
-    "        args = json.loads(c['input'])",
-    "        out = solve(*args) if isinstance(args, list) else solve(args)",
-    "    except Exception as e:",
-    "        out = '<error %s>' % e",
-    "    exp = json.loads(c['expected'])",
-    "    print('PASS' if out == exp else 'FAIL ' + str(out) + ' expected ' + str(exp))",
-  ].join("\n");
-}
-
-function runWithTimeout(file, lang) {
-  return new Promise((resolve) => {
-    const cmd = lang === "javascript" ? "node" : "python3";
-    const child = execFile(cmd, [file], { timeout: TIMEOUT_MS }, (err, stdout, stderr) => {
-      if (err && err.killed) return resolve({ error: "execution timed out" });
-      if (err) return resolve({ error: stderr || err.message });
-      resolve({ output: stdout });
+// Legacy adapter: user code is sent to the isolated provider, never executed on this host.
+import {execFile} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+export async function runCode({language,code,testCases}) {
+  if (!process.env.JUDGE0_API_URL) return {error:'Isolated code execution is not configured.',status:'unavailable',passed:0,total:testCases.length,results:[]};
+  const cases=testCases.map(c=>{const input=JSON.parse(c.input);return {args:Array.isArray(input)?input:[input],expected:JSON.parse(c.expected)};});
+  return new Promise(resolve=>{
+    const child=execFile(process.env.PYTHON_BIN || 'python3',[fileURLToPath(new URL('../app/safe_execution.py',import.meta.url))],{timeout:90000,maxBuffer:262144},(error,stdout)=>{
+      if(error)return resolve({error:'Isolated execution unavailable.',status:'unavailable'});
+      try {resolve(JSON.parse(stdout));}catch{resolve({error:'Invalid execution response.',status:'unavailable'});}
     });
-    child.on("error", (e) => resolve({ error: `could not run ${cmd}: ${e.message}` }));
+    child.stdin.on('error',()=>{});child.stdin.end(JSON.stringify({code,language,cases}));
   });
-}
-
-export async function runCode({ language, code, testCases }) {
-  const ext = language === "javascript" ? "mjs" : "py";
-  const file = join(tmpdir(), `isp_${randomUUID()}.${ext}`);
-  const harnessCode = harness(language, code, testCases);
-  // Debug: log the generated file content
-  console.log("=== Generated file:", file, "===");
-  console.log(harnessCode);
-  console.log("=== End generated file ===");
-  await writeFile(file, harnessCode, "utf8");
-  const { output, error } = await runWithTimeout(file, language);
-  if (error) return { error };
-  const lines = output.trim().split("\n").map((l) => l.trim()).filter(Boolean);
-  const passed = lines.filter((l) => l.startsWith("PASS")).length;
-  return { results: lines, passed, total: testCases.length };
 }

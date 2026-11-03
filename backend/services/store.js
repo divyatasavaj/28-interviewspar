@@ -17,6 +17,7 @@ export function listSessions() {
   return [...completed.values()]
     .map((s) => ({
       id: s.id,
+      ownerId: s.ownerId,
       name: s.name,
       domain: s.domain,
       persona: s.persona,

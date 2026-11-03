@@ -57,6 +57,9 @@ class TechnicalRound:
         )
 
     def process_answer(self, session: SessionState, answer: str, code: str = None) -> TechnicalRoundResult:
+        self._current_phase = session.metadata.get("technical_phase", "theory")
+        self._theory_index = session.metadata.get("theory_index", 0)
+        self._coding_index = session.metadata.get("coding_index", 0)
         current_question = self._get_current_question(session)
         
         if not current_question:
@@ -108,6 +111,7 @@ class TechnicalRound:
             session.current_question_index = 0
             session.current_question_id = None
         
+        session.metadata.update(technical_phase=self._current_phase, theory_index=self._theory_index, coding_index=self._coding_index)
         return TechnicalRoundResult(
             session_id=session.session_id,
             current_question=next_question,
@@ -170,7 +174,7 @@ class TechnicalRound:
             phase_progress = f"Coding: {self._coding_index}/{coding_total}"
         
         return {
-            'current': current + 1 if not is_complete else total,
+            'current': min(current + 1, total),
             'total': total,
             'percentage': round((answered / total) * 100, 1) if total > 0 else 100,
             'answered': answered,
