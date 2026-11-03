@@ -1,48 +1,105 @@
 # InterviewSpar
 
-AI-adaptive interview practice platform. Students practice HR/technical interviews against an
-AI interviewer that adapts question difficulty, checks for cheating, and syncs live code typing.
+Interview practice with saved rounds, resume evidence analysis, optional AI feedback,
+and an experimental coaching classifier. The supported application is **React +
+Vite → FastAPI `/api` → MongoDB**. Older Express and interview-v2 implementations
+are retained for reference but are not part of the default application.
 
-## Stack (locked — see docs/rules.md)
+## Run locally
 
-| Layer | Tech |
-|---|---|
-| Frontend | React + Vite + Tailwind CSS |
-| Backend | Node.js (Express) + socket.io |
-| LLM | Groq API (Llama) — Gemini as fallback |
-| ML | scikit-learn (Python) |
-| Voice | Web Speech API |
-| Face heuristic | face-api.js / MediaPipe (browser-side) |
-| Blockchain | Solidity + Hardhat, Sepolia testnet |
-| PDF parsing | pdf-parse (Node) |
-| IDE | Monaco editor |
+Prerequisites: Python 3.13, Node.js 22.12+ (or 24), and an accessible MongoDB database.
+The current test run used Python 3.13. Do not point tests at a personal or production database.
 
-## Getting started
+From the repository root:
 
-```bash
-# 1. copy env template and fill real keys locally (never commit .env)
-cp .env.example .env
-
-# 2. install + run backend
-cd backend && npm install && npm run dev
-
-# 3. in another terminal, install + run frontend
-cd frontend && npm install && npm run dev
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r backend/requirements.txt
+cp backend/.env.example backend/.env
 ```
 
-Frontend default: http://localhost:5173
-Backend default:  http://localhost:4000  (health check: /api/health)
+Edit `backend/.env` locally: set `MONGODB_URL`, `MONGODB_DATABASE`, and a random
+`JWT_SECRET` (at least 32 random bytes). Never commit this file. MongoDB must be
+running; startup checks connectivity and creates indexes.
 
-## Repo layout
-
-```
-interviewspar/
-├── frontend/    React + Tailwind app (chat, resume upload, dashboard)
-├── backend/     Express + socket.io API server
-├── blockchain/  Solidity contract + Hardhat config (Sepolia)
-├── ml/          labeled data + classifier training/eval scripts
-├── docs/        PRD, design, rules, steps, architecture, task log
-└── .env.example placeholders for all secrets
+```sh
+cd backend
+python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-See `docs/` for full product, design, and build-sequence docs.
+In another terminal:
+
+```sh
+cd frontend
+npm ci
+npm run dev
+```
+
+Open `http://localhost:5173`. Vite forwards `/api` unchanged to port 8000.
+Health: `http://127.0.0.1:8000/api/health`. Interactive API reference:
+`http://127.0.0.1:8000/docs`. Backend `npm run dev` is also an alias for Uvicorn
+when the virtual environment is activated; Node dependencies are not required for FastAPI.
+
+## Current journey
+
+1. Sign up, sign in, and edit your profile. Password changes and logout revoke old tokens.
+2. Optionally upload a text PDF or DOCX with storage consent. Resume Intelligence
+   shows extracted evidence, role findings, job-description coverage, and recommendations.
+3. Choose a domain, HR/technical track, and practice/assessment mode. Consent to
+   storing the interview is required; external AI feedback is separately optional.
+4. Complete screening, calibration, HR, technical/coding where applicable,
+   behavioral questions, and reflection. Progress persists after each answer.
+5. Review a report, print/save it as PDF, resume active interviews, or delete a session.
+   Resume deletion also removes saved resume assessments.
+
+Without Groq, the interview still runs using curated prompts and an explicitly
+labeled communication rubric. Without Judge0, code is saved but correctness is
+**not evaluated**. Submitted code never executes on the application host.
+
+## Configuration
+
+| Variable | Purpose |
+| --- | --- |
+| `MONGODB_URL` | Required connection URI; keep credentials private |
+| `MONGODB_DATABASE` | Database name, default `interspars` |
+| `JWT_SECRET` | Required random signing secret |
+| `CLIENT_ORIGIN` | Comma-separated allowed browser origins |
+| `GROQ_API_KEY`, `GROQ_MODEL` | Optional evaluation, only for opted-in sessions |
+| `JUDGE0_API_URL`, `JUDGE0_API_KEY` | Optional isolated execution service and `X-Auth-Token` |
+| `API_PROXY_TARGET` | Optional Vite development proxy override |
+
+Text-to-speech uses Edge TTS on user request, with browser speech fallback.
+Browser dictation may use the browser vendor's speech service. No camera upload
+is required by the supported interview flow.
+
+## Checks
+
+```sh
+source .venv/bin/activate
+cd backend
+python -m unittest discover -s tests -q
+cd ..
+python -m unittest discover -s ml -p 'test_*.py' -q
+cd frontend
+npm test
+npm run build
+npm run lint
+```
+
+Backend HTTP tests use synthetic in-memory collections and mocked providers.
+They do not establish live MongoDB, Groq, Judge0, or browser acceptance.
+See [TODO.md](TODO.md) for the exact verification record and outstanding tasks.
+
+## Project reference
+
+- [Architecture and source map](architecture.md): folders, important files, database, execution flows, and risks.
+- [API contract](docs/API.md): supported endpoints, payloads, errors, and lifecycle.
+- [Deployment](docs/DEPLOYMENT.md): container build, reverse proxy, storage, and service requirements.
+- [ML guide](ml/README.md): features, training, evaluation, and limitations.
+- [Resume intelligence design and implementation record](docs/RESUME_INTELLIGENCE_IMPLEMENTATION_PLAN.md).
+
+The classifier was trained mostly on synthetic examples and is not validated for
+hiring decisions. Seed role rubrics are provisional; unavailable scores stay null.
+Payments, human-interviewer matching, live socket rooms, automated anti-cheat,
+and certificate issuance are not enabled in the supported app.

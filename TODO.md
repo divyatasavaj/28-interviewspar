@@ -1,33 +1,73 @@
-# InterviewSpar repair plan — branch b3
+# InterviewSpar repair checklist — branch b3
 
-This checklist tracks the source audit findings and the implementation/verification work.
-After fetching current b3, the supported application will use React → FastAPI `/api`
-with MongoDB, preserving the newly added resume-intelligence pipeline and its tests.
-Express remains a secured legacy service, outside the default application route.
+The supported application is React → FastAPI `/api` → MongoDB. Existing local
+work and upstream b3 resume-intelligence changes were preserved. Checked tasks
+below describe source repairs and local verification; they do not claim production
+acceptance or completion of every aspirational feature in the historical PRD.
 
-## Tasks
+## Completed repair tasks
 
-- [ ] T01: Protect runtime data/secrets, establish branch baseline, and document architecture.
-- [ ] T02: Repair authentication, profile/password operations, authorization, rate limits, and socket access.
-- [ ] T03: Implement one interview contract and complete screening, calibration, HR/technical, coding, behavioral, and completion flows.
-- [ ] T04: Add consent-based session/resume persistence, ownership checks, history, deletion, and measured reports.
-- [ ] T05: Repair PDF/DOCX resume extraction; reject unreadable documents and remove fabricated facts.
-- [ ] T06: Replace unsafe host code execution with an isolated execution-provider adapter and honest unavailable states.
-- [ ] T07: Connect frontend account, interview, coding, report, and navigation flows; remove misleading placeholders.
-- [ ] T08: Correct ML feature parity, units, zero handling, evaluation provenance, and dependency documentation.
-- [ ] T09: Repair or safely retire conflicting FastAPI/v2 paths, fix validation/state bugs, and enforce safe code execution.
-- [ ] T10: Correct marketplace/privacy boundaries, subscription claims, certificate authorization, and build configuration.
-- [ ] T11: Add meaningful regression tests and run backend, Python, frontend build/lint, and integration checks.
-- [ ] T12: Update setup/API/deployment documentation, review staged changes for sensitive data, commit by task, and push b3.
+- [x] T01: Protect runtime data/secrets, preserve the local baseline, integrate upstream b3, and document the current architecture.
+- [x] T02: Repair auth/profile/password contracts, token revocation, ownership checks, request limits, and disable unowned socket access.
+- [x] T03: Connect one persistent interview contract across screening, calibration, HR, technical/coding, behavioral, and reflection rounds.
+- [x] T04: Add consent, owned session/resume storage, compact history, deletion, and reports from recorded evidence.
+- [x] T05: Preserve/test PDF/DOCX evidence extraction, reject malformed/scanned documents, and remove fabricated fallback facts.
+- [x] T06: Replace host execution with an isolated Judge0 adapter; distinguish failed code from unavailable execution and test output comparison.
+- [x] T07: Connect frontend account/interview/code/report navigation; show service errors, normalize auth/assessment responses, and remove false-success placeholders.
+- [x] T08: Repair ML feature parity, latency/score units, zero handling, train/validation/test separation, and provenance; document synthetic-data limitations.
+- [x] T09: Retire conflicting FastAPI/v2 routes from the supported app; fix reviewed legacy validation/state bugs and unsafe execution paths.
+- [x] T10: Tighten legacy marketplace/privacy boundaries, correct product claims, and restrict certificate minting to the issuer on test networks.
+- [x] T11: Run meaningful backend, ML, frontend, syntax, configuration, and diff checks; add regressions for observed integration failures.
+- [x] T12a: Update setup/API/deployment/source-map documentation and add CI/deployment examples.
+- [ ] T12b: Complete staged sensitive-data review, commit remaining task groups, push b3 without force, and verify the remote commit.
 
-## Verification log
+## Verification record — 2026-11-03
 
-- Initial audit: two backends and incompatible frontend generations; default interview path blocked.
-- Existing local changes are being preserved and incorporated; personal users, environments,
-  logs, and generated model/build artifacts must not be committed.
+| Check | Actual result |
+| --- | --- |
+| Backend unittest suite | 136 passed; includes resume parser/assessment and synthetic HTTP ownership, complete rounds, retry/stale state, consent/deletion, auth revocation, compact history, code-provider, and chunked-upload cases |
+| ML unittest suite | 3 passed; JS/Python feature parity, synthetic consistency, zero handling and unsupported label fallback |
+| Frontend tests | 11 passed; resume score/validation semantics and actual API-client contracts |
+| Frontend production build | Passed |
+| Frontend Oxlint | Exit 0; 24 warnings remain in retained legacy components/context and one existing test parameter |
+| Python source syntax | 90 files passed |
+| Node source syntax | 29 files passed, including Hardhat configuration/deploy script |
+| Ruff selected repaired Python modules | Passed (`F` correctness rules); not a whole-repository formatting claim |
+| CI YAML / selected JSON configuration | Parsed successfully |
+| Diff whitespace / merge markers | Passed; no conflict markers |
 
-## External validation
+User-approved missing PDF dependencies were installed only into the ignored
+project `.venv`; global dependencies were not changed. Backend HTTP tests use
+synthetic in-memory collections and provider mocks, not personal/live databases.
+A dependency deprecation warning remains for the inherited Starlette/httpx test
+integration; tests pass. The virtual environment inherits existing system packages,
+so a clean CI install remains useful independent validation.
 
-- Live LLM availability, an isolated code execution provider, browser acceptance, and testnet
-  deployment require their corresponding configured services. Record actual results here;
-  do not mark unavailable integrations as verified.
+ML metadata records 211 examples (210 synthetic, 1 labeled seed), ~97.6% validation
+accuracy, and 100% on a 43-example synthetic-heavy test partition. This is not
+candidate-performance evidence; `production_validated` remains false. Generated
+classifier pickles, personal JSON data, secrets, logs, dependencies, and build
+outputs are excluded from commits.
+
+## Outstanding acceptance and feature work
+
+- [ ] Run real MongoDB integration/concurrency tests in a dedicated disposable database, including indexes, restart persistence, and deletion/backup retention.
+- [ ] Run browser acceptance on desktop/mobile: signup, resume upload/matching, HR/technical interviews, retries, dictation, read-aloud, print/PDF, accessibility, deletion.
+- [ ] Verify configured Groq, Judge0 isolation/limits, and Edge TTS availability/failure behavior. No live provider request was made in this verification pass.
+- [ ] Run the new GitHub CI workflow and build/deploy the Docker/nginx examples in a test environment. Examples were not deployed locally.
+- [ ] Compile/test the Solidity contract and validate issuer authorization on a local chain before any Sepolia deployment. Only JS syntax was checked; no wallet transaction occurred.
+- [ ] Gather consented independent candidate data, review annotations, and validate/calibrate ML signals. Current bootstrap data cannot support hiring decisions.
+- [ ] Acquire permitted market evidence and manually review role rubric weights before claiming validated role scores. Current seed aggregate scores remain unavailable.
+- [ ] Extend question variety, experience-aware selection, coding challenges, and validated correctness rubrics; current default coding flow uses Two Sum.
+- [ ] Implement account erasure, password reset/email verification/MFA as product requirements; define retention of old interview facts and backups.
+- [ ] Decide whether to remove or rebuild the retained legacy UI/API modules. Live rooms, production billing, marketplace booking, automated anti-cheat, and certificate issuance remain outside the supported app.
+- [ ] Add OCR only with an explicit implementation/validation plan; scanned resumes are currently rejected with guidance.
+
+## Task commits
+
+- `97e39a5`: preserve local work and initial repair checklist.
+- `46b4675`: merge upstream b3 resume-intelligence/page updates.
+- `b5e98a9`: ML features, validation split, and provenance repairs.
+- `24bba38`: canonical authentication, resume, interview, safe execution, UI integration, and regression tests.
+- `c392854`: legacy isolation, privacy/authorization fixes, issuer restriction, and corrected product claims.
+- Documentation/deployment checklist commit and remote publication verification follow these task commits.

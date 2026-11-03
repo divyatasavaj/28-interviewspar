@@ -1,5 +1,6 @@
-// Placeholder route stubs — implemented in later build steps.
-//
-// interview.js  -> Module 1/2: Groq LLM calls, adaptive question selection (Step 1, 2, 7)
-// resume.js     -> Module 3: PDF upload + text extraction (Step 3)
-// certificate.js-> Trust Layer: Sepolia certificate mint status (Step 12 / blockchain)
+# Legacy Express routes
+
+These routes are mounted only by `server.js` with `ENABLE_LEGACY_SERVER=true`.
+They do not form the supported API. Marketplace payments are simulations, live
+socket rooms are disabled, and no migration from the MongoDB interview flow is
+provided. The supported endpoint reference is [docs/API.md](../../docs/API.md).

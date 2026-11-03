@@ -1,3 +1,5 @@
+> Phase design and historical implementation record. Current integration uses the canonical FastAPI interview flow; consult [architecture.md](../architecture.md), [API.md](API.md), and [TODO.md](../TODO.md) for current routes and verification. Future phases described here are not automatically implemented.
+
 # InterviewSpar Resume Intelligence & Job Readiness Analyzer
 
 **Implementation plan and architecture decision record**

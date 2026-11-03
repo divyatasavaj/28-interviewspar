@@ -1,3 +1,5 @@
+> Historical prototype/design record. Current routes, behavior, setup, and verification are documented in [README.md](README.md), [architecture.md](architecture.md), and [TODO.md](TODO.md). Older completion claims and endpoint examples below are not current acceptance results.
+
 # flow.md — InterviewSpar Backend Functions & Flow
 
 Backend-only reference: every core function, what it does, and the end-to-end flow connecting them. No UI details — this is the logic layer only. Database: **MongoDB**.

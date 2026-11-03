@@ -1,10 +1,8 @@
-# Backend services (Python)
-#
-# Per architecture.md the Intelligence Layer is Python (scikit-learn / Groq client).
-# For STEP 0 the backend is Node/Express. These Python services are added in later
-# steps and called by the Node API as needed:
-#
-# - llm_service.py      Groq/Gemini prompt + call wrappers (Step 1)
-# - feature_extractor.py text/voice feature extraction (Step 6, 9)
-# - classifier.py       trained model inference (Step 6)
-# - adaptive_engine.py  BKT/IRT ability estimate + next-question selection (Step 7)
+# Legacy Express services
+
+These JavaScript modules belong to the opt-in Express prototype. The default
+FastAPI application uses `../app/` instead. The classifier feature extractor is
+retained for parity tests; `codeRunner.js` delegates only to the isolated Judge0
+adapter and never executes submitted code on the application host.
+
+See [architecture](../../architecture.md) before reactivating any legacy service.

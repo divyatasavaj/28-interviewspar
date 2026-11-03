@@ -1,3 +1,5 @@
+> Historical prototype/design record. Current routes, behavior, setup, and verification are documented in [README.md](README.md), [architecture.md](architecture.md), and [TODO.md](TODO.md). Older completion claims and endpoint examples below are not current acceptance results.
+
 # steps.md — InterviewSpar Build Sequence
 
 This is the exact order to build things, with dataset sources and training details spelled out where relevant. Follow top to bottom — later steps depend on earlier ones.

@@ -1,15 +1,15 @@
-# docs/
+# Project documentation
 
-The full product, design, and build docs for InterviewSpar live at the **repo root**
-(`../PRD (1).md`, `../design.md`, `../rules.md`, `../steps.md`, `../architecture.md`,
-`../task.md`) for easy access during development. This folder is the home described in
-`architecture.md` — once the project matures we may relocate the root `.md` files here.
+Current implementation references:
 
-| File | Purpose |
-|---|---|
-| `../PRD (1).md` | Product requirements (all 9 modules, built vs vision) |
-| `../design.md` | Visual design direction, palette, components |
-| `../rules.md` | Locked tech choices + constraints |
-| `../steps.md` | Ordered build sequence (STEP 0 → STEP 12) |
-| `../architecture.md` | System layers + folder structure |
-| `../task.md` | Living progress log (which steps are done) |
+- [Setup](../README.md)
+- [Architecture and file map](../architecture.md)
+- [Supported API](API.md)
+- [Deployment](DEPLOYMENT.md)
+- [Repair TODO and verification](../TODO.md)
+- [Resume intelligence design/history](RESUME_INTELLIGENCE_IMPLEMENTATION_PLAN.md)
+- [ML guide](../ml/README.md)
+
+Root PRD, flow, design, steps, demo, report, and task documents contain earlier
+requirements and prototype history. Their historical status claims and endpoint
+examples do not override the current references above.
