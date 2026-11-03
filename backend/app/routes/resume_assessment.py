@@ -18,7 +18,7 @@ from app.resume_intelligence.assessment_service import (
     get_assessment,
     get_latest_assessment,
 )
-from app.routes.resume import require_token
+from app.routes.auth import require_user_id as require_token
 
 
 router = APIRouter(prefix="/resume/analysis", tags=["resume-assessment"])

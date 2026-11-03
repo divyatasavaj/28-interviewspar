@@ -1,5 +1,7 @@
-from fastapi import APIRouter, HTTPException, Query, Response
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Query, Response, Depends
+from pydantic import BaseModel, Field
+from app.routes.auth import require_user
+import asyncio
 from typing import Optional
 from app.tts import (
     DEFAULT_RATE,
@@ -9,11 +11,11 @@ from app.tts import (
     generate_speech_audio,
 )
 
-router = APIRouter(prefix="/tts", tags=["TTS"])
+router = APIRouter(prefix="/tts", tags=["TTS"], dependencies=[Depends(require_user)])
 
 
 class SynthesizeRequest(BaseModel):
-    text: str
+    text: str = Field(min_length=1, max_length=6000)
     voice: Optional[str] = DEFAULT_VOICE
     rate: Optional[str] = DEFAULT_RATE
     pitch: Optional[str] = DEFAULT_PITCH
@@ -35,23 +37,31 @@ async def synthesize_speech(req: SynthesizeRequest):
         raise HTTPException(status_code=400, detail="Text cannot be empty")
 
     try:
-        audio_data = await generate_speech_audio(
-            text=req.text,
-            voice=req.voice or DEFAULT_VOICE,
-            rate=req.rate or DEFAULT_RATE,
-            pitch=req.pitch or DEFAULT_PITCH,
+        audio_data = await asyncio.wait_for(
+            generate_speech_audio(
+                text=req.text,
+                voice=req.voice or DEFAULT_VOICE,
+                rate=req.rate or DEFAULT_RATE,
+                pitch=req.pitch or DEFAULT_PITCH,
+            ),
+            timeout=15,
         )
         if not audio_data:
             raise HTTPException(status_code=500, detail="Failed to synthesize speech")
 
         return Response(content=audio_data, media_type="audio/mpeg")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"TTS synthesis error: {str(e)}")
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail="Speech service unavailable. Browser speech is still available.",
+        )
 
 
 @router.get("/speak")
 async def speak_stream(
-    text: str = Query(..., description="Text to synthesize"),
+    text: str = Query(
+        ..., min_length=1, max_length=6000, description="Text to synthesize"
+    ),
     voice: str = Query(DEFAULT_VOICE, description="Neural voice ID"),
     rate: str = Query(DEFAULT_RATE, description="Speech rate adjustment"),
     pitch: str = Query(DEFAULT_PITCH, description="Speech pitch adjustment"),
@@ -60,15 +70,21 @@ async def speak_stream(
         raise HTTPException(status_code=400, detail="Text cannot be empty")
 
     try:
-        audio_data = await generate_speech_audio(
-            text=text,
-            voice=voice,
-            rate=rate,
-            pitch=pitch,
+        audio_data = await asyncio.wait_for(
+            generate_speech_audio(
+                text=text,
+                voice=voice,
+                rate=rate,
+                pitch=pitch,
+            ),
+            timeout=15,
         )
         if not audio_data:
             raise HTTPException(status_code=500, detail="Failed to synthesize speech")
 
         return Response(content=audio_data, media_type="audio/mpeg")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"TTS synthesis error: {str(e)}")
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail="Speech service unavailable. Browser speech is still available.",
+        )

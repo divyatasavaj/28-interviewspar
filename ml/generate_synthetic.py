@@ -10,19 +10,87 @@ from feature_extractor import extract_features
 
 OUT = str(Path(__file__).resolve().parent / "data/synthetic_answers.csv")
 HEADER = [
-    "answer_text", "star_present", "hedge_word_freq", "filler_word_count",
-    "answer_length", "response_latency", "code_correct", "mistake_label",
-    "pause_count", "grammar_errors", "fluency_score",
+    "answer_text",
+    "star_present",
+    "hedge_word_freq",
+    "filler_word_count",
+    "answer_length",
+    "response_latency",
+    "code_correct",
+    "mistake_label",
+    "pause_count",
+    "grammar_errors",
+    "fluency_score",
 ]
 
 # Per-label feature signatures (mean-ish values) used to fabricate plausible rows.
 SIGNATURES = {
-    "good-answer": dict(star=1, hedge=0, filler=0, length=(80, 160), lat=4.0, code=1, pauses=0, grammar=0, fluency=95),
-    "rambling":     dict(star=0, hedge=2, filler=6, length=(180, 320), lat=7.0, code=0, pauses=2, grammar=1, fluency=40),
-    "no-structure": dict(star=0, hedge=1, filler=1, length=(40, 110), lat=3.0, code=0, pauses=1, grammar=2, fluency=50),
-    "resume-gap":   dict(star=1, hedge=1, filler=1, length=(30, 90), lat=2.0, code=0, pauses=0, grammar=0, fluency=60),
-    "silent-coding":dict(star=0, hedge=0, filler=0, length=(5, 25), lat=12.0, code=0, pauses=5, grammar=0, fluency=20),
-    "underselling": dict(star=1, hedge=4, filler=1, length=(40, 100), lat=3.0, code=1, pauses=1, grammar=1, fluency=55),
+    "good-answer": dict(
+        star=1,
+        hedge=0,
+        filler=0,
+        length=(80, 160),
+        lat=4.0,
+        code=1,
+        pauses=0,
+        grammar=0,
+        fluency=95,
+    ),
+    "rambling": dict(
+        star=0,
+        hedge=2,
+        filler=6,
+        length=(180, 320),
+        lat=7.0,
+        code=0,
+        pauses=2,
+        grammar=1,
+        fluency=40,
+    ),
+    "no-structure": dict(
+        star=0,
+        hedge=1,
+        filler=1,
+        length=(40, 110),
+        lat=3.0,
+        code=0,
+        pauses=1,
+        grammar=2,
+        fluency=50,
+    ),
+    "resume-gap": dict(
+        star=1,
+        hedge=1,
+        filler=1,
+        length=(30, 90),
+        lat=2.0,
+        code=0,
+        pauses=0,
+        grammar=0,
+        fluency=60,
+    ),
+    "silent-coding": dict(
+        star=0,
+        hedge=0,
+        filler=0,
+        length=(5, 25),
+        lat=12.0,
+        code=0,
+        pauses=5,
+        grammar=0,
+        fluency=20,
+    ),
+    "underselling": dict(
+        star=1,
+        hedge=4,
+        filler=1,
+        length=(40, 100),
+        lat=3.0,
+        code=1,
+        pauses=1,
+        grammar=1,
+        fluency=55,
+    ),
 }
 
 FILLER = ["um", "uh", "like", "you know", "basically", "i mean", "well"]
@@ -40,10 +108,24 @@ def make_text(label, sig):
     if label == "underselling":
         parts += random.choices(HEDGE, k=random.randint(3, 5))
     if label == "silent-coding":
-        parts = ["ok"] 
+        parts = ["ok"]
     # pad to target length with neutral words
     while len(" ".join(parts).split()) < sig["length"][0]:
-        parts.append(random.choice(["the", "project", "team", "worked", "on", "a", "solution", "build", "system"]))
+        parts.append(
+            random.choice(
+                [
+                    "the",
+                    "project",
+                    "team",
+                    "worked",
+                    "on",
+                    "a",
+                    "solution",
+                    "build",
+                    "system",
+                ]
+            )
+        )
     random.shuffle(parts)
     return " ".join(parts)
 
@@ -56,24 +138,39 @@ def main(n_per_label=35):
             text = make_text(label, sig)
             lo, hi = sig["length"]
             length = max(lo, min(hi, len(text.split())))
-            rows.append([
-                text,
-                sig["star"] if "star" in sig else 0,
-                sig["hedge"] if label == "underselling" else (random.randint(0, 2) if label == "rambling" else random.randint(0, 1)),
-                sig["filler"] if label == "rambling" else random.randint(0, 2),
-                length,
-                round(sig["lat"] + random.uniform(-1, 1), 1),
-                sig["code"] if label in ("good-answer", "underselling") else 0,
-                label,
-                sig.get("pauses", random.randint(0, 2)),
-                sig.get("grammar", random.randint(0, 2)),
-                sig.get("fluency", 50 + random.randint(-10, 10)),
-            ])
+            rows.append(
+                [
+                    text,
+                    sig["star"] if "star" in sig else 0,
+                    (
+                        sig["hedge"]
+                        if label == "underselling"
+                        else (
+                            random.randint(0, 2)
+                            if label == "rambling"
+                            else random.randint(0, 1)
+                        )
+                    ),
+                    sig["filler"] if label == "rambling" else random.randint(0, 2),
+                    length,
+                    round(sig["lat"] + random.uniform(-1, 1), 1),
+                    sig["code"] if label in ("good-answer", "underselling") else 0,
+                    label,
+                    sig.get("pauses", random.randint(0, 2)),
+                    sig.get("grammar", random.randint(0, 2)),
+                    sig.get("fluency", 50 + random.randint(-10, 10)),
+                ]
+            )
     # Persist exactly the same features used at inference, never label-assigned text counts.
     for row in rows:
-        features=extract_features(row[0],row[5],row[6],row[8],row[9],row[10])
-        for index,key in [(1,"star_present"),(2,"hedge_word_freq"),(3,"filler_word_count"),(4,"answer_length")]:
-            row[index]=features[key]
+        features = extract_features(row[0], row[5], row[6], row[8], row[9], row[10])
+        for index, key in [
+            (1, "star_present"),
+            (2, "hedge_word_freq"),
+            (3, "filler_word_count"),
+            (4, "answer_length"),
+        ]:
+            row[index] = features[key]
     random.shuffle(rows)
     with open(OUT, "w", newline="") as f:
         w = csv.writer(f)

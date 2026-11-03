@@ -1,23 +1,30 @@
-from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 # ── Auth ──
 
+
 class SignupRequest(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=120)
     email: EmailStr
     password: str
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Name cannot be blank")
+        return value.strip()
 
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
         if len(v.encode("utf-8")) > 72:
             raise ValueError("Password must be 72 bytes or less")
-        if len(v) < 6:
-            raise ValueError("Password must be at least 6 characters")
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
         return v
 
 
@@ -42,24 +49,34 @@ class UserResponse(BaseModel):
 
 
 class UpdateProfileRequest(BaseModel):
-    name: Optional[str] = None
-    target_role: Optional[str] = None
-    experience_level: Optional[str] = None
+    name: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    target_role: Optional[str] = Field(default=None, max_length=120)
+    experience_level: Optional[str] = Field(default=None, max_length=40)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not value.strip():
+            raise ValueError("Name cannot be blank")
+        return value.strip() if value is not None else value
 
 
 class ChangePasswordRequest(BaseModel):
     old_password: str
-    new_password: str
+    new_password: str = Field(max_length=72)
 
     @field_validator("new_password")
     @classmethod
     def validate_new_password(cls, v: str) -> str:
-        if len(v) < 6:
-            raise ValueError("Password must be at least 6 characters")
+        if len(v.encode("utf-8")) > 72:
+            raise ValueError("Password must be 72 bytes or less")
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
         return v
 
 
 # ── Resume ──
+
 
 class ResumeUploadResponse(BaseModel):
     id: str
@@ -74,6 +91,7 @@ class ResumeSummaryResponse(BaseModel):
 
 
 # ── Questions ──
+
 
 class ReferenceData(BaseModel):
     test_cases: Optional[list[dict]] = None
@@ -100,6 +118,7 @@ class QuestionResponse(BaseModel):
 
 
 # ── Sessions ──
+
 
 class StartSessionRequest(BaseModel):
     domain: str
@@ -129,6 +148,7 @@ class SessionResponse(BaseModel):
 
 # ── Answers ──
 
+
 class CaptureTextAnswerRequest(BaseModel):
     session_id: str
     question_id: str
@@ -152,6 +172,7 @@ class AnswerResponse(BaseModel):
 
 # ── Reports ──
 
+
 class ReportResponse(BaseModel):
     id: str
     session_id: str
@@ -164,6 +185,7 @@ class ReportResponse(BaseModel):
 
 
 # ── Feedback ──
+
 
 class SubmitFeedbackRequest(BaseModel):
     session_id: str
@@ -181,6 +203,7 @@ class FeedbackResponse(BaseModel):
 
 # ── Integrity ──
 
+
 class IntegrityEvent(BaseModel):
     session_id: str
     type: str
@@ -195,6 +218,7 @@ class IntegritySummaryResponse(BaseModel):
 
 
 # ── Legacy Interview (kept for backward compat with existing UI) ──
+
 
 class StartInterviewRequest(BaseModel):
     interview_type: str

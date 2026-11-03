@@ -288,6 +288,10 @@ class FakeDatabase:
         resume_documents: list[dict] | None = None,
         assessment_documents: list[dict] | None = None,
     ):
+        self.users = FakeAssessmentCollection([
+            {"_id": ObjectId(document["user_id"]), "token_version": 0}
+            for document in (resume_documents or []) if ObjectId.is_valid(document.get("user_id", ""))
+        ])
         self.resumes = FakeResumes(resume_documents)
         self.resume_assessments = FakeAssessmentCollection(assessment_documents)
 

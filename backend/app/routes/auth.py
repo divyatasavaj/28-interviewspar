@@ -1,144 +1,126 @@
-from bson.objectid import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, Header, status
-from pymongo.database import Database
+"""Mongo-backed user authentication with token-version revocation."""
 
-from app.auth import create_access_token, decode_access_token, hash_password, verify_password
+from bson import ObjectId
+from fastapi import APIRouter, Depends, Header, HTTPException
+from pymongo.errors import DuplicateKeyError
+from app.auth import create_access_token, decode_token, hash_password, verify_password
 from app.database import get_db
 from app.schemas import (
-    ChangePasswordRequest,
-    LoginRequest,
     SignupRequest,
+    LoginRequest,
     TokenResponse,
-    UpdateProfileRequest,
     UserResponse,
+    UpdateProfileRequest,
+    ChangePasswordRequest,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def _has_resume(user: dict) -> bool:
-    resume = user.get("resume") or {}
-    return bool(resume.get("latest_resume_id") or resume.get("raw_text"))
-
-
-@router.get("/check-db")
-def check_db():
-    from app.database import init_db
-    init_db()
-    try:
-        db = get_db()
-        db.command("ping")
-        return {"status": "ok", "tables": "mongodb connected"}
-    except Exception as e:
-        return {"status": "error", "detail": str(e)}
-
-
-def require_user(authorization: str = Header(...)) -> dict:
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid authorization header")
-    token = authorization.removeprefix("Bearer ")
-    user_id = decode_access_token(token)
-    if user_id is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    db = get_db()
-    user = db.users.find_one({"_id": ObjectId(user_id)})
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+def require_user(authorization: str | None = Header(default=None), db=Depends(get_db)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "Authentication required")
+    payload = decode_token(authorization[7:])
+    if not payload or not ObjectId.is_valid(payload.get("sub", "")):
+        raise HTTPException(401, "Invalid or expired token")
+    user = db.users.find_one({"_id": ObjectId(payload["sub"])})
+    if not user or payload.get("version", 0) != user.get("token_version", 0):
+        raise HTTPException(401, "Invalid or expired token")
     return user
 
 
-def require_user_id(authorization: str = Header(...)) -> str:
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid authorization header")
-    token = authorization.removeprefix("Bearer ")
-    user_id = decode_access_token(token)
-    if user_id is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    return user_id
+def require_user_id(user=Depends(require_user)):
+    return str(user["_id"])
 
 
-@router.post("/signup", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-def signup(body: SignupRequest, db: Database = Depends(get_db)):
+def user_response(user):
+    resume = user.get("resume") or {}
+    return UserResponse(
+        id=str(user["_id"]),
+        name=user["name"],
+        email=user["email"],
+        resume_status=(
+            "present"
+            if resume.get("latest_resume_id") or resume.get("raw_text")
+            else "none"
+        ),
+        target_role=user.get("target_role", "Software Engineer"),
+        experience_level=user.get("experience_level", "mid"),
+        created_at=str(user["_id"].generation_time),
+    )
+
+
+@router.post("/signup", response_model=TokenResponse, status_code=201)
+def signup(body: SignupRequest, db=Depends(get_db)):
+    email = str(body.email).strip().lower()
+    if db.users.find_one({"email": email}):
+        raise HTTPException(409, "Email already registered")
+    user = {
+        "name": body.name.strip(),
+        "email": email,
+        "hashed_password": hash_password(body.password),
+        "resume": None,
+        "token_version": 0,
+    }
     try:
-        existing = db.users.find_one({"email": body.email})
-        if existing:
-            raise HTTPException(status_code=409, detail="Email already registered")
-
-        user = {
-            "name": body.name,
-            "email": body.email,
-            "hashed_password": hash_password(body.password),
-            "resume": None,
-        }
-        result = db.users.insert_one(user)
-        token = create_access_token(str(result.inserted_id))
-        return TokenResponse(access_token=token)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        user["_id"] = db.users.insert_one(user).inserted_id
+    except DuplicateKeyError:
+        raise HTTPException(409, "Email already registered")
+    return TokenResponse(access_token=create_access_token(str(user["_id"]), 0))
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(body: LoginRequest, db: Database = Depends(get_db)):
-    user = db.users.find_one({"email": body.email})
-    if not user:
-        raise HTTPException(status_code=404, detail="No user found with this email")
-    if not verify_password(body.password, user["hashed_password"]):
-        raise HTTPException(status_code=401, detail="Invalid password")
-
-    token = create_access_token(str(user["_id"]))
-    return TokenResponse(access_token=token)
+def login(body: LoginRequest, db=Depends(get_db)):
+    user = db.users.find_one({"email": str(body.email).strip().lower()})
+    if not user or not verify_password(body.password, user["hashed_password"]):
+        raise HTTPException(401, "Invalid email or password")
+    return TokenResponse(
+        access_token=create_access_token(str(user["_id"]), user.get("token_version", 0))
+    )
 
 
 @router.get("/me", response_model=UserResponse)
-def get_me(user: dict = Depends(require_user)):
-    resume_status = "present" if _has_resume(user) else "none"
-    return UserResponse(
-        id=str(user["_id"]),
-        name=user["name"],
-        email=user["email"],
-        resume_status=resume_status,
-        target_role=user.get("target_role", "Software Engineer"),
-        experience_level=user.get("experience_level", "mid"),
-        created_at=str(user["_id"].generation_time),
-    )
+def get_me(user=Depends(require_user)):
+    return user_response(user)
 
 
 @router.put("/profile", response_model=UserResponse)
-def update_profile(body: UpdateProfileRequest, user: dict = Depends(require_user), db: Database = Depends(get_db)):
-    updates = {}
-    if body.name is not None and body.name.strip():
-        updates["name"] = body.name.strip()
-    if body.target_role is not None and body.target_role.strip():
-        updates["target_role"] = body.target_role.strip()
-    if body.experience_level is not None and body.experience_level.strip():
-        updates["experience_level"] = body.experience_level.strip()
-
+def update_profile(
+    body: UpdateProfileRequest, db=Depends(get_db), user=Depends(require_user)
+):
+    updates = {
+        k: v.strip()
+        for k, v in body.model_dump().items()
+        if isinstance(v, str) and v.strip()
+    }
     if updates:
         db.users.update_one({"_id": user["_id"]}, {"$set": updates})
         user.update(updates)
-
-    return UserResponse(
-        id=str(user["_id"]),
-        name=user["name"],
-        email=user["email"],
-        resume_status="present" if _has_resume(user) else "none",
-        target_role=user.get("target_role", "Software Engineer"),
-        experience_level=user.get("experience_level", "mid"),
-        created_at=str(user["_id"].generation_time),
-    )
+    return user_response(user)
 
 
 @router.post("/change-password")
-def change_password(body: ChangePasswordRequest, user: dict = Depends(require_user), db: Database = Depends(get_db)):
+def change_password(
+    body: ChangePasswordRequest, db=Depends(get_db), user=Depends(require_user)
+):
     if not verify_password(body.old_password, user["hashed_password"]):
-        raise HTTPException(status_code=401, detail="Current password is incorrect")
-    new_hash = hash_password(body.new_password)
-    db.users.update_one({"_id": user["_id"]}, {"$set": {"hashed_password": new_hash}})
-    return {"message": "Password updated successfully"}
+        raise HTTPException(400, "Current password is incorrect")
+    db.users.update_one(
+        {"_id": user["_id"]},
+        {
+            "$set": {"hashed_password": hash_password(body.new_password)},
+            "$inc": {"token_version": 1},
+        },
+    )
+    return {
+        "message": "Password updated.",
+        "access_token": create_access_token(
+            str(user["_id"]), user.get("token_version", 0) + 1
+        ),
+    }
 
 
 @router.post("/logout")
-def logout(user: dict = Depends(require_user)):
-    return {"message": "Logged out successfully"}
+def logout(db=Depends(get_db), user=Depends(require_user)):
+    db.users.update_one({"_id": user["_id"]}, {"$inc": {"token_version": 1}})
+    return {"message": "Signed out on all devices."}

@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useState } from "react"
-import { clearToken } from "../api/auth"
+import { logout } from "../api/auth"
 
 export default function DashboardNavbar({ name }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -8,9 +8,8 @@ export default function DashboardNavbar({ name }) {
   const location = useLocation()
   const navigate = useNavigate()
 
-  function handleLogout() {
-    clearToken()
-    navigate("/login")
+  async function handleLogout() {
+    try { await logout(); } catch { /* Local token is cleared even when offline. */ } finally { navigate("/login"); }
   }
 
   const navLinks = [

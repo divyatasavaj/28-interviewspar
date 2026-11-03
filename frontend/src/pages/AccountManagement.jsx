@@ -5,8 +5,9 @@ import {
   uploadResume,
   getLatestResume,
   listSessions,
-  getInterviewFeedback,
   getMe,
+  deleteResume,
+  logout,
   updateUserProfile,
   changeUserPassword,
 } from "../api/auth"
@@ -282,7 +283,7 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                   className="w-full rounded-xl bg-gray-50 border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -313,6 +314,7 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
 
 function ResumeView() {
   const [file, setFile] = useState(null)
+  const [consent, setConsent] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState("")
   const [parsed, setParsed] = useState(null)
@@ -321,7 +323,7 @@ function ResumeView() {
   useEffect(() => {
     getLatestResume()
       .then((data) => setExisting(data.parsed_data))
-      .catch(() => {})
+      .catch(error => { if (error.status !== 404) setError(error.message); })
   }, [])
 
   async function handleUpload() {
@@ -329,7 +331,7 @@ function ResumeView() {
     setUploading(true)
     setError("")
     try {
-      const data = await uploadResume(file)
+      const data = await uploadResume(file, consent)
       setParsed(data.parsed_data)
       setExisting(null)
     } catch (err) {
@@ -346,7 +348,7 @@ function ResumeView() {
       <div className="lg:w-[70%] bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
         <h2 className="text-xl font-bold text-gray-900 mb-2">Resume Upload & Parser</h2>
         <p className="text-xs text-gray-500 mb-6">
-          Upload your resume in PDF or DOCX format. The AI extracts your key skills, projects, and achievements to personalize interview questions.
+          Upload your resume in PDF or DOCX format. The local parser extracts evidence from your resume to personalize interview questions. It does not send your resume to an AI provider.
         </p>
 
         <div className="border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center bg-gray-50/50">
@@ -361,10 +363,17 @@ function ResumeView() {
             onChange={(e) => setFile(e.target.files[0])}
             className="block w-full max-w-sm mx-auto text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white hover:file:bg-[#5b22e0] file:cursor-pointer cursor-pointer"
           />
+          <label className="mt-4 flex items-start gap-2 text-left text-xs text-gray-600">
+            <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />
+            I consent to saving my resume and extracted evidence for analysis and interview preparation.
+          </label>
+          {data && <button className="mt-4 text-sm text-red-700 underline" onClick={async () => {
+            try { await deleteResume(); setParsed(null); setExisting(null); } catch (err) { setError(err.message); }
+          }}>Delete saved resumes and analyses</button>}
           {file && (
             <button
               onClick={handleUpload}
-              disabled={uploading}
+              disabled={uploading || !consent}
               className="mt-5 bg-primary hover:bg-[#5b22e0] text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-md shadow-primary/20 transition-all disabled:opacity-50"
             >
               {uploading ? "Analyzing Resume..." : `Parse ${file.name}`}
@@ -445,26 +454,13 @@ function ReportsView() {
   const [sessions, setSessions] = useState([])
   const [feedbacks, setFeedbacks] = useState({})
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
   useEffect(() => {
-    listSessions()
-      .then((data) => {
-        setSessions(data || [])
-        const completed = (data || []).filter((s) => s.status === "completed")
-        Promise.allSettled(
-          completed.map((s) =>
-            getInterviewFeedback(s.id).then((f) => ({ id: s.id, feedback: f }))
-          )
-        ).then((results) => {
-          const map = {}
-          for (const r of results) {
-            if (r.status === "fulfilled") map[r.value.id] = r.value.feedback
-          }
-          setFeedbacks(map)
-        })
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    listSessions().then(data => {
+      setSessions(data || [])
+      setFeedbacks(Object.fromEntries((data || []).map(s => [s.id, {overall_score:s.overall_score}])))
+    }).catch(error => setError(error.message)).finally(() => setLoading(false))
   }, [])
 
   function formatDate(iso) {
@@ -491,6 +487,8 @@ function ReportsView() {
       </div>
     )
   }
+
+  if (error) return <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-700">{error}</p>
 
   if (sessions.length === 0) {
     return (
@@ -748,6 +746,7 @@ export default function AccountManagement() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [view, setView] = useState(() => searchParams.get("tab") || "profile")
   const [completedCount, setCompletedCount] = useState(0)
+  const [accountError, setAccountError] = useState("")
 
   useEffect(() => {
     const tabParam = searchParams.get("tab")
@@ -759,9 +758,9 @@ export default function AccountManagement() {
   useEffect(() => {
     getMe()
       .then(setUser)
-      .catch(() => {
-        clearToken()
-        navigate("/login")
+      .catch(error => {
+        if (error.status === 401) { clearToken(); navigate("/login"); }
+        else setAccountError(error.message);
       })
   }, [navigate])
 
@@ -771,11 +770,10 @@ export default function AccountManagement() {
       .catch(() => {})
   }, [])
 
-  if (!user) return null
+  if (!user) return <main className="p-10 text-gray-900"><p role="status">{accountError || "Loading account…"}</p><Link to="/login">Sign in</Link></main>
 
-  function handleLogout() {
-    clearToken()
-    navigate("/login")
+  async function handleLogout() {
+    try { await logout(); } catch {} finally { navigate("/login"); }
   }
 
   return (

@@ -1,8 +1,9 @@
+import {getToken} from "./auth";
 const API = "/api";
 
 export async function fetchTtsVoices() {
   try {
-    const res = await fetch(`${API}/tts/voices`)
+    const res = await fetch(`${API}/tts/voices`, {headers:{Authorization:`Bearer ${getToken()}`}})
     if (res.ok) {
       return await res.json()
     }
@@ -22,10 +23,11 @@ export async function fetchTtsVoices() {
   }
 }
 
-export async function fetchSpeechAudioBlob(text, voice = "en-US-AvaNeural", rate = "-3%", pitch = "+0Hz") {
+export async function fetchSpeechAudioBlob(text, voice = "en-US-AvaNeural", rate = "-3%", pitch = "+0Hz", signal) {
   const res = await fetch(`${API}/tts/synthesize`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization:`Bearer ${getToken()}` },
+    signal,
     body: JSON.stringify({ text, voice, rate, pitch }),
   })
   if (!res.ok) {

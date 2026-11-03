@@ -22,6 +22,7 @@ import {
 export default function ResumeIntelligence() {
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
+  const [userError, setUserError] = useState("")
   const [resumeState, setResumeState] = useState({
     loading: true,
     hasResume: false,
@@ -53,9 +54,9 @@ export default function ResumeIntelligence() {
         setUser(u)
         setSelectedRoleId(mapRoleToCanonicalId(u.target_role))
       })
-      .catch(() => {
-        clearToken()
-        navigate("/login")
+      .catch(error => {
+        if (error.status === 401) { clearToken(); navigate("/login"); }
+        else setUserError(error.message);
       })
   }, [navigate])
 
@@ -90,9 +91,10 @@ export default function ResumeIntelligence() {
           resumeDocument: resumeDoc,
           analysis,
           isOcrRequired: isOcr,
-          error: !hasResume && resResult.reason?.message ? resResult.reason.message : null,
+          error: resResult.status === "rejected" && resResult.reason?.status !== 404 ? resResult.reason.message : null,
         })
 
+        if (matchResult.status === "rejected") setAssessmentError(matchResult.reason.message)
         if (matchResult.status === "fulfilled" && matchResult.value) {
           setAssessment(matchResult.value)
           setPreviousAssessment(matchResult.value)
@@ -127,7 +129,7 @@ export default function ResumeIntelligence() {
       setAssessment(result)
       setPreviousAssessment(result)
     } catch (err) {
-      if (err.message && err.message.includes("Unauthorized")) {
+      if (err.status === 401) {
         clearToken()
         navigate("/login")
         return
@@ -166,7 +168,7 @@ export default function ResumeIntelligence() {
       setAssessment(result)
       setPreviousAssessment(result)
     } catch (err) {
-      if (err.message && err.message.includes("Unauthorized")) {
+      if (err.status === 401) {
         clearToken()
         navigate("/login")
         return
@@ -185,7 +187,7 @@ export default function ResumeIntelligence() {
       const res = await getMatchById(assessmentId)
       setAssessment(res)
     } catch (err) {
-      console.error("Failed to reload assessment", err)
+      setAssessmentError(err.message || "Failed to reload assessment")
     } finally {
       setSubmitting(false)
     }
@@ -221,7 +223,7 @@ export default function ResumeIntelligence() {
     })
   }
 
-  if (!user) return null
+  if (!user) return <main className="p-10 text-gray-900"><p role="status">{userError || "Loading account…"}</p><Link to="/login">Sign in</Link></main>
 
   return (
     <div className="min-h-screen font-sans bg-[#fbfaff]">
@@ -246,7 +248,7 @@ export default function ResumeIntelligence() {
                 Resume Intelligence & Skill Readiness
               </h1>
               <p className="mt-2 text-sm sm:text-base text-gray-600 max-w-3xl leading-relaxed">
-                Compare your extracted resume evidence against verified occupational rubrics or specific job descriptions.
+                Compare your extracted resume evidence against versioned role rubrics or specific job descriptions.
                 Assessments are deterministic, explainable, and never fabricate scores.
               </p>
             </div>
@@ -281,6 +283,8 @@ export default function ResumeIntelligence() {
               <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               <span>Checking resume status...</span>
             </div>
+          ) : resumeState.error ? (
+            <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-700">{resumeState.error}</p>
           ) : !resumeState.hasResume ? (
             /* Empty State: No Resume */
             <div className="bg-white rounded-3xl p-8 border border-dashed border-purple-200 text-center shadow-sm">
@@ -291,7 +295,7 @@ export default function ResumeIntelligence() {
               </div>
               <h2 className="text-base font-bold text-gray-900">No Resume Uploaded Yet</h2>
               <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto mt-1 leading-relaxed">
-                Upload your PDF or DOCX resume to extract verified skills, project context, and work experience before running an assessment.
+                Upload your PDF or DOCX resume to extract documented skills, project context, and work experience before running an assessment.
               </p>
               <Link
                 to="/account?tab=resume"
@@ -523,7 +527,7 @@ export default function ResumeIntelligence() {
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <p className="text-xs text-gray-400 max-w-xl">
-                  Job descriptions are treated as private untrusted data. Embedded instructions (e.g. prompt injections) are neutralized. Content is tracked by SHA-256 hash only.
+                  Job descriptions are treated as private untrusted data. Embedded instructions (e.g. prompt injections) are neutralized. The full description is not retained; its hash and extracted requirements are saved with your assessment.
                 </p>
                 <button
                   type="submit"

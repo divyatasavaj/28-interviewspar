@@ -1,15 +1,23 @@
 import os
+import atexit
+from pathlib import Path
 
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 MONGODB_URL = os.environ["MONGODB_URL"]
 
-client = MongoClient(MONGODB_URL, server_api=ServerApi("1"))
-db = client["interspars"]
+client = MongoClient(
+    MONGODB_URL,
+    server_api=ServerApi("1"),
+    serverSelectionTimeoutMS=5000,
+    connectTimeoutMS=5000,
+)
+atexit.register(client.close)
+db = client[os.getenv("MONGODB_DATABASE", "interspars")]
 
 
 def get_db():
@@ -22,6 +30,10 @@ def init_db():
         print("MongoDB connected successfully")
 
         db.users.create_index("email", unique=True)
+        db.resumes.create_index([("user_id", 1), ("_id", -1)])
+        db.interview_sessions.create_index(
+            [("user_id", 1), ("engine_version", 1), ("_id", -1)]
+        )
 
         db.questions.create_index([("domain", 1), ("difficulty", 1)])
 
@@ -38,8 +50,6 @@ def init_db():
 
         db.feedback.create_index("user_id")
         db.feedback.create_index("session_id")
-
-        db.resumes.create_index([("user_id", 1), ("_id", -1)])
 
         db.resume_assessments.create_index("assessment_id", unique=True)
         db.resume_assessments.create_index([("user_id", 1), ("created_at", -1)])
@@ -63,5 +73,7 @@ def init_db():
         db.video_sessions.create_index("interview_session_id")
 
         print("MongoDB indexes created")
-    except Exception as e:
-        print(f"MongoDB connection failed: {e}")
+    except Exception:
+        raise RuntimeError(
+            "MongoDB is unavailable; check MONGODB_URL and network access."
+        ) from None

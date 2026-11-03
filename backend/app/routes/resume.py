@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, UploadFile, statu
 from pymongo.database import Database
 
 from app.auth import decode_access_token
+from app.routes.auth import require_user_id
 from app.database import get_db
 from app.resume_intelligence.parser import (
     MAX_FILE_BYTES,
@@ -42,7 +43,7 @@ def _latest_resume(db: Database, user_id: str) -> Optional[dict]:
 def upload_resume(
     file: UploadFile,
     db: Database = Depends(get_db),
-    user_id: str = Depends(require_token),
+    user_id: str = Depends(require_user_id),
 ):
     content = file.file.read(MAX_FILE_BYTES + 1)
     try:
@@ -101,7 +102,7 @@ def upload_resume(
 @router.get("/latest")
 def get_latest_resume(
     db: Database = Depends(get_db),
-    user_id: str = Depends(require_token),
+    user_id: str = Depends(require_user_id),
 ):
     resume = _latest_resume(db, user_id)
     if resume is None:
@@ -119,7 +120,7 @@ def get_latest_resume(
 @router.get("/analysis/latest")
 def get_latest_resume_analysis(
     db: Database = Depends(get_db),
-    user_id: str = Depends(require_token),
+    user_id: str = Depends(require_user_id),
 ):
     resume = _latest_resume(db, user_id)
     if resume is None:
@@ -140,7 +141,7 @@ def get_latest_resume_analysis(
 @router.get("/summary")
 def get_resume_summary(
     db: Database = Depends(get_db),
-    user_id: str = Depends(require_token),
+    user_id: str = Depends(require_user_id),
 ):
     resume = _latest_resume(db, user_id)
     if resume is None:
@@ -150,3 +151,11 @@ def get_resume_summary(
         "parsed_data": resume.get("parsed_data"),
         "analysis": resume.get("analysis"),
     }
+
+
+@router.delete("/")
+def delete_resumes(db=Depends(get_db), user_id: str=Depends(require_user_id)):
+    db.resumes.delete_many({"user_id": user_id})
+    db.resume_assessments.delete_many({"user_id": user_id})
+    db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"resume": None}})
+    return {"deleted": True}

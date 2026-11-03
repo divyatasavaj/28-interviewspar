@@ -96,6 +96,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/interview" element={<Navigate to="/interview/start" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -61,7 +61,7 @@ const tracks = [
     questionsCount: "Contextual to Resume",
     difficulty: "Tailored to Your Stack",
     description:
-      "Recreates the intense scrutiny of senior campus tech leads interrogating your academic capstone projects, internships, and GitHub repositories.",
+      "Recreates the intense scrutiny of senior campus tech leads interrogating your academic capstone projects and internships described in your resume.",
     curriculum: [
       "Defense of architectural and technology stack choices",
       "Scale limitations of college-built prototypes",
@@ -84,7 +84,7 @@ export default function PracticeTracksPage() {
     const isAuth = Boolean(getToken())
     const targetType = track.targetType || track.id
     if (isAuth) {
-      navigate(`/interview?type=${targetType}`)
+      navigate(`/interview/start?persona=${targetType}`)
     } else {
       navigate("/login")
     }

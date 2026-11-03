@@ -1,223 +1,74 @@
 const API = "/api";
 const TOKEN_KEY = "interviewspar_token";
-
-export function getToken() {
-  return typeof localStorage !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+export function getToken() { return localStorage.getItem(TOKEN_KEY); }
+export function setToken(token) { localStorage.setItem(TOKEN_KEY, token); }
+export function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+export function errorMessage(data, fallback = "Request failed") {
+  const detail = data?.detail ?? data?.error;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) return detail.map(item => item.msg).join("; ");
+  return detail?.message || fallback;
 }
-
-export function setToken(t) {
-  if (typeof localStorage !== "undefined") localStorage.setItem(TOKEN_KEY, t);
-}
-
-export function clearToken() {
-  if (typeof localStorage !== "undefined") localStorage.removeItem(TOKEN_KEY);
-}
-
-export async function signup(name, email, password, role = "student") {
-  const res = await fetch(`${API}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password, role }),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error || "Signup failed")
+export async function apiRequest(path, options = {}) {
+  const response = await fetch(`${API}${path}`, {
+    ...options,
+    headers: { ...(options.body && !(options.body instanceof FormData) ? {"Content-Type":"application/json"} : {}),
+      ...(getToken() ? {Authorization:`Bearer ${getToken()}`} : {}), ...options.headers },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    if (response.status === 401) clearToken();
+    const error = new Error(errorMessage(data)); error.status = response.status; throw error;
   }
-  return res.json()
+  return data;
 }
-
-export async function login(email, password) {
-  const res = await fetch(`${API}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error || "Login failed")
-  }
-  return res.json()
+export async function signup(name, email, password) {
+  const data = await apiRequest("/auth/signup", {method:"POST",body:JSON.stringify({name,email,password})});
+  return {...data, token:data.access_token};
 }
-
-export async function getMe() {
-  const res = await fetch(`${API}/auth/me`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  })
-  if (!res.ok) throw new Error("Unauthorized")
-  return res.json()
+export async function login(email,password) {
+  const data = await apiRequest("/auth/login", {method:"POST",body:JSON.stringify({email,password})});
+  return {...data, token:data.access_token};
 }
-
-export async function uploadResume(file) {
-  const form = new FormData()
-  form.append("file", file)
-  const res = await fetch(`${API}/resume/upload`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${getToken()}` },
-    body: form,
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error || "Upload failed")
-  }
-  return res.json()
+export const getMe = () => apiRequest("/auth/me");
+export async function uploadResume(file, consent = false) {
+  if (!consent) throw new Error("Please consent to saving your resume first.");
+  if (file.size > 10*1024*1024) throw new Error("Resume must be 10 MB or smaller.");
+  const body = new FormData(); body.append("file",file);
+  return apiRequest("/resume/upload", {method:"POST", body, headers:{"X-Data-Consent":"true"}});
 }
-
-export async function getLatestResume() {
-  const res = await fetch(`${API}/resume/latest`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  })
-  if (!res.ok) throw new Error("No resume found")
-  return res.json()
+export const getLatestResume = () => apiRequest("/resume/latest");
+export const deleteResume = () => apiRequest("/resume/", {method:"DELETE"});
+export const listSessions = () => apiRequest("/interview/sessions");
+export const getInterviewFeedback = id => apiRequest(`/interview/${id}/feedback`);
+export const updateUserProfile = data => apiRequest("/auth/profile", {method:"PUT",body:JSON.stringify(data)});
+export async function changeUserPassword(old_password,new_password) {
+  const data = await apiRequest("/auth/change-password",{method:"POST",body:JSON.stringify({old_password,new_password})});
+  if (data.access_token) setToken(data.access_token);
+  return data;
 }
-
-export async function startInterview(interviewType) {
-  const res = await fetch(`${API}/interview/start`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify({ persona: interviewType }),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error || "Failed to start interview")
-  }
-  return res.json()
+export async function logout() {
+  try { await apiRequest("/auth/logout",{method:"POST"}); } finally { clearToken(); }
 }
+export const startInterview = settings => apiRequest("/interview/start",{method:"POST",body:JSON.stringify(settings)});
+export const answerInterview = data => apiRequest("/interview/answer",{method:"POST",body:JSON.stringify(data)});
 
-export async function answerInterview(sessionId, answer) {
-  const res = await fetch(`${API}/interview/message`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify({ sessionId, answer }),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error || "Failed to submit answer")
-  }
-  return res.json()
-}
-
-export async function listSessions() {
-  const res = await fetch(`${API}/sessions`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error || "Failed to fetch sessions")
-  }
-  return res.json()
-}
-
-export async function getInterviewFeedback(sessionId) {
-  const res = await fetch(`${API}/interview/${sessionId}/feedback`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error || "Failed to fetch feedback")
-  }
-  return res.json()
-}
-
-export async function updateUserProfile(data) {
-  const res = await fetch(`${API}/auth/me`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error || "Failed to update profile")
-  }
-  return res.json()
-}
-
-export async function changeUserPassword(old_password, new_password) {
-  const res = await fetch(`${API}/auth/change-password`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify({ old_password, new_password }),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error || "Failed to change password")
-  }
-  return res.json()
-}
-
-export async function createRoleMatch(target_role_id) {
-  const res = await fetch(`${API}/resume/analysis/match`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify({ target_role_id }),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.detail?.message || err.detail || "Role match failed")
-  }
-  return res.json()
-}
-
-export async function createJobDescriptionMatch(job_description) {
-  const res = await fetch(`${API}/resume/analysis/job-description`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify({ job_description }),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.detail?.message || err.detail || "Job description match failed")
-  }
-  return res.json()
-}
-
+export const createRoleMatch = target_role_id => apiRequest("/resume/analysis/match", {
+  method: "POST", body: JSON.stringify({ target_role_id }),
+});
+export const createJobDescriptionMatch = job_description => apiRequest("/resume/analysis/job-description", {
+  method: "POST", body: JSON.stringify({ job_description }),
+});
 export async function getLatestMatch(mode, target_role_id) {
-  const params = new URLSearchParams()
-  if (mode) params.append("mode", mode)
-  if (target_role_id) params.append("target_role_id", target_role_id)
-  const qs = params.toString() ? `?${params.toString()}` : ""
-  const res = await fetch(`${API}/resume/analysis/match/latest${qs}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  })
-  if (!res.ok) return null
-  return res.json()
-}
-
-export async function getMatchById(assessmentId) {
-  const res = await fetch(`${API}/resume/analysis/match/${assessmentId}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.detail?.message || err.detail || "Assessment not found")
+  const params = new URLSearchParams();
+  if (mode) params.set("mode", mode);
+  if (target_role_id) params.set("target_role_id", target_role_id);
+  try {
+    return await apiRequest(`/resume/analysis/match/latest?${params}`);
+  } catch (error) {
+    if (error.status === 404) return null;
+    throw error;
   }
-  return res.json()
 }
-
-export async function getLatestResumeAnalysis() {
-  const res = await fetch(`${API}/resume/analysis/latest`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.detail || "No resume analysis found")
-  }
-  return res.json()
-}
+export const getMatchById = id => apiRequest(`/resume/analysis/match/${encodeURIComponent(id)}`);
+export const getLatestResumeAnalysis = () => apiRequest("/resume/analysis/latest");

@@ -4,7 +4,6 @@ import {
   getMe,
   clearToken,
   listSessions,
-  getInterviewFeedback,
   getLatestResume,
   createRoleMatch,
   createJobDescriptionMatch,
@@ -38,6 +37,7 @@ export default function Dashboard() {
   const [feedbacks, setFeedbacks] = useState({})
   const [resumeData, setResumeData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState("")
 
   // Assessment & Resume Intelligence state
   const [assessment, setAssessment] = useState(null)
@@ -54,9 +54,9 @@ export default function Dashboard() {
         const initialRoleId = mapTargetRoleToId(userData.target_role)
         setSelectedRoleId(initialRoleId)
       })
-      .catch(() => {
-        clearToken()
-        navigate("/login")
+      .catch((error) => {
+        if (error.status === 401) { clearToken(); navigate("/login"); }
+        else setLoadError(error.message);
       })
   }, [navigate])
 
@@ -64,28 +64,20 @@ export default function Dashboard() {
     if (!user) return
 
     Promise.allSettled([
-      listSessions().then(async (data) => {
+      listSessions().then((data) => {
         setSessions(data || [])
-        const completed = (data || []).filter((s) => s.status === "completed").slice(0, 5)
-        const fbEntries = await Promise.allSettled(
-          completed.map((s) => getInterviewFeedback(s.id).then((fb) => ({ id: s.id, fb })))
-        )
-        const map = {}
-        for (const r of fbEntries) {
-          if (r.status === "fulfilled") map[r.value.id] = r.value.fb
-        }
-        setFeedbacks(map)
-      }),
+        setFeedbacks(Object.fromEntries((data || []).filter(s => s.status === "completed").slice(0,5).map(s => [s.id, {overall_score:s.overall_score}])))
+      }).catch(error => setLoadError(error.message)),
       getLatestResume()
         .then((r) => {
           setResumeData(r.parsed_data || r.analysis || null)
         })
-        .catch(() => setResumeData(null)),
+        .catch(error => { setResumeData(null); if (error.status !== 404) setLoadError(error.message); }),
       getLatestMatch()
         .then((m) => {
           if (m) setAssessment(m)
         })
-        .catch(() => {}),
+        .catch(error => setLoadError(error.message)),
     ]).finally(() => setLoading(false))
   }, [user])
 
@@ -96,7 +88,7 @@ export default function Dashboard() {
       const res = await createRoleMatch(roleId)
       setAssessment(res)
     } catch (err) {
-      console.error("Role match failed:", err)
+      setLoadError(err.message || "Role match failed")
     } finally {
       setAssessmentLoading(false)
     }
@@ -117,7 +109,7 @@ export default function Dashboard() {
     }
   }
 
-  if (!user) return null
+  if (!user) return <main className="p-10 text-gray-900"><p role="status">{loadError || "Loading account…"}</p><Link to="/login">Sign in</Link></main>
 
   const completedSessions = sessions.filter((s) => s.status === "completed")
   const scores = Object.values(feedbacks)
@@ -145,6 +137,7 @@ export default function Dashboard() {
       <DashboardNavbar name={user.name} />
 
       <main className="pt-28 pb-20 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
+        {loadError && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-4 text-red-700">{loadError}</p>}
         {/* Top Welcome Banner */}
         <section className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-sm mb-8 relative overflow-hidden">
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -753,7 +746,7 @@ export default function Dashboard() {
                       </span>
 
                       <button
-                        onClick={() => navigate(`/interview-complete?session_id=${s.id}`)}
+                        onClick={() => navigate(s.status === "active" ? `/interview/${s.id}` : `/interview/${s.id}/report`)}
                         className="text-xs font-semibold text-primary hover:text-[#5b22e0] bg-purple-50 hover:bg-purple-100 px-3.5 py-1.5 rounded-full transition-all"
                       >
                         View Scorecard →

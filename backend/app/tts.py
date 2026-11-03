@@ -5,7 +5,7 @@ from pathlib import Path
 import edge_tts
 
 CACHE_DIR = Path("/tmp/interspars_tts_cache")
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
 
 DEFAULT_VOICE = "en-US-AvaNeural"
 DEFAULT_RATE = "-3%"
@@ -111,12 +111,6 @@ async def generate_speech_audio(
     if voice not in valid_voice_ids:
         voice = DEFAULT_VOICE
 
-    cache_key = get_cache_key(cleaned, voice, rate, pitch)
-    cache_path = CACHE_DIR / f"{cache_key}.mp3"
-
-    if cache_path.exists() and cache_path.stat().st_size > 0:
-        return cache_path.read_bytes()
-
     communicate = edge_tts.Communicate(
         text=cleaned,
         voice=voice,
@@ -130,11 +124,5 @@ async def generate_speech_audio(
             audio_chunks.append(chunk["data"])
 
     audio_data = b"".join(audio_chunks)
-
-    # Save to cache
-    try:
-        cache_path.write_bytes(audio_data)
-    except Exception:
-        pass
 
     return audio_data

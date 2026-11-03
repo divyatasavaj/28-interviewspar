@@ -1,4 +1,4 @@
-import { useNavigate, Link, useSearchParams } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { getMe, clearToken, getLatestResume } from "../api/auth"
 import DashboardNavbar from "../components/DashboardNavbar"

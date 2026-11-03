@@ -58,7 +58,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--database",
-        default=os.environ.get("MONGODB_DB", "interspars"),
+        default=os.environ.get("MONGODB_DATABASE", os.environ.get("MONGODB_DB", "interspars")),
         help="MongoDB database name (default: interspars).",
     )
     parser.add_argument(

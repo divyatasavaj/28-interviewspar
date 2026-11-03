@@ -30,7 +30,7 @@ def detect_pauses(word_timestamps: list[dict] = None) -> dict:
 def check_grammar(transcript: str) -> int:
     if not transcript:
         return 0
-    sentences = re.split(r'[.!?]+', transcript)
+    sentences = re.findall(r'[^.!?]+[.!?]?', transcript)
     errors = 0
     for s in sentences:
         s = s.strip()
@@ -50,7 +50,7 @@ def compute_fluency_score(transcript: str = None, word_timestamps: list[dict] = 
 
     word_count = len((transcript or "").split())
     if word_count == 0:
-        return {"filler_count": 0, "pause_ms_total": 0, "grammar_errors": 0, "score": 1.0}
+        return {"filler_count": 0, "pause_ms_total": 0, "grammar_errors": 0, "score": 0.0}
 
     filler_penalty = min(filler_count / max(word_count, 1) * 2, 0.3)
     pause_penalty = min(pause_data.get("pause_ms_total", 0) / 30000, 0.2)
