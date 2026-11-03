@@ -65,7 +65,13 @@ async def protect_requests(request: Request, call_next):
         )
     identity = (
         request.client.host if request.client else "local",
-        "auth" if request.url.path.startswith("/api/auth/") else "api",
+        (
+            "auth"
+            if request.method == "POST"
+            and request.url.path
+            in {"/api/auth/signup", "/api/auth/login", "/api/auth/change-password"}
+            else "api"
+        ),
     )
     current = monotonic()
     if len(requests) > 10000:

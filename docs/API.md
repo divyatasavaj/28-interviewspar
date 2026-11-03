@@ -145,7 +145,8 @@ Common statuses: 400 invalid consent/settings, 401 authentication, 404 absent/fo
 resource, 409 state conflict, 413 request/file size, 415 unsupported document,
 422 validation, 429 rate limit (`Retry-After`), 503 service unavailable.
 
-Application rate limits are process-local per IP: 30 auth and 120 other requests
+Application rate limits are process-local per IP: 30 credential attempts (POST
+signup, login, and change-password) and 120 other requests, including profile reads,
 per minute. Production ingress must provide shared limits and trusted proxy
 configuration. Responses are marked `no-store`. `/api/interview/v2`, `/api/video`,
 old `/api/sessions`, `/api/answers`, marketplace/admin, and socket endpoints are

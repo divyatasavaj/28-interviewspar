@@ -77,6 +77,25 @@ class Collection:
 
 
 class InterviewApiTests(unittest.TestCase):
+    def test_profile_reads_do_not_consume_credential_attempt_budget(self):
+        for _ in range(35):
+            response = self.client.get("/api/auth/me", headers=self.headers)
+            self.assertEqual(response.status_code, 200)
+        response = self.client.post(
+            "/api/auth/login",
+            json={"email": "candidate@example.com", "password": "Test-only-pass-824"},
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_credential_attempt_limit_is_retained(self):
+        requests.clear()
+        for _ in range(30):
+            response = self.client.post("/api/auth/login", json={})
+            self.assertEqual(response.status_code, 422)
+        response = self.client.post("/api/auth/login", json={})
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response.headers["Retry-After"], "60")
+
     def test_skipping_does_not_create_evaluation_or_report_weaknesses(self):
         session = self.start()
         with patch("app.routes.interview_flow.evaluate_answer") as evaluate:
