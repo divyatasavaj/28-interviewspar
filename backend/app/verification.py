@@ -46,7 +46,31 @@ def keyword_precheck(answer_text: str, checklist_terms: list[str]) -> dict:
     return {"checked": True, "missing": missing, "all_found": len(missing) == 0}
 
 
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODELS = [
+    os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b"),
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b",
+]
+GROQ_MODEL = GROQ_MODELS[0]
+
+
+def _call_groq_json(client: Groq, prompt: str) -> str:
+    last_err = None
+    for model in GROQ_MODELS:
+        try:
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                max_tokens=300,
+            )
+            c = resp.choices[0].message.content
+            if c and c.strip():
+                return c.strip()
+        except Exception as e:
+            last_err = e
+            continue
+    raise ValueError(f"All Groq models failed: {last_err}")
 
 
 def llm_verify_answer(question: str, reference_answer: str, student_answer: str) -> dict:
@@ -64,14 +88,7 @@ def llm_verify_answer(question: str, reference_answer: str, student_answer: str)
             "Return ONLY valid JSON with keys: "
             '"passed" (boolean), "score" (0-100 integer), "feedback" (string), "missing_points" (array of strings).'
         )
-        response = client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-        )
-        content = response.choices[0].message.content
-        if not content:
-            return {"passed": True, "score": 75, "feedback": "Verification complete", "missing_points": []}
+        content = _call_groq_json(client, prompt)
         text = content.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         return json.loads(text)
     except Exception as e:
@@ -94,14 +111,7 @@ def verify_logical_puzzle(question: str, reference_reasoning_path: str, student_
             "Return ONLY valid JSON with keys: "
             '"passed" (boolean), "correct_final_answer" (boolean), "reasoning_quality" (0-100), "feedback" (string).'
         )
-        response = client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-        )
-        content = response.choices[0].message.content
-        if not content:
-            return {"passed": True, "correct_final_answer": True, "reasoning_quality": 75, "feedback": ""}
+        content = _call_groq_json(client, prompt)
         text = content.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         return json.loads(text)
     except Exception as e:
@@ -124,14 +134,7 @@ def verify_trick_question(question: str, key_insight: str, student_answer: str) 
             "Return ONLY valid JSON with keys: "
             '"caught_trap" (boolean), "explanation" (string), "score" (0-100).'
         )
-        response = client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-        )
-        content = response.choices[0].message.content
-        if not content:
-            return {"caught_trap": False, "explanation": "", "score": 50}
+        content = _call_groq_json(client, prompt)
         text = content.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         return json.loads(text)
     except Exception as e:
@@ -153,14 +156,7 @@ def verify_resume_consistency(resume_claim: str, live_answer: str) -> dict:
             "Return ONLY valid JSON with keys: "
             '"consistent" (boolean), "depth_match" (0-100), "explanation" (string).'
         )
-        response = client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-        )
-        content = response.choices[0].message.content
-        if not content:
-            return {"consistent": True, "depth_match": 75, "explanation": ""}
+        content = _call_groq_json(client, prompt)
         text = content.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         return json.loads(text)
     except Exception as e:
@@ -184,14 +180,7 @@ def classify_mistake_type(answer_features: dict) -> list[dict]:
             '"feature_values" (object describing why). '
             "Return an empty array if no issues found."
         )
-        response = client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-        )
-        content = response.choices[0].message.content
-        if not content:
-            return []
+        content = _call_groq_json(client, prompt)
         text = content.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         return json.loads(text)
     except Exception as e:

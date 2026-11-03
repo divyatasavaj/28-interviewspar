@@ -1,0 +1,250 @@
+{
+  "schema_version": "1.0.0",
+  "registry_version": "2026-10-21.2",
+  "retrieved_at": "2026-10-21",
+  "sources": [
+    {
+      "source_id": "onet-31.0",
+      "content_kind": "occupation_taxonomy",
+      "job_posting_import_allowed": false,
+      "name": "O*NET Database",
+      "official_url": "https://www.onetcenter.org/database.html",
+      "format": "CSV, JSON, Excel",
+      "acquisition_method": "Direct public download; optional developer registration",
+      "version": "31.0",
+      "geographic_scope": "United States",
+      "license": {
+        "name": "Creative Commons Attribution 4.0 International",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "redistribution": "allowed_with_attribution",
+        "commercial_use": "allowed_with_attribution",
+        "attribution": "This product includes information from the O*NET 31.0 Database by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA). Used under the CC BY 4.0 license. O*NET is a trademark of USDOL/ETA. InterviewSpar has modified all or some of this information. USDOL/ETA has not approved, endorsed, or tested these modifications."
+      },
+      "permitted_use": "Occupational crosswalks, task/skill mappings, and derived role requirements with attribution.",
+      "retention_scope": "Source metadata and derived mappings; raw source files need not be committed.",
+      "status": "approved_for_import",
+      "limitations": [
+        "United States labor-market context, not Indian hiring outcomes.",
+        "Crosswalks to Indian role titles are approximate unless manually reviewed."
+      ],
+      "verified_on": "2026-10-21",
+      "verification_note": "Database page and license page returned HTTP 200; occupation_data.csv, software_skills.csv, essential_skills.csv, and job_titles.csv were downloaded and inspected. Database version observed as 31.0."
+    },
+    {
+      "source_id": "esco-1.2.1",
+      "content_kind": "occupation_taxonomy",
+      "job_posting_import_allowed": false,
+      "name": "ESCO",
+      "official_url": "https://esco.ec.europa.eu/en/use-esco/download",
+      "format": "RDF, TTL, ODS, CSV, XML, JSON-LD",
+      "acquisition_method": "Free download after privacy-statement acceptance and email delivery",
+      "version": "1.2.1",
+      "geographic_scope": "European Union",
+      "license": {
+        "name": "Dataset-specific license requires review",
+        "url": "https://commission.europa.eu/legal-notice_en",
+        "redistribution": "unverified",
+        "commercial_use": "unverified",
+        "attribution": "Capture the license and attribution text shipped with the selected ESCO package before ingestion."
+      },
+      "permitted_use": "Occupation, skill, and qualification crosswalks after legal review of the downloaded package.",
+      "retention_scope": "Source metadata and approved derived mappings only.",
+      "status": "manual_review_required",
+      "limitations": [
+        "European occupational context; Indian title mapping is not one-to-one.",
+        "License text is not assumed from the download page and must be archived with the package."
+      ],
+      "verified_on": "2026-10-21",
+      "verification_note": "Download page returned HTTP 200 and exposed dataset v1.2.1 plus supported formats. The page states downloads are free and gated by a privacy statement."
+    },
+    {
+      "source_id": "nco-2015",
+      "content_kind": "occupation_taxonomy",
+      "job_posting_import_allowed": false,
+      "name": "National Classification of Occupations 2015",
+      "official_url": "https://ncs.gov.in/",
+      "format": "Official publication; machine-readable file not verified",
+      "acquisition_method": "Requires an authorized, versioned NCO file from the National Career Service or Ministry of Labour and Employment",
+      "version": "NCO 2015",
+      "geographic_scope": "India",
+      "license": {
+        "name": "Government publication reuse terms require confirmation",
+        "url": "https://ncs.gov.in/terms%26condition",
+        "redistribution": "unverified",
+        "commercial_use": "unverified",
+        "attribution": "Record the publisher, publication title, version, and source URL."
+      },
+      "permitted_use": "Indian occupation classification and role-title crosswalks after the actual publication is archived and reuse is reviewed.",
+      "retention_scope": "Source metadata and approved derived crosswalks only.",
+      "status": "access_pending",
+      "limitations": [
+        "The NCS portal is client-rendered and direct guessed document URLs returned the app shell.",
+        "No NCO file was downloaded or parsed in Phase 1."
+      ],
+      "verified_on": "2026-10-21",
+      "verification_note": "NCS portal returned HTTP 200. Searches for a direct NCO document were not successful, so no NCO identifiers are claimed in seed rubrics."
+    },
+    {
+      "source_id": "nsdc-qualification-packs",
+      "content_kind": "occupation_taxonomy",
+      "job_posting_import_allowed": false,
+      "name": "NSDC Qualification Packs",
+      "official_url": "https://www.nsdcindia.org/qualification-packs",
+      "format": "Qualification Pack documents on a dynamic portal",
+      "acquisition_method": "Portal access; bulk machine-readable API not verified",
+      "version": "Portal current as of 2026-10-21",
+      "geographic_scope": "India",
+      "license": {
+        "name": "NSDC Terms of Use",
+        "url": "https://www.nsdcindia.org/terms-of-use",
+        "redistribution": "prohibited_without_written_permission",
+        "commercial_use": "prohibited_without_written_permission",
+        "attribution": "Link to the official Qualification Pack; do not copy or redistribute without written permission."
+      },
+      "permitted_use": "Reference and link only until written reuse permission is obtained.",
+      "retention_scope": "URL and metadata only.",
+      "status": "reference_only",
+      "limitations": [
+        "The published Terms of Use restrict downloading, copying, reproducing, and commercial exploitation without written permission.",
+        "No Qualification Pack text is ingested in Phase 1."
+      ],
+      "verified_on": "2026-10-21",
+      "verification_note": "NSDC home and qualification-packs pages returned HTTP 200. Terms of Use page returned HTTP 200 and contained the restriction language recorded above."
+    },
+    {
+      "source_id": "adzuna-india-api",
+      "content_kind": "job_postings",
+      "job_posting_import_allowed": false,
+      "name": "Adzuna API",
+      "official_url": "https://developer.adzuna.com/",
+      "format": "Authenticated JSON API",
+      "acquisition_method": "Register for an app id and API key; use only within an approved plan or license",
+      "version": "API current as of 2026-10-21",
+      "geographic_scope": "Includes India",
+      "license": {
+        "name": "Adzuna API Terms of Service",
+        "url": "https://developer.adzuna.com/docs/terms_of_service",
+        "redistribution": "restricted",
+        "commercial_use": "license_required",
+        "attribution": "Follow Adzuna display and attribution requirements for any permitted listing use."
+      },
+      "permitted_use": "Personal job search, personal/academic research, or an appropriately licensed product integration.",
+      "retention_scope": "Only what the approved plan/license permits; aggregation and raw-data retention require review.",
+      "status": "license_required",
+      "limitations": [
+        "Commercial analysis and product use require a license.",
+        "No API key or posting data is included in Phase 1."
+      ],
+      "verified_on": "2026-10-21",
+      "verification_note": "Adzuna API site returned HTTP 200. Terms page returned HTTP 200 and restricted commercial analysis, resale, and aggregation without written consent."
+    },
+    {
+      "source_id": "kaggle-datasets",
+      "content_kind": "dataset_catalog",
+      "job_posting_import_allowed": false,
+      "name": "Kaggle public datasets",
+      "official_url": "https://www.kaggle.com/datasets",
+      "format": "Dataset-dependent",
+      "acquisition_method": "Kaggle account/API and per-dataset acceptance",
+      "version": "Per dataset",
+      "geographic_scope": "Dataset-dependent",
+      "license": {
+        "name": "Per-dataset license",
+        "url": "https://www.kaggle.com/datasets",
+        "redistribution": "per_dataset",
+        "commercial_use": "per_dataset",
+        "attribution": "Use the license and attribution stated on the selected dataset card."
+      },
+      "permitted_use": "Only after the selected dataset's license, provenance, and quality are reviewed.",
+      "retention_scope": "Per dataset.",
+      "status": "per_item_review",
+      "limitations": [
+        "Kaggle is a host, not a single licensed dataset.",
+        "No dataset is selected or ingested in Phase 1."
+      ],
+      "verified_on": "2026-10-21",
+      "verification_note": "Kaggle datasets site returned HTTP 200. No dataset-level license was reviewed in Phase 1."
+    },
+    {
+      "source_id": "huggingface-datasets",
+      "content_kind": "dataset_catalog",
+      "job_posting_import_allowed": false,
+      "name": "Hugging Face datasets",
+      "official_url": "https://huggingface.co/docs/hub/datasets-usage",
+      "format": "Dataset-dependent",
+      "acquisition_method": "Hugging Face Hub/CLI; gated datasets require acceptance",
+      "version": "Per dataset revision",
+      "geographic_scope": "Dataset-dependent",
+      "license": {
+        "name": "Per-dataset license",
+        "url": "https://huggingface.co/docs/hub/datasets-usage",
+        "redistribution": "per_dataset",
+        "commercial_use": "per_dataset",
+        "attribution": "Use the dataset card license and attribution."
+      },
+      "permitted_use": "Only after per-dataset license and provenance review.",
+      "retention_scope": "Per dataset revision.",
+      "status": "per_item_review",
+      "limitations": [
+        "Hub content is not uniformly licensed.",
+        "No dataset revision is selected or ingested in Phase 1."
+      ],
+      "verified_on": "2026-10-21",
+      "verification_note": "Hub dataset documentation returned HTTP 200. No dataset card was qualified in Phase 1."
+    },
+    {
+      "source_id": "github-public-repositories",
+      "content_kind": "dataset_catalog",
+      "job_posting_import_allowed": false,
+      "name": "GitHub public repositories",
+      "official_url": "https://github.com/",
+      "format": "Repository-dependent",
+      "acquisition_method": "Public repository access under the repository license",
+      "version": "Commit-pinned",
+      "geographic_scope": "Repository-dependent",
+      "license": {
+        "name": "Per-repository license",
+        "url": "https://github.com/",
+        "redistribution": "per_repository",
+        "commercial_use": "per_repository",
+        "attribution": "Record repository owner, commit, and license."
+      },
+      "permitted_use": "Only after repository license and provenance review.",
+      "retention_scope": "Per repository and commit.",
+      "status": "per_item_review",
+      "limitations": [
+        "A repository without a license does not grant reuse permission.",
+        "No repository dataset is selected or ingested in Phase 1."
+      ],
+      "verified_on": "2026-10-21",
+      "verification_note": "GitHub is listed as a candidate source family; no dataset was qualified in Phase 1."
+    },
+    {
+      "source_id": "curated-taxonomy-v1",
+      "content_kind": "curated_taxonomy",
+      "job_posting_import_allowed": false,
+      "name": "InterviewSpar curated taxonomy",
+      "official_url": null,
+      "format": "Repository JSON",
+      "acquisition_method": "Manual curation and review by the project team",
+      "version": "2026.10.1",
+      "geographic_scope": "India-focused engineering education",
+      "license": {
+        "name": "Project-owned",
+        "url": null,
+        "redistribution": "not_applicable",
+        "commercial_use": "not_applicable",
+        "attribution": "InterviewSpar project taxonomy."
+      },
+      "permitted_use": "Canonical aliases, role families, and provisional requirement tiers.",
+      "retention_scope": "Repository-controlled.",
+      "status": "approved_for_import",
+      "limitations": [
+        "Curated aliases are not a substitute for source-backed market frequencies.",
+        "Seed rubrics are expert-curated and provisional."
+      ],
+      "verified_on": "2026-10-21",
+      "verification_note": "Project-owned curation; no external dataset is represented."
+    }
+  ]
+}

@@ -15,8 +15,10 @@ export default function Navbar() {
     { label: "Home", to: "/" },
     { label: "Features", to: "/features" },
     { label: "Practice Tracks", to: "/practice-tracks" },
+    { label: "Resources", to: "/resources" },
+    { label: "Pricing", to: "/pricing" },
     { label: "Student Guide", to: "/student-guide" },
-    { label: "Plans", to: "/pricing" },
+    { label: "Contact Us", to: "/contact" },
   ]
 
   return (
@@ -38,7 +40,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden lg:flex items-center gap-7">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.to
             return (
@@ -93,7 +95,7 @@ export default function Navbar() {
         {/* Mobile Toggle */}
         <button
           onClick={() => setOpen(!open)}
-          className="md:hidden p-2 text-gray-600 hover:text-gray-900 rounded-lg focus:outline-none"
+          className="lg:hidden p-2 text-gray-600 hover:text-gray-900 rounded-lg focus:outline-none"
           aria-label="Toggle menu"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,7 +110,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {open && (
-        <div className="md:hidden bg-white/95 backdrop-blur-xl border-b border-gray-100 px-6 py-5 space-y-3 animate-modal-pop shadow-xl">
+        <div className="lg:hidden bg-white/95 backdrop-blur-xl border-b border-gray-100 px-6 py-5 space-y-3 animate-modal-pop shadow-xl">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.to
             return (

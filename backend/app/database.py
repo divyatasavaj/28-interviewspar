@@ -39,6 +39,26 @@ def init_db():
         db.feedback.create_index("user_id")
         db.feedback.create_index("session_id")
 
+        db.resumes.create_index([("user_id", 1), ("_id", -1)])
+
+        db.resume_assessments.create_index("assessment_id", unique=True)
+        db.resume_assessments.create_index([("user_id", 1), ("created_at", -1)])
+        db.resume_assessments.create_index(
+            [("user_id", 1), ("assessment_mode", 1), ("created_at", -1)]
+        )
+        db.resume_assessments.create_index(
+            [("user_id", 1), ("target_role_id", 1), ("created_at", -1)]
+        )
+
+        db.job_postings.create_index("record_id", unique=True)
+        db.job_postings.create_index("source_id")
+        db.job_postings.create_index("content_fingerprint")
+        db.job_postings.create_index([("normalized_role_id", 1), ("posted_at", -1)])
+        db.job_market_ingestion_runs.create_index("run_id", unique=True)
+        db.job_market_ingestion_runs.create_index("dataset_version")
+        db.unknown_job_skills.create_index("normalized_term", unique=True)
+        db.role_rubrics.create_index([("role_id", 1), ("version", 1)], unique=True)
+
         db.video_sessions.create_index("user_id")
         db.video_sessions.create_index("interview_session_id")
 

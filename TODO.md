@@ -1,8 +1,9 @@
 # InterviewSpar repair plan — branch b3
 
 This checklist tracks the source audit findings and the implementation/verification work.
-The supported application will use React → Express `/api`; Python supplies optional ML
-and document helpers. The separate FastAPI experiments remain explicitly documented.
+After fetching current b3, the supported application will use React → FastAPI `/api`
+with MongoDB, preserving the newly added resume-intelligence pipeline and its tests.
+Express remains a secured legacy service, outside the default application route.
 
 ## Tasks
 
