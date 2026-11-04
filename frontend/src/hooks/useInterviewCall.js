@@ -15,7 +15,6 @@ export function useInterviewCall(question, onTranscript) {
   const [interim,setInterim] = useState(''), [audio,setAudio] = useState(null), [voiceText,setVoiceText] = useState('');
   const [camera,setCamera] = useState(null), [focus,setFocus] = useState({observed_ms:0, hidden_ms:0, hidden_count:0});
   const [language,setLanguage] = useState('en-IN'), [engine,setEngine] = useState('browser');
-  const [confidence,setConfidence] = useState('');
   const active = useRef(false), phase = useRef('idle'), generation = useRef(0), microphone = useRef(null), meter = useRef(null);
   const incomplete = useRef(false);
   const records = useRef([]), recognized = useRef(''), cameraData = useRef(null), focusData = useRef(new VisibilityActivity());
@@ -51,13 +50,13 @@ export function useInterviewCall(question, onTranscript) {
   const listen = useCallback(async () => {
     if (!active.current || ['listening','preparing','finalizing'].includes(phase.current)) return;
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Recognition) { setError('Speech recognition is unavailable. Use Chrome or Edge, or type your answer.'); changePhase('review'); return; }
+    if (!Recognition) { setError('Speech recognition is unavailable. Use Chrome or Edge, then rejoin the call.'); changePhase('review'); return; }
     const ticket = ++generation.current;
     stopAnySpeech(); setError(''); setInterim(''); changePhase('preparing');
     const capture = createAudioMeter(value => {
       if (generation.current === ticket) setAudio(audioTotal([...records.current,value]));
     }, () => {
-      if (generation.current === ticket) { setError('Microphone disconnected. Review your transcript or type your answer.'); void stopListening(); }
+      if (generation.current === ticket) { setError('Microphone disconnected. Review your transcript then rejoin the call.'); void stopListening(); }
     });
     meter.current = capture;
     try {
@@ -78,7 +77,7 @@ export function useInterviewCall(question, onTranscript) {
           // A recognition failure may omit spoken words even when the meter worked.
           incomplete.current = true;
           microphone.current?.abort(); microphone.current = null;
-          setError(code === 'no-speech' ? 'No speech recognized. Try again or type your answer.' : code === 'finalization-timeout' ? 'Final speech could not be confirmed. Check the transcript before submitting.' : 'Speech recognition stopped. Check microphone/network access, then retry or type.');
+          setError(code === 'no-speech' ? 'No speech recognized. Check your microphone, then try again.' : code === 'finalization-timeout' ? 'Final speech could not be confirmed. Check the transcript before submitting.' : 'Speech recognition stopped. Check microphone/network access, then retry.');
           finishMeter(); changePhase('review');
         },
         onEnd:() => { if (generation.current === ticket) { microphone.current = null; finishMeter(); changePhase('review'); } },
@@ -87,7 +86,7 @@ export function useInterviewCall(question, onTranscript) {
     } catch {
       if (generation.current === ticket) {
         microphone.current?.abort(); microphone.current = null; finishMeter(); changePhase('review');
-        setError('Microphone unavailable. Check browser permission or type your answer.');
+        setError('Microphone unavailable. Check browser permission then rejoin the call.');
       }
     }
   }, [changePhase, finishMeter, stopListening]);
@@ -104,17 +103,18 @@ export function useInterviewCall(question, onTranscript) {
     if (result.status === 'ended' && autoListen && active.current) await listen();
     else {
       changePhase('review');
-      if (result.status === 'unavailable') setError('Question audio is unavailable. Read the question and select Speak answer.');
+      if (result.status === 'unavailable') setError('Question audio is unavailable. Read the question and select Continue speaking.');
     }
   }, [changePhase, listen, stopListening]);
   const join = useCallback(() => { active.current = true; setEnabled(true); void speak(true); }, [speak]);
   const leave = useCallback(() => {
+    if (microphone.current) incomplete.current = true;
     active.current = false; setEnabled(false); finishMeter(); cancel(); changePhase('review'); setInterim('');
   }, [cancel, changePhase, finishMeter]);
   useEffect(() => {
     cancel(); records.current = []; recognized.current = ''; cameraData.current = null; incomplete.current = false;
     focusData.current = new VisibilityActivity();
-    setVoiceText(''); setAudio(null); setCamera(null); setFocus({...focusData.current.data}); setInterim(''); setConfidence(''); setError(''); changePhase('idle');
+    setVoiceText(''); setAudio(null); setCamera(null); setFocus({...focusData.current.data}); setInterim(''); setError(''); changePhase('idle');
     if (active.current && prompt.current) void speak(true);
     return cancel;
   }, [question?.id, cancel, changePhase, speak]);
@@ -139,14 +139,20 @@ export function useInterviewCall(question, onTranscript) {
     c.samples++; c.face_samples += Number(observation.face); c.centered_samples += Number(observation.centered); c.multiple_samples += Number(observation.multiple);
     setCamera({...c});
   }, []);
+  const retryAnswer = useCallback(() => {
+    cancel(); records.current = []; recognized.current = ''; cameraData.current = null; incomplete.current = false;
+    focusData.current = new VisibilityActivity();
+    setVoiceText(''); setInterim(''); setAudio(null); setCamera(null); setFocus({...focusData.current.data});
+    changePhase('review'); void listen();
+  }, [cancel,changePhase,listen]);
   async function finishAnswer() {
     const stopped = await stopListening();
     if (stopped.status === 'timeout') throw new Error('Final speech could not be confirmed. Review the transcript, then submit again.');
     generation.current++; stopAnySpeech();
-    if (!recognized.current && !records.current.length && !cameraData.current && !confidence) return null;
+    if (!recognized.current && !records.current.length && !cameraData.current) return null;
     return {consent:true, transcript:recognized.current, transcript_complete:!incomplete.current, language, audio:audioTotal(records.current), camera:cameraData.current,
-      focus:focusData.current.data.observed_ms ? {...focusData.current.data} : null, confidence_self_rating:confidence ? Number(confidence) : null};
+      focus:focusData.current.data.observed_ms ? {...focusData.current.data} : null};
   }
-  return {enabled,status,error,interim,audio,voiceText,camera,focus,language,setLanguage,engine,setEngine,confidence,setConfidence,
-    join,leave,speak,listen,stopListening,finishAnswer,observeFaces};
+  return {enabled,status,error,interim,audio,voiceText,camera,focus,language,setLanguage,engine,setEngine,
+    join,leave,speak,listen,retryAnswer,stopListening,finishAnswer,observeFaces};
 }

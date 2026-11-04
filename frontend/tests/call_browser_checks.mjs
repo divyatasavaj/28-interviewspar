@@ -1,7 +1,6 @@
 // Real UI/media integration with synthetic devices and a deterministic speech-service stub.
 // Speech-service transcription/voice quality are deliberately not claimed by this test.
-export async function checkInterviewCall({goto,click,fill,select,waitFor,evaluate,check,command,screenshot,viewport,layout,hasText}) {
-  const install = denied => `(() => {
+export const installCallMedia = (denied=false) => `(() => {
     const state = window.__callTest = {streams:[],questions:[],starts:0,stopTail:true};
     const originalRecognition=window.SpeechRecognition, originalWebkit=window.webkitSpeechRecognition;
     const originalSpeak=speechSynthesis.speak, originalCancel=speechSynthesis.cancel;
@@ -40,71 +39,67 @@ export async function checkInterviewCall({goto,click,fill,select,waitFor,evaluat
     speechSynthesis.cancel=function(){};
     state.restore=()=>{window.SpeechRecognition=originalRecognition;window.webkitSpeechRecognition=originalWebkit;speechSynthesis.speak=originalSpeak;speechSynthesis.cancel=originalCancel;navigator.mediaDevices.getUserMedia=originalMedia;window.fetch=originalFetch;};
   })()`;
-  const start = async () => {
+
+export async function checkInterviewCall({goto,click,waitFor,evaluate,check,command,screenshot,viewport,layout,hasText}) {
+  const start=async()=>{
     await goto('/interview/start?persona=hr',hasText('Start interview'));
-    await waitFor('document.querySelectorAll("select option").length>4','domains for call');
-    await click('input[type="checkbox"]'); await click('button','Start interview');
-    await waitFor('document.querySelector("progress")','call room');
+    await waitFor('document.querySelectorAll("select option").length>4','domains');
+    await click('input[type="checkbox"]');await click('button','Start interview');
+    await waitFor('document.querySelector("progress")','call lobby');
+  };
+  const join=async(denied=false)=>{
+    await evaluate(installCallMedia(denied));
+    await click('input[aria-label="Speech recognition consent"]');await click('button','Join interview');
   };
   await start();
-  check('Voice mode requires explicit observation consent',await evaluate(`Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Join voice interview').disabled`));
-  await evaluate(install(false));
-  await click('.call-join input[type="checkbox"]'); await click('button','Join voice interview');
+  check('Call lobby requires explicit speech consent',await evaluate(`Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Join interview').disabled`));
+  check('Interview has no round list, answer editor, or confidence questionnaire',await evaluate(`!document.querySelector('textarea,[contenteditable="true"],.interview-rounds,select[aria-label="Self-rated confidence"]') && !document.querySelector('.call-room').textContent.includes('Calibration')`));
+  await click('button','Full screen');await waitFor('document.fullscreenElement?.classList.contains("call-room")','browser fullscreen');
+  check('Browser full screen opens the call surface',true);
+  await click('button','Exit full screen');await waitFor('!document.fullscreenElement','fullscreen exit');
+  check('Exiting browser full screen preserves the call lobby',await evaluate('!!document.querySelector(".call-join")'));
+  await screenshot('call-lobby-desktop');
+  await join();
   await waitFor('window.__callTest.starts===1 && document.querySelector(".call-avatar-listening")','automatic microphone turn');
   check('Question playback automatically opens the spoken-answer turn',true);
-  await click('button','Turn camera on');
-  await waitFor('document.querySelector("video").srcObject?.active && document.querySelector("video").videoWidth>0','synthetic camera preview');
+  await waitFor('document.querySelector("video").srcObject?.active && document.querySelector("video").videoWidth>0','automatic synthetic camera');
   await waitFor(`document.querySelector('.camera-toolbar').textContent.includes('detected')`,'bundled face detector',45000);
-  check('Camera preview and bundled face detector run locally',true);
-  await evaluate(`window.__callTest.emit('Um I built a cache because our team needed faster responses and clearer monitoring for the service.'); window.__callTest.late=window.__callTest.current.onresult;`);
-  await waitFor(`parseFloat(document.querySelectorAll('.delivery-live-stats strong')[2].textContent)>=6.5`,'observed microphone timing');
-  await select('select[aria-label="Self-rated confidence"]','4');
-  await layout('desktop voice call'); await screenshot('voice-call-desktop');
-  await viewport(390,844); await layout('mobile voice call'); await screenshot('voice-call-mobile'); await viewport(1440);
-  check('Camera stays active throughout the answer and viewport changes',await evaluate(`document.querySelector('video').srcObject?.getVideoTracks()[0].readyState==='live'`));
-  await click('button','Submit answer');
-  await waitFor(`window.__callTest.starts===2 && document.querySelector('.call-avatar-listening')`,'next spoken question');
-  check('Submitting waits for final speech and starts the next question',await evaluate(`window.__callTest.questions.length===2 && document.querySelector('.delivery-feedback')?.textContent.includes('Transcript fillers')`));
+  check('Joining connects the local camera and bundled face detector',true);
+  await evaluate(`window.__callTest.emit('Replace this first attempt.');window.__callTest.stopTail=false;`);
+  await click('button','Pause microphone');await waitFor(`document.querySelector('.call-avatar-review')`,'review');
+  await click('button','Record again');await waitFor('window.__callTest.starts===2','new attempt');
+  check('Recording again clears the discarded transcript',await evaluate(`!document.querySelector('.call-transcript').textContent.includes('Replace this')`));
+  await evaluate(`window.__callTest.stopTail=true; window.__callTest.emit('Um I built a reliable cache because our team needed faster responses and clear monitoring of each request across the service.');window.__callTest.late=window.__callTest.current.onresult;`);
+  await waitFor(`parseFloat(document.querySelectorAll('.delivery-live-stats strong')[2].textContent)>=12`,'sufficient microphone timing');
+  await layout('desktop video call');await screenshot('voice-call-desktop');
+  check('Desktop call fills the viewport',await evaluate(`Math.abs(document.querySelector('.call-room').getBoundingClientRect().height-innerHeight)<2`));
+  await viewport(390,844);await layout('mobile video call');await screenshot('voice-call-mobile');await viewport(1440);
+  check('Camera stays active through recording and viewport changes',await evaluate(`document.querySelector('video').srcObject?.getVideoTracks()[0].readyState==='live'`));
+  await click('button','Send spoken answer');
+  await waitFor('window.__callTest.starts===3 && document.querySelector(".call-avatar-listening")','next question');
+  check('Spoken answer saves final words and advances automatically',await evaluate(`window.__callTest.submitted.transcript.includes('The result improved reliability.') && !window.__callTest.submitted.transcript.includes('Replace this')`));
   await evaluate(`window.__callTest.late({resultIndex:0,results:[Object.assign([{transcript:'STALE WORDS'}],{isFinal:true})]})`);
-  check('Late speech callbacks cannot enter the next answer',await evaluate(`!document.querySelector('form textarea').value.includes('STALE WORDS')`));
+  check('Late speech cannot enter the next answer',await evaluate(`!document.querySelector('.call-transcript').textContent.includes('STALE WORDS')`));
   check('Camera stays active across spoken questions',await evaluate(`document.querySelector('video').srcObject?.getVideoTracks()[0].readyState==='live'`));
-  await evaluate('window.__callTest.delayStop=true');
-  await click('button','Read question aloud');
-  await waitFor(`document.querySelector('.call-avatar-finalizing')`,'final speech before repeating');
-  check('New recordings wait while the last recognized words are finalized',await evaluate(`Array.from(document.querySelectorAll('.voice-panel button')).every(b=>b.disabled)`));
-  await click('button','Leave voice mode');
-  await evaluate('window.__callTest.finishStop()');
-  check('Leaving during finalization cannot restart question playback',await evaluate('window.__callTest.questions.length===2 && window.__callTest.starts===2'));
-  await waitFor(`window.__callTest.streams.every(s=>s.getTracks().every(t=>t.readyState==='ended'))`,'all call tracks released');
-  check('Leaving voice mode releases microphone and camera tracks',true);
-  await evaluate('window.__callTest.restore()');
-  await click('button','Finish and view report');
-  await waitFor(hasText('Speaking, fluency & attention cues'),'saved delivery report');
-  check('Report includes final recognized words and delivery observations',await evaluate(`${hasText('The result improved reliability.')} && ${hasText('4 / 5')} && ${hasText('Recognized filler expressions: um')}`));
-  // Debugger/renderer stalls are missing coverage, not a reason to fabricate pace.
-  const pace = await evaluate(`(() => {
-    const d=window.__callTest.submitted, a=d?.audio;
-    const eligible=d?.transcript_complete && a?.speech_span_ms>=5000 && a.voiced_ms>=1000 && a.observed_ms/a.capture_ms>=.8;
-    const shown=document.querySelector('.delivery-metrics dd')?.textContent;
-    return {eligible,shown,coverage:a ? 100*a.observed_ms/a.capture_ms : null};
-  })()`);
-  check('Saved pace respects the captured microphone coverage',pace.eligible ? /[0-9]+ words\/min/.test(pace.shown) : pace.shown==='Not measured');
-  console.log(`Synthetic microphone coverage: ${pace.coverage?.toFixed(1)}%; pace shown: ${pace.shown}`);
-  await screenshot('voice-report-desktop');
-  await viewport(390,844); await layout('mobile voice report'); await screenshot('voice-report-mobile'); await viewport(1440);
-  await evaluate('window.__beforeReload = true');
-  await command('Page.reload'); await waitFor(`!window.__beforeReload && ${hasText('Speaking, fluency & attention cues')}`,'delivery report reload');
-  check('Delivery report survives reload',true);
-  await click('button','Delete this interview'); await waitFor('location.pathname==="/dashboard"','voice session deletion');
-
-  await start(); await evaluate(install(true));
-  await click('.call-join input[type="checkbox"]'); await click('button','Join voice interview');
-  await waitFor(hasText('Microphone unavailable'),'controlled permission error');
-  check('Denied microphone permission leaves a usable typed interview',true);
-  await click('button','Leave voice mode'); await evaluate('window.__callTest.restore()');
-  await fill('form textarea','I built an inventory dashboard because the team needed visibility. The result reduced manual checking.');
-  await click('button','Submit answer'); await waitFor(hasText('Question 2 of'),'typed fallback progression');
-  await click('button','Finish and view report'); await waitFor(hasText('Your interview feedback'),'typed fallback report');
-  check('Unavailable microphone measurements are not fabricated in reports',await evaluate(`!${hasText('Speaking, fluency & attention cues')}`));
-  await click('button','Delete this interview'); await waitFor('location.pathname==="/dashboard"','typed fallback deletion');
+  await evaluate('window.__callTest.delayStop=true');await click('button','Repeat question');
+  await waitFor(`document.querySelector('.call-avatar-finalizing')`,'speech finalization');
+  check('New recordings wait for finalization',await evaluate(`Array.from(document.querySelectorAll('.voice-panel button')).every(b=>b.disabled)`));
+  await click('button','Disconnect devices');await evaluate('window.__callTest.finishStop()');
+  check('Disconnecting cancels queued playback',await evaluate('window.__callTest.questions.length===2 && window.__callTest.starts===3'));
+  await waitFor('window.__callTest.streams.every(s=>s.getTracks().every(t=>t.readyState==="ended"))','released media');
+  check('Disconnecting releases every microphone and camera track',true);
+  await evaluate('window.__callTest.restore()');await click('button','End interview');
+  await waitFor(hasText('Speaking, confidence & attention cues'),'delivery report');
+  check('Report includes automatic confidence, attention, fluency and final spoken words',await evaluate(`${hasText('The result improved reliability.')} && ${hasText('Confidence cues')} && ${hasText('Speech flow')} && ${hasText('Attention cues')} && !${hasText('self-rated')}`));
+  const pace=await evaluate(`(()=>{const d=window.__callTest.submitted,a=d.audio;return {eligible:d.transcript_complete && a.speech_span_ms>=5000 && a.voiced_ms>=1000 && a.observed_ms/a.capture_ms>=.8,shown:document.querySelector('.delivery-metrics dd').textContent};})()`);
+  check('Saved pace respects microphone coverage',pace.eligible?/\d+ words\/min/.test(pace.shown):pace.shown==='Not measured');
+  await screenshot('voice-report-desktop');await viewport(390,844);await layout('mobile voice report');await screenshot('voice-report-mobile');await viewport(1440);
+  await evaluate('window.__beforeReload=true');await command('Page.reload');await waitFor(`!window.__beforeReload && ${hasText('Speaking, confidence & attention cues')}`,'report reload');
+  check('Automatic delivery report survives reload',true);
+  await click('button','Delete this interview');await waitFor('location.pathname==="/dashboard"','deletion');
+  await start();await join(true);await waitFor(hasText('Microphone unavailable'),'permission denial');
+  check('Denied microphone cannot submit a typed or empty answer',await evaluate(`!document.querySelector('textarea') && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Send spoken answer').disabled`));
+  await evaluate('window.__callTest.restore()');await click('button','End interview');await waitFor(hasText('Your interview feedback'),'empty report');
+  check('Failed microphone does not fabricate delivery measurements',await evaluate(`!${hasText('Speaking, confidence & attention cues')}`));
+  await click('button','Delete this interview');await waitFor('location.pathname==="/dashboard"','failed call deletion');
 }

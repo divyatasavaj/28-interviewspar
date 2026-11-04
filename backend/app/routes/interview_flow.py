@@ -14,6 +14,7 @@ from app.interview_flow import (
     compile_report,
     now,
     evaluation_kind,
+    spoken_question,
 )
 from app.safe_execution import run_problem
 from app.delivery import DeliveryObservation, delivery_feedback
@@ -29,6 +30,7 @@ class StartRequest(BaseModel):
     mode: Literal["practice", "assessment"] = "practice"
     save_consent: bool = False
     allow_ai: bool = False
+    response_mode: Literal["text", "voice"] = "text"
 
 
 class AnswerRequest(BaseModel):
@@ -82,7 +84,9 @@ def start(body: StartRequest, db=Depends(get_db), user=Depends(require_user)):
         "experience": body.experience,
         "persona": persona,
         "mode": body.mode,
-        "questions": make_questions(body.domain, persona, resume),
+        "response_mode": body.response_mode,
+        "questions": [spoken_question(q) if body.response_mode == "voice" else q
+                      for q in make_questions(body.domain, persona, resume)],
         "answers": [],
         "index": 0,
         "version": 0,
@@ -102,6 +106,26 @@ def session_summary(session):
         summary.pop(field, None)
     summary["overall_score"] = compile_report(session)["overall_score"]
     return summary
+
+
+@router.post("/{session_id}/voice")
+def enable_voice(session_id: str, db=Depends(get_db), user=Depends(require_user)):
+    """Resume older sessions in the speech-only UI without changing saved answers."""
+    session = owned_session(db, session_id, user)
+    if session.get("response_mode") == "voice" or session["status"] != "active":
+        return public_session(session)
+    patch = {"response_mode": "voice", "version": session["version"] + 1,
+             "questions": [spoken_question(q) if i >= session["index"] else q
+                           for i, q in enumerate(session["questions"])]}
+    result = db.interview_sessions.update_one(
+        {"_id": session["_id"], "version": session["version"], "status": "active"}, {"$set": patch})
+    if not result.modified_count:
+        current = owned_session(db, session_id, user)
+        if current.get("response_mode") == "voice":
+            return public_session(current)
+        raise HTTPException(409, "The interview changed. Reopen it to continue.")
+    session.update(patch)
+    return public_session(session)
 
 
 @router.get("/sessions")
@@ -124,13 +148,18 @@ def answer(body: AnswerRequest, db=Depends(get_db), user=Depends(require_user)):
     if session["status"] != "active":
         raise HTTPException(409, "Interview is already completed")
     question = session["questions"][session["index"]]
-    question["evaluation_kind"] = evaluation_kind(
+    question["evaluation_kind"] = "technical" if question["type"] == "spoken" else evaluation_kind(
         question["round"], session["domain"], session["persona"]
     )
     if body.version != session["version"] or body.question_id != question["id"]:
         raise HTTPException(
             409, "This question has already changed. Reload the interview."
         )
+    if session.get("response_mode") == "voice" and not body.skipped:
+        if not body.delivery or not body.delivery.transcript.strip():
+            raise HTTPException(422, "A spoken answer is required. Enable the microphone and try again.")
+        if body.answer.strip() != body.delivery.transcript.strip() or body.code:
+            raise HTTPException(422, "Voice interviews accept the recognized spoken answer only.")
     if not body.skipped and (
         not body.answer.strip()
         or (question["type"] == "coding" and not body.code.strip())

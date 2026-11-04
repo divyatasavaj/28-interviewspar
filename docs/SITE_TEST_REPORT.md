@@ -5,6 +5,53 @@ Tests use synthetic accounts and resumes in a unique disposable database. Existi
 application records and browser profiles are not used. No dependencies were installed
 for this pass.
 
+## Full-screen speech-only follow-up — 4 November 2026
+
+The call now fills the viewport, hides the round sequence, and has no answer editor,
+code editor, or confidence questionnaire. Captions are read-only. Re-recording clears
+the discarded transcript and its metrics; final spoken words are saved before the
+next question. Technical algorithm prompts are answered verbally. Microphone denial
+blocks submission with a retry message instead of offering a typed answer.
+
+New sessions use the enforced voice API contract. Older owned active sessions upgrade
+idempotently, preserving submitted answers and converting pending coding prompts.
+Voice submissions must contain a consented recognized transcript matching the answer.
+The API cannot independently authenticate client-reported speech observations.
+
+Automatic speech-flow and confidence cues use observed pause share, pace, and filler
+rate, with minimum sample/coverage requirements. Attention cues combine face presence
+and tab visibility from the same answer. These are documented coaching heuristics,
+not validated measures of mental confidence, attention, or language proficiency.
+Camera appearance does not influence confidence cues.
+
+Initial focused Chrome run: **27 checks passed**, including no typing/round list,
+viewport fill, automatic camera, re-recording, final-word saving, media continuity,
+cancellation, persisted automatic reports, and blocked empty/typed submission when
+microphone access is denied. Desktop and mobile screenshots were reviewed in
+`interspars-browser-results-hfYcjw`. Test database removal was confirmed.
+
+Frontend: **48 tests passed**. Build and lint passed; 19 retained legacy warnings
+and the existing lazy face-model size warning remain. Backend checks additionally
+cover all-voice technical completion without code execution, transcript matching,
+owned/idempotent legacy upgrades, automatic cue thresholds, camera-independent
+confidence cues, and unavailable/short/incomplete samples.
+
+Final results: **160 backend tests**, **48 frontend tests**, **122 full-site Chrome
+checks**, and **29 final focused call checks** passed. Full-site artifacts are
+`interspars-browser-results-JherOv`; the final call artifacts are
+`interspars-browser-results-Zetnw0`. The latter verifies entering/exiting browser
+fullscreen as well as the viewport-filling layout. Both completed HR and technical
+spoken journeys, saved reports, PDF generation, account/resume flows, and cleanup
+passed. No uncaught browser exceptions or unexpected HTTP 5xx responses were seen.
+The final disconnect safeguard marks an aborted capture incomplete; the existing
+incomplete-capture rules suppress unsupported speech estimates.
+
+Synthetic audio/video and controlled speech events establish integration only.
+Real-device recognition, face detection accuracy, audible speech quality and the
+coaching thresholds still need independent validation. Earlier entries below are
+historical; their typed fallback and self-rating descriptions no longer describe
+the supported call UI.
+
 ## Core voice/video verification — 4 November 2026
 
 The canonical interview now connects question playback, browser recognition,

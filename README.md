@@ -49,15 +49,16 @@ when the virtual environment is activated; Node dependencies are not required fo
 3. Choose a domain, HR/technical track, and practice/assessment mode. Consent to
    storing the interview is required; external AI feedback is separately optional.
 4. Complete screening, calibration, HR, technical/coding where applicable,
-   behavioral questions, and reflection. Join voice mode with consent to hear each
-   question and speak your answer; optionally enable a local camera preview. Review
-   the transcript, then submit. Progress and delivery observations persist per answer.
+   behavioral questions, and reflection in one full-screen call with no round list.
+   Join with speech consent, hear each question, and answer aloud. Captions are read-only;
+   re-record if needed, then send the spoken answer. Progress and observations persist.
 5. Review a report, print/save it as PDF, resume active interviews, or delete a session.
    Resume deletion also removes saved resume assessments.
 
 Without Groq, the interview still runs using curated prompts and an explicitly
-labeled keyword/length structure indicator. Without Judge0, code is saved but correctness is
-**not evaluated**. Submitted code never executes on the application host.
+labeled keyword/length structure indicator. The call asks for spoken technical reasoning,
+including algorithm explanations, without a code editor. Legacy API code execution is
+separately bounded by Judge0; code never executes on the application host.
 
 ## Configuration
 
@@ -78,9 +79,11 @@ or HTTPS. Voice mode must be joined again after a reload; capture never resumes
 without a new user action.
 
 Delivery reports show transcript fillers, microphone-based speech/pauses and pace,
-local face presence/framing, tab visibility, and optional self-rated confidence.
-Unavailable observations stay null. These are practice cues, not verified attention,
-eye contact, emotional confidence, pronunciation assessment, or a hiring score.
+local face presence/framing, tab visibility, and automatic speech-flow, confidence,
+and attention cues. There is no confidence self-rating or written-answer option.
+Confidence describes vocal steadiness; attention combines camera presence and tab
+visibility. These are documented practice heuristics, not validated psychological
+measurements. Unavailable observations stay null.
 Camera frames and raw microphone audio are never stored or uploaded by InterviewSpar.
 The face model loads locally only when the camera is enabled. See
 [the delivery feature guide](docs/VOICE_VIDEO_INTERVIEW.md) for definitions and limits.

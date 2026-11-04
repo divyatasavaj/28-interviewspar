@@ -8,7 +8,7 @@ import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 // Already supplied by the project's socket.io-client dependency tree.
 import WebSocket from 'ws';
-import {checkInterviewCall} from './call_browser_checks.mjs';
+import {checkInterviewCall,installCallMedia} from './call_browser_checks.mjs';
 
 const [baseUrl, fixture] = process.argv.slice(2);
 assert.ok(baseUrl && fixture, 'The isolated API runner must supply the URL and synthetic PDF');
@@ -273,15 +273,14 @@ try {
         await command('Page.reload'); await waitFor('!window.__beforeReload && document.querySelector("progress")','interview reload');
         check(`${persona} active interview survives reload`,await evaluate(`document.querySelector('h1').innerText===${JSON.stringify(question)}`));
       }
-      if(await evaluate(`!!document.querySelector('textarea[aria-label="Your code"]')`)) {
-        await select('select[aria-label="Code language"]','python');
-        await fill('textarea[aria-label="Your code"]','def solve(nums, target):\n    return [0, 1]');
-        await click('button','Run tests');
-        await waitFor(hasText('not configured'),'coding unavailable message');
-        check('Coding language/editor and unavailable-runner state',true);
+      if(i===0) {
+        await evaluate(installCallMedia());
+        await click('input[aria-label="Speech recognition consent"]');await click('button','Join interview');
       }
-      await fill('form textarea','For example I built an inventory dashboard because the team needed visibility. The result reduced manual checking, and I learned to document the tests.');
-      await click('button','Submit answer');
+      await waitFor('document.querySelector(".call-avatar-listening")','spoken question turn');
+      if(question.includes('Explain your algorithm aloud'))check('Technical problem is answered aloud without a code editor',await evaluate('!document.querySelector("textarea")'));
+      await evaluate(`window.__callTest.emit('For example I built an inventory dashboard because the team needed visibility. The result reduced manual checking, and I learned to document the tests.');`);
+      await click('button','Send spoken answer');
       await waitFor(`location.pathname.endsWith('/report') || (document.querySelector('h1')?.innerText!==${JSON.stringify(question)} && !${hasText('Saving answer')})`,'next interview question');
     }
     await waitFor(hasText('Your interview feedback'),'completed report');
@@ -304,9 +303,11 @@ try {
   await goto('/interview/start',hasText('Start interview'));
   await click('input[type="checkbox"]'); await click('button','Start interview');
   await waitFor('document.querySelector("progress")','skip scenario');
+  await evaluate(installCallMedia());await click('input[aria-label="Speech recognition consent"]');await click('button','Join interview');
+  await waitFor('document.querySelector(".call-avatar-listening")','skip call joined');
   await click('button','Skip question');
   await waitFor(hasText('Question 2 of'),'skipped question');
-  await click('button','Finish and view report');
+  await click('button','End interview');
   await waitFor(hasText('Your interview feedback'),'early-completion report');
   check('Skipping and early completion keep skipped answers unscored',await evaluate(`${hasText('Not scored')} && ${hasText('skipped 1')}`));
   await click('button','Delete this interview');

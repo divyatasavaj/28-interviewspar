@@ -120,6 +120,14 @@ def make_questions(domain, persona, resume=None):
     return questions
 
 
+def spoken_question(question):
+    """A voice interview asks for reasoning, never executable code."""
+    if question.get("type") != "coding":
+        return dict(question)
+    return {**question, "type": "spoken", "evaluation_kind": "technical",
+            "prompt": question["prompt"] + " Explain your algorithm aloud, walk through an example, and discuss time complexity and edge cases. You do not need to write code."}
+
+
 def evaluate_answer(question, answer, latency_ms=0, allow_ai=False, code_result=None):
     """Keep observed communication signals separate from unverified technical correctness."""
     words = answer.split()
@@ -187,7 +195,8 @@ def evaluate_answer(question, answer, latency_ms=0, allow_ai=False, code_result=
     if (
         allow_ai
         and os.getenv("GROQ_API_KEY")
-        and question["round"] not in ("screening", "coding")
+        and question["round"] != "screening"
+        and (question["round"] != "coding" or question.get("type") == "spoken")
     ):
         try:
             from groq import Groq
@@ -273,6 +282,7 @@ def public_session(session):
         "domain": session["domain"],
         "interview_type": session["persona"],
         "mode": session["mode"],
+        "response_mode": session.get("response_mode", "text"),
         "status": session["status"],
         "version": session["version"],
         "current_round": current["round"] if current else "completed",

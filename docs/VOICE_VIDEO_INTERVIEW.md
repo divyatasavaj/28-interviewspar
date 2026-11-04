@@ -1,97 +1,98 @@
-# Voice/video interview and delivery feedback
+# Speech-only interview call
 
-The supported `/interview/:sessionId` screen now includes the call experience.
-It uses the same owned, versioned FastAPI interview and MongoDB report as typed
-practice. The retired `pages/Interview.jsx` and `/api/video` routes are not activated.
+The supported `/interview/:sessionId` page fills the viewport with an interviewer
+and local camera view. The call has no round list, written-answer field, code editor,
+or confidence questionnaire. A browser **Full screen** button is available where
+supported; the page already fills the viewport without browser fullscreen permission.
 
 ## Candidate journey
 
-1. Start an HR or technical interview as usual.
-2. In **Your interview call**, choose an English recognition locale and browser or
-   online neural question voice. Accept the voice/observation consent, then select
-   **Join voice interview**. The interviewer speaks the question and opens the
-   microphone when playback ends successfully.
-3. Optionally select **Turn camera on**. The preview and face detector run locally.
-   Camera failure or an unavailable detector does not prevent spoken/typed answers.
-4. Confirmed recognized words append to the answer field; interim words appear as
-   live captions. **Stop and review** ends recognition and waits for final words.
-   **Submit answer** also waits for final words before saving and advancing. The
-   next question is spoken automatically while voice mode remains active.
-5. Review saved delivery observations alongside answer-content feedback. Assessment
-   mode keeps previous-answer feedback in the final report.
+1. Choose the interview focus, feedback timing, and storage consent in setup.
+2. In the call lobby choose the recognition locale and question voice, accept speech
+   consent, and select **Join interview**. The camera connects by default; it may be
+   disabled. Microphone speech recognition is required to answer.
+3. The interviewer reads the question, then opens the microphone. Recognized words
+   appear as read-only captions. **Pause microphone** waits for final words;
+   **Continue speaking** appends more speech. **Record again** replaces the entire
+   current answer and its delivery observations. Nothing can be typed into an answer.
+4. **Send spoken answer** waits for final recognized words, saves the transcript and
+   observations, and starts the next question automatically. Technical algorithm
+   questions request a spoken explanation, example, complexity, and edge cases.
+5. **End interview** opens the saved report. It does not submit an unsent answer.
+   **Disconnect devices** stops camera/microphone and returns to the lobby.
 
-Use **Leave voice mode** to release microphone/camera resources and continue typing.
-Navigating away, completing the interview, or cancelling a pending permission
-request also releases resources. Reloaded sessions retain submitted answers and
-reports, but require joining voice mode again before accessing devices. Unsaved
-text/recordings are not restored. Each recording stops after ten minutes.
+Practice feedback is available in a compact **Previous answer feedback** control.
+Assessment feedback appears only in the report. Device access requires joining again
+after reload. Unsupported browsers or denied microphone permissions show a retry
+message and block answer submission; there is no typed fallback. Skip/early finish
+remain available. Each recording stops after ten minutes.
 
-Browser recognition may send microphone audio to its browser/vendor service.
-InterviewSpar stores the submitted answer and consented numerical summaries, not
-raw audio or camera frames. Online neural voice sends the question text to the
-configured Edge TTS service; browser voice is the default and does not require
-that service. Neither the avatar nor local face detection uses an external CDN.
+## Automatic observations
 
-## Measurement definitions
+All computation uses browser observations and the recognized answer. No emotional,
+identity, gaze, or pronunciation model runs. These are transparent coaching
+heuristics, not independently validated measurements of a candidate's mental state.
+Camera appearance is never used to infer confidence.
 
-| Observation | Definition and limit |
+| Metric | Definition |
 | --- | --- |
-| Transcript fillers | Whole expressions `um`, `uh`, `erm`, `er`, `hmm`, `you know`, `I mean` in the original recognized text. Recognition can omit or mishear them; these are coaching cues, not penalties. |
-| Context-dependent words | `like`, `well`, `actually`, `basically`, `literally` are listed separately. They may be meaningful and are excluded from the filler count. |
-| Microphone activity | Local Web Audio RMS sampled about every 50ms. RMS ≥0.018 marks an energy-active sample. It estimates speech activity; it cannot distinguish a speaker from every background sound. Browser audio processing is disabled for this meter. |
-| Pauses | Energy gaps ≥500ms between active samples. Leading/trailing silence and gaps between separate recording attempts are excluded. Long missing sampling intervals are missing coverage, not pauses. |
-| Speaking pace | Recognized word count divided by the observed first-to-last speech span, including internal pauses. Available only for a complete recognized transcript, ≥5 words, ≥5 seconds of span, ≥1 second of active energy and ≥80% audio coverage. |
-| Audio coverage | Successfully sampled duration divided by capture duration. Browser suspension, a busy device, or unavailable audio can reduce coverage. |
-| Face presence/framing | Native face detection where available, otherwise bundled TinyFaceDetector. Observations are sampled about twice per second. Centered framing requires exactly one detected face within the central framing bounds. No identity, emotion, gaze, or eye-contact model runs. |
-| Page visibility | Visible/hidden elapsed time while the microphone answer turn is active, with visibility events preserving hidden duration across timer throttling. This describes the tab, not the candidate's attention. |
-| Confidence | Optional candidate self-rating from 1–5. No inferred psychological-confidence percentage is fabricated. |
+| Speaking pace | Recognized words / observed first-to-last speech span, including internal pauses. Requires complete recognition, ≥5 words, ≥5 seconds of span, ≥1 second of active energy, and ≥80% microphone coverage. |
+| Transcript fillers | Whole expressions `um`, `uh`, `erm`, `er`, `hmm`, `you know`, `I mean`. Recognition may miss these; counts are not guaranteed disfluency counts. |
+| Context-dependent words | `like`, `well`, `actually`, `basically`, `literally`, listed separately and excluded from filler totals. |
+| Pauses | Energy gaps ≥500ms between active samples. Leading/trailing silence, gaps between attempts, and missing sampling intervals are excluded. Deliberate pauses can be useful. |
+| Speech flow · estimate | `100 × (1 − pause_ms / speech_span_ms) × (1 − filler_count / word_count)`, rounded. A descriptive flow index, not a validated language-proficiency score. |
+| Confidence cues | **Steady delivery** when pauses occupy ≤20% of speech span, fillers are ≤5 per 100 words, and pace is 90–190 words/minute; otherwise **Variable delivery**. Exact evidence is displayed. These thresholds are unvalidated coaching defaults, not a measurement of internal confidence. |
+| Attention cues · presence | `face_presence_percent × page_visible_percent / 100`. Requires at least 10 valid camera samples and 10 seconds of tab observations in the same answer. This combines observable presence; it does not establish cognitive attention, eye contact, or integrity. |
+| Face/framing | Native FaceDetector or bundled TinyFaceDetector, about twice per second while speaking. Centered framing requires one face within the central bounds. No face is distinct from unavailable detection. |
+| Tab visibility | Event-based visible/hidden time only during the microphone answer turn. Hidden time is retained across timer throttling. |
 
-Short, silent, unavailable, or insufficiently observed samples remain **Not
-measured** where a metric cannot be supported. Camera-off and detector-unavailable
-states produce no samples, rather than a zero attention score. Normal pauses are
-not treated as evidence of nervousness. Pronunciation and emotional confidence are
-not measured; independent labeled recordings would be needed to validate stronger
-claims across devices, accents, noise, and environments.
+Speech flow and confidence cues require complete recognition, ≥20 words, ≥10 seconds
+of speech span, ≥3 seconds of energy-active audio, and ≥80% microphone coverage.
+Short, silent, interrupted, or insufficiently observed answers show **Not measured**.
+The microphone meter samples RMS about every 50ms; RMS ≥0.018 counts as active.
+Background noise can count as energy, and device/browser behavior affects measurements.
+Intervals longer than 250ms are missing coverage, not measured pauses.
 
-Reports use the original recognized word counts for delivery even when the final
-answer is edited, and label that distinction. Summary pace combines eligible
-spoken spans; camera percentages combine sample counts; self-ratings average only
-answers with a rating. Skipped answers have no delivery evaluation. These metrics
-do not change answer correctness, difficulty adaptation, or the hiring-related
-limitations on existing scores.
+Session speech metrics combine eligible answers' counts and durations, rather than
+averaging rounded percentages. Attention estimates average only answers with both
+camera and tab evidence, weighted by observed time. Skipped answers are excluded.
+New reports no longer display historical confidence self-ratings. These observations
+never alter answer correctness or difficulty adaptation.
 
-## Engineering and verification
+## Data and API
 
-`useInterviewCall` owns playback/recognition generations and invalidates old
-callbacks on question changes. `createDictation.stop()` waits for the recognition
-end event with a bounded finalization timeout. Concurrent stop requests share the
-same result; another recording cannot start until final words are handled. Leaving
-during finalization cancels queued question playback. A recognition failure or
-finalization timeout disables pace estimates for that answer; the user reviews
-the captured transcript before submission. `useWebcam` releases late permission
-results. `FaceDetection` loads its model only when the camera is active and never
-uses pixel brightness as a substitute for face detection.
+Camera frames and raw audio are not saved or uploaded by InterviewSpar. Browser
+recognition may send audio to the browser vendor. Online neural voice sends question
+text to the configured TTS service; browser voice is the default. Local face detection
+loads only when the camera is enabled and does not use an external CDN.
 
-The optional `delivery` field on `/api/interview/answer` requires explicit consent,
-bounded integer observations, and consistent duration/sample relationships. The
-server derives report metrics; arbitrary client score fields are rejected. These
-are still client-reported observations, not tamper-proof proctoring evidence.
-Metrics share the interview's ownership, retry, persistence and deletion lifecycle.
+React starts sessions with `response_mode: "voice"`. The API requires a consented,
+nonempty `delivery.transcript` equal to the submitted answer, and rejects written
+replacements/code in those sessions. Browser observations cannot cryptographically
+prove someone spoke. Text-mode API compatibility remains for existing integrations;
+it is not exposed in the interview UI. `POST /api/interview/{id}/voice` upgrades an
+owned older active session, preserving submitted answers and converting remaining
+coding prompts to spoken problems. It is idempotent and uses a version check.
 
-Unit/API checks cover pauses, filler boundaries, missing data, transcript editing,
-weighted summaries, consent/validation, final-word flushing, cancellation, visibility
-timing and persistence. Browser checks use synthetic camera frames, a deterministic
-Web Audio stream, and controlled speech-recognition/playback events. They test the
-actual UI, media handling, bundled model loading and saved report integration; they
-do not establish real microphone transcription accuracy or audible voice quality.
-See `SITE_TEST_REPORT.md` for the run results and current limitations.
+Generation ownership prevents old speech events from affecting a new answer.
+Repeated stop requests share finalization; disconnect cancels queued playback and
+late device permissions. Failed recognition or disconnecting before final words
+arrive disables unsupported speech estimates until the answer is recorded again.
 
-The optional focused browser command is:
+## Verification
+
+Unit/API regressions cover threshold/null behavior, camera-independent confidence
+cues, paired attention evidence, speech-only enforcement, complete technical voice
+sessions, retries, and legacy upgrades. Browser checks use synthetic camera/audio and
+controlled speech events. They establish wiring, persistence and UI behavior, not
+real-device transcription accuracy, face-model accuracy, or audible voice quality.
+See [site verification](SITE_TEST_REPORT.md) for actual results.
+
+Start Vite on port 5173, leave port 8000 free, then run:
 
 ```sh
 cd backend
 CALL_ONLY=1 ../.venv/bin/python tests/live_site_check.py --browser --browser-only --headful
 ```
 
-As with the full runner, start Vite on port 5173 first and leave port 8000 free.
-The runner creates and removes its own disposable database.
+The runner uses a unique disposable database and confirms its deletion.

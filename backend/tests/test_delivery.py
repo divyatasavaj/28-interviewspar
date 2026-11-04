@@ -9,7 +9,7 @@ def observed(**changes):
         "audio":{"capture_ms":12000,"observed_ms":12000,"voiced_ms":7000,"speech_span_ms":10000,
                  "pause_count":2,"pause_ms":3000,"longest_pause_ms":2000,"sample_count":240,"clipped_samples":0},
         "camera":{"samples":20,"face_samples":18,"centered_samples":15,"multiple_samples":1},
-        "focus":{"observed_ms":10000,"hidden_ms":2000,"hidden_count":1},"confidence_self_rating":4}
+        "focus":{"observed_ms":10000,"hidden_ms":2000,"hidden_count":1}}
     data.update(changes)
     return data
 
@@ -23,13 +23,14 @@ class DeliveryTests(unittest.TestCase):
         self.assertTrue(result['transcript_edited'])
         self.assertEqual(result['face_presence_percent'],90)
         self.assertEqual(result['page_visible_percent'],80)
-        self.assertEqual(result['confidence_self_rating'],4)
+        self.assertEqual(result['behavior']['attention_cue_percent'],72)
+        self.assertIsNone(result['behavior']['confidence_cue'])
         self.assertNotIn('confidence_score',result)
 
     def test_no_measurement_is_not_a_zero_score(self):
         self.assertIsNone(delivery_feedback(None,"Typed answer"))
         result=delivery_feedback(DeliveryObservation(consent=True),"Typed answer")
-        for key in ['words_per_minute','filler_count','face_presence_percent','page_visible_percent','confidence_self_rating']:
+        for key in ['words_per_minute','filler_count','face_presence_percent','page_visible_percent']:
             self.assertIsNone(result[key])
         self.assertIsNone(summarize_delivery([]))
 
@@ -49,12 +50,40 @@ class DeliveryTests(unittest.TestCase):
 
     def test_summary_weights_samples_and_excludes_skipped_answers(self):
         first=delivery_feedback(DeliveryObservation(**observed()),'Edited')
-        second=delivery_feedback(DeliveryObservation(**observed(camera={'samples':80,'face_samples':40,'centered_samples':20,'multiple_samples':0},confidence_self_rating=2)),'Edited')
+        second=delivery_feedback(DeliveryObservation(**observed(camera={'samples':80,'face_samples':40,'centered_samples':20,'multiple_samples':0})),'Edited')
         report=summarize_delivery([{'evaluation':{'delivery':first}},{'evaluation':{'delivery':second}},{'skipped':True,'evaluation':{'delivery':first}}])
         self.assertEqual(report['answers_observed'],2)
         self.assertEqual(report['face_presence_percent'],58)
-        self.assertEqual(report['confidence_self_rating'],3)
+        self.assertEqual(report['behavior']['attention_cue_percent'],56)
         self.assertEqual(report['filler_count'],4)
+
+    def test_automatic_delivery_cues_and_camera_independence(self):
+        text = "I built a reliable service for our team because we needed faster reporting and clear ownership of every customer request."
+        source = observed(transcript=text)
+        source['audio'].update(voiced_ms=9000, pause_count=1, pause_ms=1000, longest_pause_ms=1000)
+        result = delivery_feedback(DeliveryObservation(**source), text)['behavior']
+        self.assertEqual(result['fluency_score'], 90)
+        self.assertEqual(result['confidence_cue'], 'Steady delivery')
+        self.assertEqual(result['attention_cue_percent'], 72)
+        source['camera'] = None
+        without_camera = delivery_feedback(DeliveryObservation(**source), text)['behavior']
+        self.assertEqual(without_camera['confidence_cue'], result['confidence_cue'])
+        self.assertIsNone(without_camera['attention_cue_percent'])
+
+    def test_incomplete_short_and_low_coverage_never_infer_confidence(self):
+        for change in ({'transcript_complete':False}, {'transcript':'A brief answer'}):
+            result=delivery_feedback(DeliveryObservation(**observed(**change)), '')['behavior']
+            self.assertIsNone(result['fluency_score'])
+            self.assertIsNone(result['confidence_cue'])
+        source=observed(transcript='word ' * 25)
+        source['audio']['capture_ms']=60000
+        self.assertIsNone(delivery_feedback(DeliveryObservation(**source), '')['behavior']['confidence_cue'])
+
+    def test_attention_requires_paired_evidence_in_the_same_answer(self):
+        first=delivery_feedback(DeliveryObservation(**observed(camera=None)), '')
+        second=delivery_feedback(DeliveryObservation(**observed(focus=None)), '')
+        result=summarize_delivery([{'evaluation':{'delivery':first}}, {'evaluation':{'delivery':second}}])
+        self.assertIsNone(result['behavior']['attention_cue_percent'])
 
     def test_context_dependent_terms_are_separate(self):
         result=delivery_feedback(DeliveryObservation(consent=True,transcript='I like well designed APIs. Actually this works.'),'')

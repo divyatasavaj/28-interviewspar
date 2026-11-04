@@ -8,12 +8,20 @@ export default function InterviewAnalytics({delivery, summary = false}) {
     ['Pauses ≥0.5s',value(summary ? delivery.pause_count : delivery.audio?.pause_count)],
     ['Face present in samples',value(delivery.face_presence_percent,'%')],
     ['Interview tab visible',value(delivery.page_visible_percent,'%')],
-    ['Confidence · self-rated',value(delivery.confidence_self_rating,' / 5')],
+    ['Speech flow · estimate',value(delivery.behavior?.fluency_score,' / 100')],
+    ['Confidence cues',delivery.behavior?.confidence_cue || 'Not measured'],
+    ['Attention cues · presence',value(delivery.behavior?.attention_cue_percent,'%')],
   ];
   return <section className="delivery-feedback">
-    <h3 className="font-semibold text-lg">{summary ? 'Speaking, fluency & attention cues' : 'Delivery observations'}</h3>
+    <h3 className="font-semibold text-lg">{summary ? 'Speaking, confidence & attention cues' : 'Delivery observations'}</h3>
     <p className="text-xs text-gray-600 mt-2">{summary ? `${delivery.answers_observed} answer(s) with observations. ` : ''}Practice observations, separate from your answer score.</p>
     <dl className="delivery-metrics">{items.map(([label,content])=><div key={label}><dt>{label}</dt><dd>{content}</dd></div>)}</dl>
+    {delivery.behavior && <div className="text-xs text-gray-600 leading-relaxed">
+      <p>{delivery.behavior.note}</p>
+      {delivery.behavior.confidence_basis?.length > 0 && <p className="mt-2">Delivery evidence: {delivery.behavior.confidence_basis.join(' · ')}.</p>}
+      {!delivery.behavior.eligible_speech && <p className="mt-2">Speech flow and confidence cues need at least 20 recognized words, a 10-second speech span, and sufficient microphone coverage.</p>}
+      <p className="mt-2">Speech flow combines the share of the speech span outside energy gaps with the recognized filler rate. Attention cues multiply sampled face presence by visible-tab time and require both measurements.</p>
+    </div>}
     {!summary && <>
       <p className="text-xs text-gray-600">Microphone coverage: {value(delivery.audio_coverage_percent,'%')}. Centered framing: {value(delivery.centered_frame_percent,'%')}.</p>
       {delivery.filler_examples?.length > 0 && <p className="mt-2 text-sm">Recognized filler expressions: {delivery.filler_examples.join(', ')}.</p>}

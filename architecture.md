@@ -42,7 +42,7 @@ flowchart LR
    storage consent and optional AI consent. The server selects questions and saves
    the entire owned state document before returning the current question.
 6. Interview Page sends question ID, session revision, unique request ID, answer,
-   code/language where relevant, skip flag, and elapsed milliseconds. The server
+   recognized speech and validated delivery observations, skip flag, and elapsed milliseconds. Voice sessions reject typed replacements and code. The server
    checks ownership and state, evaluates the recorded answer, advances once with
    a MongoDB compare-and-set, and returns the new state.
 7. Practice mode displays feedback after each answer. Assessment mode postpones
@@ -104,13 +104,13 @@ labels do not decide hiring eligibility or certification.
 | `pages/Dashboard.jsx` | Profile summary, owned session list, report/resume navigation |
 | `pages/ResumeIntelligence.jsx`, `utils/resumeIntelligence.js` | Role/JD analysis, evidence/gaps/recommendations, null-score semantics, input/error formatting |
 | `pages/StartInterviewPage.jsx`, `InterviewType.jsx`, `PracticeTracksPage.jsx` | Track/domain selection and consented start |
-| `pages/InterviewPage.jsx` | Current question state, answer/retry/skip/finish, microphone input, code editor, practice feedback |
+| `pages/InterviewPage.jsx` | Full-screen speech-only call, read-only transcript, re-record/skip/finish, compact practice feedback |
 | `pages/InterviewReportPage.jsx`, `InterviewComplete.jsx` | Evidence report, print/PDF, session deletion; old completion URL adapter |
 | `pages/Home.jsx`, `FeaturesPage.jsx`, `StudentGuidePage.jsx`, `ResourcesPage.jsx` | Public explanation, preparation guidance, generated Markdown study notes |
 | `pages/SubscriptionPage.jsx`, `ContactPage.jsx` | Current free access/planned team features and real GitHub support link |
 | `components/ProtectedRoute.jsx`, `DashboardNavbar.jsx`, `Navbar.jsx` | Token presence guard and navigation/logout |
 | `components/Hero.jsx`, `Features.jsx`, `FeatureCard.jsx`, `TrustedCompanies.jsx`, `DashboardHero.jsx`, `ProfileCard.jsx` | Presentational sections/cards; usage claims corrected where reviewed |
-| `components/interview/CodeEditor.jsx` | Current JS/Python editor and owned isolated-code-run request |
+| `components/interview/CodeEditor.jsx` | Retained JS/Python editor for legacy contracts; not rendered in the speech-only call |
 | `utils/naturalSpeech.js`, `utils/dictation.js` | Saved voice preferences, abortable playback, one-shot fallback, and invalidated dictation callbacks |
 | `src/api.js`, `AuthContext.jsx` | Old Express client/auth context; not mounted by `main.jsx` |
 | `pages/Interview.jsx`, `components/SessionView.jsx`, `AuthPage.jsx`, `Home.jsx`, `Dashboard.jsx` | Earlier UI generations, outside the current route tree |

@@ -69,11 +69,40 @@ class DeliveryObservation(Observation):
     audio: AudioObservation | None = None
     camera: CameraObservation | None = None
     focus: FocusObservation | None = None
-    confidence_self_rating: Annotated[int, Field(strict=True, ge=1, le=5)] | None = None
 
 
 def percent(numerator, denominator):
     return round(100 * numerator / denominator, 1) if denominator else None
+
+
+def behavioral_feedback(word_count, filler_count, audio, camera, focus, complete=True):
+    """Transparent practice heuristics; no emotion or gaze inference from video."""
+    coverage = percent(audio["observed_ms"], audio["capture_ms"]) if audio else None
+    eligible = bool(complete and audio and word_count >= 20 and audio["speech_span_ms"] >= 10000
+                    and audio["voiced_ms"] >= 3000 and coverage is not None and coverage >= 80)
+    flow = confidence = None
+    basis = []
+    if eligible:
+        # Long energy gaps and recognized fillers are observable delivery interruptions.
+        gap_fraction = audio["pause_ms"] / audio["speech_span_ms"]
+        filler_rate = 100 * filler_count / word_count
+        pace = word_count * 60000 / audio["speech_span_ms"]
+        flow = round(100 * (1 - gap_fraction) * (1 - min(1, filler_count / word_count)))
+        steady = gap_fraction <= .2 and filler_rate <= 5 and 90 <= pace <= 190
+        confidence = "Steady delivery" if steady else "Variable delivery"
+        basis = [f"{round(pace)} recognized words/minute",
+                 f"{round(filler_rate, 1)} filler expressions per 100 words",
+                 f"{round(100 * gap_fraction, 1)}% of speech span in energy gaps ≥0.5 seconds"]
+    attention = None
+    if camera and camera["samples"] >= 10 and focus and focus["observed_ms"] >= 10000:
+        # A combined presence proxy; missing camera or tab evidence stays unavailable.
+        attention = round(100 * camera["face_samples"] / camera["samples"]
+                          * (1 - focus["hidden_ms"] / focus["observed_ms"]), 1)
+    return {"method": "delivery-behavior-heuristic-v1", "fluency_score": flow,
+            "confidence_cue": confidence, "attention_cue_percent": attention,
+            "confidence_basis": basis,
+            "eligible_speech": eligible,
+            "note": "Automatic practice estimates, not validated psychological measurements. Confidence cues describe vocal steadiness; attention cues combine face presence and tab visibility. Pauses can be deliberate. Camera appearance is not used to infer confidence."}
 
 
 def delivery_feedback(observation, answer):
@@ -114,7 +143,7 @@ def delivery_feedback(observation, answer):
     if focus and focus["hidden_count"]:
         notes.append(f"The interview tab became hidden {focus['hidden_count']} time(s) during spoken answers.")
     return {
-        "source": "browser-observations-v1", "language": data.get("language"),
+        "source": "browser-observations-v2", "language": data.get("language"),
         "recognized_word_count": len(words),
         "filler_count": len(fillers) if transcript else None,
         "filler_examples": sorted(set(fillers)),
@@ -127,13 +156,13 @@ def delivery_feedback(observation, answer):
         "face_presence_percent": percent(camera["face_samples"], camera["samples"]) if camera else None,
         "centered_frame_percent": percent(camera["centered_samples"], camera["samples"]) if camera else None,
         "page_visible_percent": percent(focus["observed_ms"]-focus["hidden_ms"], focus["observed_ms"]) if focus else None,
-        "confidence_self_rating": data.get("confidence_self_rating"),
+        "behavior": behavioral_feedback(len(words), len(fillers), audio, camera, focus, data.get("transcript_complete", True)),
         "coaching": notes,
         "limitations": [
             "Browser-reported practice observations; not independently verified or a hiring score.",
             "Speech recognition may omit fillers or misrecognize accents. Contextual words such as 'like' are listed separately.",
             "Microphone energy estimates speech and pauses; background noise and browser suspension affect coverage. Pronunciation is not scored.",
-            "Face presence and framing do not measure eye contact, attention, or confidence. Confidence is an optional self-rating.",
+            "Confidence cues are delivery heuristics, not emotional confidence. Camera and tab observations cannot establish actual attention or eye contact.",
         ],
     }
 
@@ -147,10 +176,20 @@ def summarize_delivery(answers):
     paced = [r for r in rows if r.get("words_per_minute") is not None]
     cameras = [r["camera"] for r in rows if r.get("camera")]
     focuses = [r["focus"] for r in rows if r.get("focus")]
-    ratings = [r["confidence_self_rating"] for r in rows if r.get("confidence_self_rating") is not None]
     span = sum(r["audio"]["speech_span_ms"] for r in paced)
     camera_samples = sum(c["samples"] for c in cameras)
     focus_ms = sum(f["observed_ms"] for f in focuses)
+    eligible = [r for r in rows if (r.get("behavior") or {}).get("eligible_speech")]
+    combined_audio = ({key: sum(r["audio"][key] for r in eligible)
+                       for key in ("observed_ms", "capture_ms", "speech_span_ms", "voiced_ms", "pause_ms")} if eligible else None)
+    combined_camera = {"samples": camera_samples, "face_samples": sum(c["face_samples"] for c in cameras)} if cameras else None
+    combined_focus = {"observed_ms": focus_ms, "hidden_ms": sum(f["hidden_ms"] for f in focuses)} if focuses else None
+    # Attention is averaged only from answers with both camera and tab evidence.
+    attended = [r for r in rows if (r.get("behavior") or {}).get("attention_cue_percent") is not None]
+    behavior = behavioral_feedback(sum(r["recognized_word_count"] for r in eligible),
+                                   sum(r["filler_count"] for r in eligible), combined_audio, combined_camera, combined_focus)
+    weight = sum(r["focus"]["observed_ms"] for r in attended)
+    behavior["attention_cue_percent"] = round(sum(r["behavior"]["attention_cue_percent"] * r["focus"]["observed_ms"] for r in attended) / weight, 1) if weight else None
     return {
         "answers_observed": len(rows), "spoken_answers": len(spoken),
         "filler_count": sum(r["filler_count"] for r in spoken) if spoken else None,
@@ -158,6 +197,5 @@ def summarize_delivery(answers):
         "pause_count": sum(r["audio"]["pause_count"] for r in rows if r.get("audio")) if any(r.get("audio") for r in rows) else None,
         "face_presence_percent": percent(sum(c["face_samples"] for c in cameras),camera_samples),
         "page_visible_percent": percent(focus_ms-sum(f["hidden_ms"] for f in focuses),focus_ms),
-        "confidence_self_rating": round(sum(ratings)/len(ratings),1) if ratings else None,
-        "confidence_ratings": len(ratings), "limitations": rows[0]["limitations"],
+        "behavior": behavior, "limitations": rows[0]["limitations"],
     }

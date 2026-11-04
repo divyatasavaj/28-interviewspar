@@ -1,42 +1,63 @@
-import {useEffect, useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {useWebcam} from '../../hooks/useWebcam';
 import FaceDetection from '../FaceDetection';
 import InterviewerAvatar from '../InterviewerAvatar';
 import VoicePanel from '../VoicePanel';
+import Brand from '../Brand';
+import {transcriptSignals} from '../../utils/deliveryMetrics';
 
-/** Active call surface: browser speech plus local camera, connected to the saved interview. */
-export default function CallRoom({call, interviewType, questionPrompt, busy}) {
-  const webcam = useWebcam();
-  const [consent,setConsent] = useState(false), [detector,setDetector] = useState({status:'off'}), [faces,setFaces] = useState(null);
-  const [aspect,setAspect] = useState(4/3);
-  const stopCamera = webcam.stop;
-  useEffect(() => { if (!call.enabled) { stopCamera(); setFaces(null); setDetector({status:'off'}); } }, [call.enabled,stopCamera]);
-  function observe(detected) {
-    setFaces(detected);
-    const video = webcam.videoRef.current;
-    call.observeFaces(detected,video?.videoWidth,video?.videoHeight);
+export default function CallRoom({call,questionPrompt,busy,error,progress,onSubmit,onSkip,onFinish,feedback}) {
+  const root=useRef(null), webcam=useWebcam();
+  const [consent,setConsent]=useState(false),[cameraWanted,setCameraWanted]=useState(true);
+  const [detector,setDetector]=useState({status:'off'}),[faces,setFaces]=useState(null);
+  const [fullscreen,setFullscreen]=useState(false),[fullscreenError,setFullscreenError]=useState('');
+  const stopCamera=webcam.stop;
+  useEffect(()=>{if(!call.enabled){stopCamera();setFaces(null);setDetector({status:'off'});}},[call.enabled,stopCamera]);
+  useEffect(()=>{const changed=()=>setFullscreen(document.fullscreenElement===root.current);document.addEventListener('fullscreenchange',changed);return()=>document.removeEventListener('fullscreenchange',changed);},[]);
+  function observe(detected){setFaces(detected);const v=webcam.videoRef.current;call.observeFaces(detected,v?.videoWidth,v?.videoHeight);}
+  function startCamera(){setFaces(null);setDetector({status:'loading'});void webcam.start();}
+  function join(){call.join();if(cameraWanted)startCamera();}
+  async function toggleFullscreen(){
+    setFullscreenError('');
+    try{if(document.fullscreenElement)await document.exitFullscreen();else await root.current.requestFullscreen();}
+    catch{setFullscreenError('Browser full screen is unavailable. The call still fills this page.');}
   }
-  return <section className="call-room" aria-labelledby="call-title">
-    <div className="flex flex-wrap justify-between items-start gap-4 mb-4"><div><h2 id="call-title" className="text-lg font-bold">Your interview call</h2><p className="text-sm text-gray-600 mt-1">Hear the question, speak your answer, then review and submit.</p></div>{call.enabled && <button type="button" disabled={busy} className="text-sm text-primary underline" onClick={call.leave}>Leave voice mode</button>}</div>
-    <div className="call-tiles">
-      <InterviewerAvatar status={busy ? 'thinking' : call.status} interviewType={interviewType}/>
+  const signals=transcriptSignals(call.voiceText);
+  return <main ref={root} className="call-room" aria-label="Interview video call">
+    <header className="call-header">
+      <Brand to="/dashboard"/>
+      <div className="call-session-status"><span className={call.enabled?'call-status-dot active':'call-status-dot'}/>{call.enabled?'Interview in progress':'Ready to connect'}<span>Question {progress.current} of {progress.total}</span></div>
+      <div className="call-header-actions">{typeof document!=='undefined' && typeof document.documentElement.requestFullscreen==='function' && <button type="button" onClick={toggleFullscreen}>{fullscreen?'Exit full screen':'Full screen'}</button>}<button type="button" className="call-end" disabled={busy} onClick={onFinish}>End interview</button></div>
+      <progress className="call-progress" aria-label="Interview progress" value={progress.answered} max={progress.total}/>
+    </header>
+    <section className="call-stage" aria-label="Call participants">
+      <InterviewerAvatar status={busy?'thinking':call.status}/>
       <div className="camera-tile">
-        <div className="camera-preview" style={{aspectRatio:aspect}}>
-          <video ref={webcam.videoRef} autoPlay muted playsInline aria-label="Your local camera preview" onLoadedMetadata={e=>setAspect(e.currentTarget.videoWidth/e.currentTarget.videoHeight || 4/3)} className={webcam.on ? '' : 'hidden'}/>
-          {webcam.on && <FaceDetection active={webcam.on} videoRef={webcam.videoRef} onFacesDetected={observe} onDebug={setDetector}/>}
-          {!webcam.on && <div className="camera-placeholder"><span aria-hidden="true">◯</span><p>Your camera is off</p><small>You can practice with voice alone.</small></div>}
+        <div className="camera-preview">
+          <video ref={webcam.videoRef} autoPlay muted playsInline aria-label="Your local camera preview" className={webcam.on?'':'hidden'}/>
+          {webcam.on && <FaceDetection active videoRef={webcam.videoRef} onFacesDetected={observe} onDebug={setDetector}/>}
+          {!webcam.on && <div className="camera-placeholder"><span aria-hidden="true">◯</span><p>Your camera</p><small>{webcam.pending?'Connecting…':'Camera is off'}</small></div>}
         </div>
-        <div className="camera-toolbar"><span>{!webcam.on ? 'Local preview' : detector.status === 'loading' ? 'Loading face detection…' : detector.status !== 'ready' ? 'Face detection unavailable' : faces?.length ? `${faces.length} face${faces.length === 1 ? '' : 's'} detected` : 'No face detected in this sample'}</span><button type="button" disabled={busy || !call.enabled} onClick={() => { if (webcam.on || webcam.pending) webcam.stop(); else { setFaces(null); setDetector({status:'loading'}); void webcam.start(); } }}>{webcam.pending ? 'Cancel camera' : webcam.on ? 'Turn camera off' : 'Turn camera on'}</button></div>
+        <div className="camera-toolbar"><span>{!webcam.on?'You':detector.status==='loading'?'Connecting camera…':detector.status!=='ready'?'Face detection unavailable':faces?.length?'Face detected':'No face detected'}</span><button type="button" disabled={!call.enabled} onClick={()=>webcam.on || webcam.pending ? webcam.stop() : startCamera()}>{webcam.pending?'Cancel camera':webcam.on?'Turn camera off':'Turn camera on'}</button></div>
       </div>
-    </div>
-    <p className="call-question-caption" aria-live="polite">{questionPrompt}</p>
-    {webcam.error && <p role="alert" className="mt-3 text-sm text-red-700">{webcam.error}</p>}
-    {!call.enabled && <div className="call-join">
-      <div className="flex flex-wrap gap-4 mb-4"><label className="text-sm">Spoken language<select className="ml-2 rounded-lg border p-2 bg-white" value={call.language} onChange={e=>call.setLanguage(e.target.value)}><option value="en-IN">English (India)</option><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option></select></label><label className="text-sm">Question voice<select className="ml-2 rounded-lg border p-2 bg-white" value={call.engine} onChange={e=>call.setEngine(e.target.value)}><option value="browser">Browser voice</option><option value="neural">Online neural voice</option></select></label></div>
-      <label className="flex gap-3 items-start text-sm leading-relaxed"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)} className="mt-1"/><span>I agree to browser speech recognition and saving delivery observations with my answers. My browser may send speech to its recognition provider. Camera frames and raw audio are not saved by InterviewSpar.</span></label>
-      <button type="button" className="spar-button mt-4" disabled={busy || !consent} onClick={call.join}>Join voice interview</button>
-    </div>}
-    {(call.enabled || call.voiceText) && <VoicePanel call={call} disabled={busy}/>}
-    <p className="text-xs text-gray-600 mt-4 leading-relaxed">Attention cues use tab visibility and sampled face presence/framing. They do not establish attention or eye contact. Confidence is your optional self-rating. Typed answers remain available.</p>
-  </section>;
+      <div className="call-question-caption"><span>Interviewer</span><h1 key={questionPrompt}>{questionPrompt}</h1></div>
+      {!call.enabled && <div className="call-lobby"><div className="call-join">
+        <span className="section-kicker">Your interview call</span><h2>Let’s talk.</h2><p>Hear the question and answer aloud. Your transcript is read-only; you can record an answer again before sending it.</p>
+        <div className="call-join-options"><label>Spoken language<select value={call.language} onChange={e=>call.setLanguage(e.target.value)}><option value="en-IN">English (India)</option><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option></select></label><label>Question voice<select value={call.engine} onChange={e=>call.setEngine(e.target.value)}><option value="browser">Browser voice</option><option value="neural">Online neural voice</option></select></label></div>
+        <label className="call-consent"><input type="checkbox" checked={cameraWanted} onChange={e=>setCameraWanted(e.target.checked)}/>Connect my camera for framing and attention cues</label>
+        <label className="call-consent"><input type="checkbox" aria-label="Speech recognition consent" checked={consent} onChange={e=>setConsent(e.target.checked)}/><span>I agree to browser speech recognition and saved delivery observations. The browser may send audio to its speech provider. Camera frames and raw audio are not saved by InterviewSpar.</span></label>
+        <button type="button" className="spar-button" disabled={busy || !consent} onClick={join}>Join interview</button>
+        <small>Microphone access is required. Use Chrome or Edge.</small>
+      </div></div>}
+    </section>
+    <footer className="call-footer">
+      {(error || webcam.error || fullscreenError) && <p role="alert" className="call-error">{error || webcam.error || fullscreenError}</p>}
+      {call.enabled ? <VoicePanel call={call} disabled={busy} onSubmit={onSubmit} onSkip={onSkip}/> : <p className="call-offline-note">Speech-only interview · Automatic delivery feedback · Local camera preview</p>}
+      {call.enabled && <div className="call-footer-meta">
+        <details className="call-observations"><summary>Live observations</summary><div className="delivery-live-stats"><span>Recognized words <strong>{signals.word_count}</strong></span><span>Transcript fillers <strong>{call.voiceText?signals.filler_count:'—'}</strong></span><span>Observed audio <strong>{call.audio?`${(call.audio.observed_ms/1000).toFixed(1)}s`:'—'}</strong></span><span>Pauses ≥0.5s <strong>{call.audio?call.audio.pause_count:'—'}</strong></span></div><p>Confidence cues describe delivery steadiness. Attention cues describe camera presence and tab visibility. These are practice estimates.</p></details>
+        {feedback && <details className="call-previous-feedback"><summary>Previous answer feedback</summary><p>{feedback.feedback}</p></details>}
+        <button type="button" disabled={busy} onClick={call.leave}>Disconnect devices</button>
+      </div>}
+    </footer>
+  </main>;
 }

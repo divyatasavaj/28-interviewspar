@@ -1,5 +1,16 @@
 # InterviewSpar repair checklist — branch b3
 
+## Full-screen speech-only call
+
+- [x] T33: Replace round steps and answer/code editors with a full-screen call and read-only spoken captions; support re-recording and voice-only API enforcement.
+- [x] T34: Replace confidence self-rating with automatic delivery/attention cues, evidence, thresholds, missing-data handling, and saved report integration.
+- [x] T35: Complete all regression/browser journeys, review desktop/mobile, document and publish on b3.
+
+Speech-only verification: 160 backend tests, 48 frontend tests, 122 full-site Chrome
+checks and 29 final focused call checks passed. Build and lint passed with retained
+legacy warnings. Automatic behavior cues are documented practice heuristics;
+independent accuracy validation remains outstanding.
+
 ## Core voice/video interview integration
 
 - [x] T30: Connect the call UI, local avatar/camera, automatic spoken questions, and microphone answers to the canonical saved interview.

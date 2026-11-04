@@ -84,13 +84,59 @@ class InterviewApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         saved = response.json()['answers'][0]['evaluation']['delivery']
         self.assertEqual(saved['filler_count'], 2)
-        self.assertEqual(saved['confidence_self_rating'], 4)
+        self.assertEqual(saved['behavior']['attention_cue_percent'], 72)
         retry = self.client.post('/api/interview/answer', headers=self.headers, json=body)
         self.assertEqual(len(retry.json()['answers']), 1)
         report = self.client.get('/api/interview/'+session['id']+'/feedback', headers=self.headers).json()
         self.assertEqual(report['delivery_summary']['spoken_answers'], 1)
         self.assertEqual(report['qa_pairs'][0]['evaluation']['delivery'], saved)
         self.assertEqual(self.client.get('/api/interview/'+session['id']+'/feedback').status_code, 401)
+
+    def test_voice_interview_accepts_only_recognized_speech_and_retries(self):
+        from test_delivery import observed
+        session=self.start(response_mode='voice')
+        response,_=self.submit(session)
+        self.assertEqual(response.status_code,422)
+        data=observed()
+        response,_=self.submit(session,answer='Typed replacement',delivery=data)
+        self.assertEqual(response.status_code,422)
+        response,body=self.submit(session,answer=data['transcript'],delivery=data)
+        self.assertEqual(response.status_code,200,response.text)
+        self.assertEqual(response.json()['answers'][0]['answer'],data['transcript'])
+        retry=self.client.post('/api/interview/answer',headers=self.headers,json=body)
+        self.assertEqual(len(retry.json()['answers']),1)
+
+    def test_voice_technical_track_finishes_without_code_execution(self):
+        from test_delivery import observed
+        session=self.start(response_mode='voice')
+        found=False
+        with patch('app.routes.interview_flow.run_problem') as execute:
+            while session['current_question']:
+                if session['current_question']['round']=='coding':
+                    found=True
+                    self.assertEqual(session['current_question']['type'],'spoken')
+                    self.assertIn('Explain your algorithm aloud',session['current_question']['prompt'])
+                data=observed()
+                response,_=self.submit(session,answer=data['transcript'],delivery=data)
+                self.assertEqual(response.status_code,200,response.text)
+                session=response.json()
+            execute.assert_not_called()
+        self.assertTrue(found)
+        self.assertEqual(session['status'],'completed')
+
+    def test_legacy_session_voice_upgrade_is_owned_idempotent_and_preserves_answers(self):
+        session=self.start()
+        response,_=self.submit(session)
+        session=response.json()
+        path='/api/interview/'+session['id']+'/voice'
+        self.assertEqual(self.client.post(path).status_code,401)
+        response=self.client.post(path,headers=self.headers)
+        self.assertEqual(response.status_code,200,response.text)
+        upgraded=response.json()
+        self.assertEqual(upgraded['response_mode'],'voice')
+        self.assertEqual(upgraded['answers'],session['answers'])
+        self.assertEqual(upgraded['version'],session['version']+1)
+        self.assertEqual(self.client.post(path,headers=self.headers).json()['version'],upgraded['version'])
 
     def test_invalid_delivery_is_rejected_and_skip_has_no_delivery(self):
         from test_delivery import observed
@@ -102,6 +148,18 @@ class InterviewApiTests(unittest.TestCase):
         self.assertNotIn('delivery', response.json()['answers'][0]['evaluation'])
         report = self.client.get('/api/interview/'+session['id']+'/feedback', headers=self.headers).json()
         self.assertIsNone(report['delivery_summary'])
+
+    def test_concurrent_voice_upgrade_returns_the_winning_session(self):
+        session = self.start()
+        update = self.db.interview_sessions.update_one
+        def concurrent_upgrade(query, patch):
+            update(query, patch)  # Another request wins the same transition.
+            return SimpleNamespace(modified_count=0)
+        with patch.object(self.db.interview_sessions, 'update_one', side_effect=concurrent_upgrade):
+            response = self.client.post('/api/interview/'+session['id']+'/voice', headers=self.headers)
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()['response_mode'], 'voice')
+        self.assertEqual(response.json()['version'], session['version']+1)
 
     def test_profile_reads_do_not_consume_credential_attempt_budget(self):
         for _ in range(35):

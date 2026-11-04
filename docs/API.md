@@ -75,11 +75,17 @@ Start request example (optional fields shown):
   "persona": "technical",
   "mode": "practice",
   "save_consent": true,
-  "allow_ai": false
+  "allow_ai": false,
+  "response_mode": "voice"
 }
 ```
 
 Personas: `hr`, `technical` (`tech` alias accepted). Modes: `practice`, `assessment`.
+React uses `response_mode: "voice"`; omitted response mode defaults to `text` for
+legacy API compatibility. Voice questions request spoken algorithm explanations
+instead of code. `POST /api/interview/{id}/voice` upgrades owned active older sessions
+idempotently, preserving saved answers and converting pending coding prompts.
+An actual upgrade increments the session revision; concurrent changes are checked.
 Unsupported domains or missing storage consent return 400. The session includes
 `id`, `version`, `status`, `current_question`, `current_round`, `rounds`, `progress`,
 saved `answers`, and creation/completion times. Question objects have `id`, `round`,
@@ -94,16 +100,16 @@ Submit the IDs/revision from that response:
   "version": 0,
   "request_id": "<unique UUID for this submission>",
   "answer": "I am preparing for a backend role...",
-  "code": "",
-  "language": "javascript",
+  "delivery": {"consent": true, "transcript": "I am preparing for a backend role...", "transcript_complete": true, "language": "en-IN"},
   "latency_ms": 42000,
   "skipped": false
 }
 ```
 
-Answers allow 12,000 characters; code 50,000. Supported languages are JavaScript
-and Python. A coding submission needs both code and an explanation, or an explicit
-skip. The request ID is retained for retries: reuse it after a lost response.
+Voice answers require a nonempty consented `delivery.transcript` matching `answer`;
+written replacements and code are rejected with 422. An explicit skip needs no speech.
+Answers allow 12,000 characters. Legacy text-mode coding accepts JavaScript/Python
+code (50,000 characters) with an explanation, or an explicit skip. The request ID is retained for retries: reuse it after a lost response.
 A stale revision/question returns 409 and the client reloads session state.
 Concurrent requests may both call an external evaluator, but only one can advance
 the stored revision. There is no paid/billing guarantee tied to evaluation count.
@@ -119,15 +125,19 @@ means **null**, not zero or a passing grade. Reports can be requested while acti
 
 ## Optional delivery observations
 
-`POST /api/interview/answer` also accepts `delivery` (omit or null for typed-only
-answers). This object requires `consent: true`, an optional original recognized
+`POST /api/interview/answer` requires `delivery` for voice answers (omit or null
+only for legacy text-mode answers or skipped questions). This object requires `consent: true`, an optional original recognized
 `transcript` (≤12,000 characters), `transcript_complete` (boolean; false disables pace estimation), `language` (`en-IN`, `en-US`, `en-GB`), and optional:
 
 - `audio`: `capture_ms`, `observed_ms`, `voiced_ms`, `speech_span_ms`, `pause_count`,
   `pause_ms`, `longest_pause_ms`, `sample_count`, `clipped_samples`.
 - `camera`: `samples`, `face_samples`, `centered_samples`, `multiple_samples`.
 - `focus`: `observed_ms`, `hidden_ms`, `hidden_count`.
-- `confidence_self_rating`: integer 1–5, explicitly a candidate self-report.
+
+Confidence self-ratings and client-calculated scores are not accepted. The server
+computes `behavior` containing `fluency_score`, `confidence_cue`,
+`attention_cue_percent`, evidence, eligibility and the heuristic version. See the
+feature guide for exact thresholds/formulas and limits.
 
 Durations are nonnegative integer milliseconds capped at one hour; counts are
 bounded integers. Invalid duration/count relationships, unconsented data and
@@ -135,10 +145,10 @@ unknown observation fields return 422. Browser observations are not independentl
 verified. No audio/video upload endpoint is needed or enabled.
 
 The server derives `evaluation.delivery` for non-skipped answers, including filler
-counts, eligible words/minute, coverage, camera/tab percentages, self-rating,
+counts, eligible words/minute, coverage, camera/tab percentages, automatic delivery cues,
 coaching and measurement limits. Missing measurements remain null. The raw voice
-transcript is used to derive delivery counts; the submitted edited answer remains
-the stored answer. `delivery_summary` aggregates eligible answer observations in
+transcript is used to derive delivery counts and is the stored voice answer. Legacy
+text-mode submissions can still store an edited answer separately. `delivery_summary` aggregates eligible answer observations in
 reports. Ownership, idempotent retries and deletion follow the existing session.
 See [measurement definitions](VOICE_VIDEO_INTERVIEW.md).
 
