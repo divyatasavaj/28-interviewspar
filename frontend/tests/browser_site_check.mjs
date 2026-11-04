@@ -8,6 +8,7 @@ import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 // Already supplied by the project's socket.io-client dependency tree.
 import WebSocket from 'ws';
+import {checkInterviewCall} from './call_browser_checks.mjs';
 
 const [baseUrl, fixture] = process.argv.slice(2);
 assert.ok(baseUrl && fixture, 'The isolated API runner must supply the URL and synthetic PDF');
@@ -18,6 +19,7 @@ const chrome = spawn(process.env.CHROME_BIN || '/Applications/Google Chrome.app/
   ...(process.env.CHROME_HEADLESS === '0' ? [] : ['--headless=new']),
   '--remote-debugging-port=0', `--user-data-dir=${profile}`,
   '--enable-automation',
+  '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream',
   '--no-first-run', '--no-default-browser-check', '--disable-extensions',
   '--disable-background-networking', '--disable-background-timer-throttling',
   '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding',
@@ -41,7 +43,7 @@ async function command(method, params = {}) {
 }
 async function evaluate(expression) {
   const result = await command('Runtime.evaluate', { expression, returnByValue: true, timeout: 10000 });
-  if (result.exceptionDetails) throw new Error('Browser evaluation failed');
+  if (result.exceptionDetails) throw new Error(`Browser evaluation failed: ${result.exceptionDetails.exception?.description || result.exceptionDetails.text}`);
   return result.result.value;
 }
 async function waitFor(expression, label, timeout = 30000) {
@@ -67,6 +69,7 @@ async function click(selector, text = null) {
   const rect = await evaluate(`(()=>{const e=${lookup}; const r=e.getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
   await command('Input.dispatchMouseEvent', { type: 'mousePressed', ...rect, button: 'left', clickCount: 1 });
   await command('Input.dispatchMouseEvent', { type: 'mouseReleased', ...rect, button: 'left', clickCount: 1 });
+  await command('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0, buttons: 0 });
 }
 async function fill(selector, value) {
   await waitFor(`!!document.querySelector(${JSON.stringify(selector)})`, selector);
@@ -159,6 +162,7 @@ try {
   await command('Page.enable'); await command('Runtime.enable'); await command('Network.enable');
   await command('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: artifacts });
   await viewport(1440);
+  if (process.env.CALL_ONLY !== '1') {
   const publicPages = ['/', '/features', '/practice-tracks', '/student-guide', '/pricing', '/subscription', '/resources', '/contact', '/login', '/signup'];
   for (const path of publicPages) {
     await goto(path);
@@ -200,6 +204,7 @@ try {
   await command('Page.navigate', {url:new URL('/dashboard',baseUrl).href});
   await waitFor('location.pathname==="/login"', 'protected route sign-in redirect');
   check('Signed-out protected route redirects to login', true);
+  }
   await goto('/signup');
   await fill('#signup-name','Browser Tester');
   await fill('#signup-email','browser@example.com');
@@ -210,6 +215,9 @@ try {
   await click('button[type="submit"]');
   await waitFor('location.pathname==="/dashboard" && document.querySelector("h1")','signed-in dashboard');
   check('Signup validation and successful registration', true);
+  if (process.env.CALL_ONLY === '1') {
+    await checkInterviewCall({goto,click,fill,select,waitFor,evaluate,check,command,screenshot,viewport,layout,hasText});
+  } else {
   await layout('desktop dashboard'); await screenshot('dashboard-desktop');
   await viewport(768,1024); await layout('tablet dashboard'); await screenshot('dashboard-tablet'); await viewport(1440);
   await goto('/account',hasText('Profile Details'));
@@ -248,6 +256,7 @@ try {
   await click('button','Calm (-7%)'); await click('button','Save Preferences');
   await goto('/account?tab=preferences',hasText('Interviewer Voice & Speech Preferences'));
   check('Voice preferences survive reload',await evaluate('localStorage.getItem("interviewer_rate")==="-7%"'));
+  await checkInterviewCall({goto,click,fill,select,waitFor,evaluate,check,command,screenshot,viewport,layout,hasText});
   for (const [persona,count] of [['hr',9],['technical',13]]) {
     await goto(`/interview/start?persona=${persona}`,hasText('Start interview'));
     await waitFor('document.querySelectorAll("select option").length>4','interview domains');
@@ -260,11 +269,12 @@ try {
       const question = await evaluate('document.querySelector("h1").innerText');
       if(i===0) {
         await viewport(390,844); await layout(`mobile ${persona} interview`); await screenshot(`${persona}-interview-mobile`); await viewport(1440);
-        await command('Page.reload'); await waitFor('document.querySelector("progress")','interview reload');
+        await evaluate('window.__beforeReload = true');
+        await command('Page.reload'); await waitFor('!window.__beforeReload && document.querySelector("progress")','interview reload');
         check(`${persona} active interview survives reload`,await evaluate(`document.querySelector('h1').innerText===${JSON.stringify(question)}`));
       }
       if(await evaluate(`!!document.querySelector('textarea[aria-label="Your code"]')`)) {
-        await select('select','python');
+        await select('select[aria-label="Code language"]','python');
         await fill('textarea[aria-label="Your code"]','def solve(nums, target):\n    return [0, 1]');
         await click('button','Run tests');
         await waitFor(hasText('not configured'),'coding unavailable message');
@@ -321,6 +331,7 @@ try {
   await fill('#login-password','Changed-browser-password-826');await click('button[type="submit"]');
   await waitFor('location.pathname==="/dashboard" && document.querySelector("h1")','valid login');
   check('Logout, invalid login and subsequent valid login',true);
+  }
   check('No uncaught browser exceptions',exceptions.length===0);
   check('No unexpected HTTP 5xx responses',serverErrors.length===0);
 } catch(error) {

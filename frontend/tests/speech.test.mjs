@@ -80,3 +80,62 @@ test('late microphone results are discarded after a question is submitted', () =
   delayedResult({resultIndex:0,results});
   assert.deepEqual(transcripts,['old answer']);
 });
+
+test('stopping dictation waits for the final words before completing', async () => {
+  let mic;
+  class Recognition {
+    constructor(){mic=this;}
+    start(){this.onstart?.();}
+    stop(){queueMicrotask(()=>{this.onresult({resultIndex:0,results:[Object.assign([{transcript:'final words'}],{isFinal:true})]});this.onend();});}
+    abort(){}
+  }
+  const transcript=[];
+  const session=createDictation(Recognition,{onTranscript:t=>transcript.push(t),onEnd(){},onError(){assert.fail('unexpected speech error');}});
+  session.start(); await session.stop(); assert.deepEqual(transcript,['final words']);
+  mic.onresult?.({resultIndex:0,results:[Object.assign([{transcript:'late words'}],{isFinal:true})]});
+  assert.deepEqual(transcript,['final words']);
+});
+
+test('browser question playback needs no neural service and exposes completion', async () => {
+  globalThis.fetch=()=>assert.fail('browser voice must not call the neural service');
+  const playing=playHumanSpeech('Practice question',{engine:'browser',language:'en-IN'});
+  assert.equal(spoken.length,1); assert.equal(spoken[0].lang,'en-IN');
+  spoken[0].onend(); assert.deepEqual(await playing,{status:'ended',source:'browser'});
+});
+
+test('review and submit can await the same final speech result without stopping twice', async () => {
+  let microphone, stops=0;
+  class Recognition {
+    constructor(){microphone=this;}
+    start(){this.onstart();}
+    stop(){if (++stops > 1) throw new Error('Recognition already stopping');}
+    abort(){}
+  }
+  const words=[];
+  const session=createDictation(Recognition,{onTranscript:text=>words.push(text),onEnd(){},onError(){assert.fail('unexpected error');}});
+  session.start(); const review=session.stop(), submit=session.stop();
+  microphone.onresult({resultIndex:0,results:[Object.assign([{transcript:'last words'}],{isFinal:true})]});
+  microphone.onend();
+  assert.equal((await review).status,'ended'); assert.equal((await submit).status,'ended');
+  assert.equal(stops,1); assert.deepEqual(words,['last words']);
+});
+
+test('failed question playback is not reported as a completed question', async () => {
+  let ended=0;
+  const playing=playHumanSpeech('Practice question',{engine:'browser',onEnd:()=>ended++});
+  spoken[0].onerror(); assert.equal((await playing).status,'unavailable'); assert.equal(ended,0);
+});
+
+test('speech finalization timeout is explicit and discards later words', async t => {
+  t.mock.timers.enable({apis:['setTimeout']});
+  let microphone;
+  class Recognition {constructor(){microphone=this;} start(){this.onstart();} stop(){} abort(){}}
+  const words=[],errors=[];
+  const session=createDictation(Recognition,{onTranscript:text=>words.push(text),onEnd(){},onError:code=>errors.push(code)});
+  session.start(); const late=microphone.onresult; const stopping=session.stop();
+  t.mock.timers.tick(3001);
+  assert.equal((await stopping).status,'timeout');
+  assert.deepEqual(errors,['finalization-timeout']);
+  late({resultIndex:0,results:[Object.assign([{transcript:'late'}],{isFinal:true})]});
+  assert.deepEqual(words,[]);
+});

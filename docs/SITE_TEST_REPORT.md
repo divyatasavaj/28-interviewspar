@@ -5,6 +5,54 @@ Tests use synthetic accounts and resumes in a unique disposable database. Existi
 application records and browser profiles are not used. No dependencies were installed
 for this pass.
 
+## Core voice/video verification — 4 November 2026
+
+The canonical interview now connects question playback, browser recognition,
+editable final transcripts, local camera/face detection, microphone observations,
+and persisted delivery reports. Voice mode requires consent and an explicit join.
+Confidence is self-rated; face presence/framing and page visibility are observations,
+not measurements of psychological confidence, eye contact, or actual attention.
+
+| Check | Result |
+| --- | --- |
+| Backend regression suite | 153 passed, including delivery validation, null semantics, weighted summaries, owned persistence, retries, and skipped answers |
+| Frontend unit/component suite | 47 passed, including final-word flushing, shared stop finalization, late-callback rejection, late-permission cleanup, audio gaps, and visibility timing |
+| Production frontend build | Passed; face detection is loaded only when camera use begins |
+| Frontend lint | Exit 0; 19 retained legacy warnings |
+| Complete Chrome application journey | 114 checks passed; no uncaught exceptions or unexpected HTTP 5xx responses; disposable database cleanup confirmed |
+| Final focused call journey | 24 checks passed after the finalization repair; camera continuity, finalization/cancellation, saved pace eligibility, report reload, and denied-permission fallback; disposable database cleanup confirmed |
+
+The full journey includes both complete interview tracks plus the new spoken-answer
+flow, automatic next-question playback, local detector loading, final transcript
+persistence, saved reports/reload, media cleanup, denied-microphone typed fallback,
+and mobile layouts. Existing resume, account, coding, deletion, and report/PDF flows
+also pass. Artifacts: `interspars-browser-results-DJdy17` in the machine's temporary
+directory. Desktop and mobile call/report screenshots were reviewed.
+The final focused artifacts are `interspars-browser-results-T39uNW`; this synthetic
+sample had 94.6% microphone coverage and displayed 183 words/minute. Those values
+describe the generated fixture, not an independently evaluated speaker.
+
+Finalization review found a race between stopping recognition and starting another
+recording or repeating a question. Controls now wait for final words, concurrent stop
+requests share a result, and leaving cancels queued playback. Recognition errors or
+incomplete finalization disable pace estimation for the affected answer.
+
+Browser media checks use synthetic camera frames, a deterministic Web Audio stream,
+and controlled recognition/playback events. They establish UI/media integration and
+saved observations, not real-device transcription accuracy or audible voice quality.
+The synthetic camera contains no human face; a zero face-presence result is expected.
+Debugger/renderer stalls can lower microphone coverage; such samples correctly show
+**Not measured** for pace. The focused test verifies that condition as well as eligible
+pace values. No personal camera or microphone recordings were used.
+
+The lazy face-api JavaScript chunk is approximately 1.315 MB (330 KB gzip), producing
+a build-size warning. Main application JavaScript is approximately 453 KB (127 KB
+gzip). Some early test attempts encountered intermittent MongoDB setup/startup
+failures; successful runs confirmed disposable-database cleanup. Optional external
+provider limitations below remain unresolved; browser speech is the default.
+
+Definitions and reproduction: [voice/video feature guide](VOICE_VIDEO_INTERVIEW.md).
+
 ## UI refresh verification — 4 November 2026
 
 The sky blue, warm beige, and navy refresh is applied to the supported React pages.

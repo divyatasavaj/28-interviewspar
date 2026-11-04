@@ -20,7 +20,8 @@ export function playHumanSpeech(text, options = {}) {
     let fallbackStarted = false;
     let audio = null;
     let url = null;
-    let playbackTimeout;
+    let source = 'neural';
+    let playbackTimeout, startupTimeout;
     const controller = new AbortController();
     const requestTimeout = setTimeout(() => controller.abort(), 16000);
 
@@ -31,51 +32,59 @@ export function playHumanSpeech(text, options = {}) {
       }
       if (url) { URL.revokeObjectURL(url); url = null; }
     }
-    function finish(cancelled = false) {
+    function finish(status = 'ended') {
       if (finished) return;
       finished = true;
       clearTimeout(requestTimeout);
       clearTimeout(playbackTimeout);
+      clearTimeout(startupTimeout);
       controller.abort();
       releaseAudio();
-      if (cancelled) window.speechSynthesis?.cancel();
+      if (status !== 'ended') window.speechSynthesis?.cancel();
       else options.onEnd?.();
-      resolve();
+      resolve({status, source});
     }
-    cancelCurrent = () => finish(true);
+    cancelCurrent = () => finish('cancelled');
 
     function fallback() {
       if (finished || fallbackStarted) return;
       fallbackStarted = true;
+      source = 'browser';
       clearTimeout(playbackTimeout);
+      clearTimeout(startupTimeout);
       clearTimeout(requestTimeout);
       releaseAudio();
-      if (!window.speechSynthesis) { options.onError?.(); finish(); return; }
+      if (!window.speechSynthesis) { options.onError?.(); finish('unavailable'); return; }
       try {
         const speech = new SpeechSynthesisUtterance(cleaned);
-        speech.lang = 'en-US';
+        speech.lang = options.language || 'en-US';
+        const voices = window.speechSynthesis.getVoices?.() || [];
+        speech.voice = voices.find(v => v.lang === speech.lang) || null;
         speech.rate = Math.max(0.5, Math.min(2, 1 + (Number.parseFloat(rate) || 0) / 100));
-        speech.onstart = () => { if (!finished) options.onStart?.(); };
+        speech.onstart = () => { clearTimeout(startupTimeout); if (!finished) options.onStart?.(); };
         speech.onend = () => finish();
-        speech.onerror = () => { if (!finished) options.onError?.(); finish(); };
-        playbackTimeout = setTimeout(() => { window.speechSynthesis.cancel(); finish(); }, 180000);
+        speech.onerror = () => { if (!finished) options.onError?.(); finish('unavailable'); };
+        playbackTimeout = setTimeout(() => { options.onError?.(); finish('unavailable'); }, 180000);
+        startupTimeout = setTimeout(() => { options.onError?.(); finish('unavailable'); }, 10000);
         window.speechSynthesis.speak(speech);
       } catch {
         options.onError?.();
-        finish();
+        finish('unavailable');
       }
     }
 
     if (!cleaned) { finish(); return; }
+    if (options.engine === 'browser') { fallback(); return; }
     fetchSpeechAudioBlob(cleaned, voice, rate, pitch, controller.signal).then(blob => {
       clearTimeout(requestTimeout);
       if (finished) return;
       url = URL.createObjectURL(blob);
       audio = new Audio(url);
-      audio.onplay = () => { if (!finished) options.onStart?.(); };
+      audio.onplay = () => { clearTimeout(startupTimeout); if (!finished) options.onStart?.(); };
       audio.onended = () => finish();
       audio.onerror = fallback;
-      playbackTimeout = setTimeout(() => finish(true), 180000);
+      playbackTimeout = setTimeout(() => { options.onError?.(); finish('unavailable'); }, 180000);
+      startupTimeout = setTimeout(fallback, 10000);
       audio.play().catch(fallback);
     }).catch(fallback);
   });

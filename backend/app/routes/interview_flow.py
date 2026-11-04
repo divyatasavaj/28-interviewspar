@@ -16,6 +16,7 @@ from app.interview_flow import (
     evaluation_kind,
 )
 from app.safe_execution import run_problem
+from app.delivery import DeliveryObservation, delivery_feedback
 
 router = APIRouter(prefix="/interview", tags=["interview"])
 
@@ -40,6 +41,7 @@ class AnswerRequest(BaseModel):
     language: Literal["javascript", "python"] = "javascript"
     latency_ms: int = Field(default=0, ge=0, le=86400000)
     skipped: bool = False
+    delivery: DeliveryObservation | None = None
 
 
 def owned_session(db, session_id, user):
@@ -159,6 +161,8 @@ def answer(body: AnswerRequest, db=Depends(get_db), user=Depends(require_user)):
             code_result,
         )
     )
+    if not body.skipped:
+        evaluation["delivery"] = delivery_feedback(body.delivery, body.answer.strip())
     entry = {
         "question_id": question["id"],
         "question": question["prompt"],

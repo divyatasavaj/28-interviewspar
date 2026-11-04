@@ -293,6 +293,7 @@ def public_session(session):
 
 
 def compile_report(session):
+    from app.delivery import summarize_delivery
     answers = session.get("answers", [])
     scored = [
         a["evaluation"]["communication_score"] for a in answers if not a.get("skipped")
@@ -339,6 +340,7 @@ def compile_report(session):
         "score_label": "Answer structure indicator",
         "score_note": "A keyword and length heuristic, not verified understanding, spoken fluency, or a hiring score. It can miss valid wording or reward irrelevant keywords. Technical correctness is separate and shown only when evaluated; AI judgments can be wrong.",
         "round_scores": rounds,
+        "delivery_summary": summarize_delivery(answers),
         "qa_pairs": [{"question_number": i + 1, **a} for i, a in enumerate(answers)],
         "strengths": strengths,
         "weaknesses": improvements,

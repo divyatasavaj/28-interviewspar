@@ -116,9 +116,12 @@ labels do not decide hiring eligibility or certification.
 | `pages/Interview.jsx`, `components/SessionView.jsx`, `AuthPage.jsx`, `Home.jsx`, `Dashboard.jsx` | Earlier UI generations, outside the current route tree |
 | `components/interview/{HRRound,TechnicalRound,InterviewLayout,ProgressIndicator,ValidationToast,index}` | Experimental v2 UI contracts; not the current interview page |
 | `components/{AdminPanel,CompanyPortal,DeveloperPortal,Marketplace,CollectView}.jsx` | Legacy administration/marketplace/data-collection prototype interfaces |
-| `components/{FaceDetection,CameraView,IntegrityMonitor,InterviewAnalytics}.jsx`, `lib/faceLogic.js` | Legacy camera/integrity code; unsupported pixel heuristic and frame uploads disabled |
-| `components/{VoiceControls,VoicePanel,HumanAvatar,InterviewerAvatar}.jsx`, `hooks/useSpeech.js`, `hooks/useWebcam.js` | Earlier voice/avatar/media helpers |
-| `frontend/public/models/` | Vendored browser face/body/hand model manifests and binary assets; not trained or used by the canonical interview |
+| `components/FaceDetection.jsx`, `components/InterviewAnalytics.jsx` | Active local face detector and saved delivery metrics; no emotion/gaze scoring |
+| `components/CameraView.jsx`, `IntegrityMonitor.jsx`, `lib/faceLogic.js` | Retained legacy camera/integrity helpers, outside the canonical flow |
+| `components/interview/CallRoom.jsx`, `VoicePanel.jsx`, `HumanAvatar.jsx`, `InterviewerAvatar.jsx` | Active voice/video room, captions and local illustrated interviewer |
+| `hooks/useInterviewCall.js`, `useWebcam.js`, `utils/audioMeter.js`, `deliveryMetrics.js` | Turn ownership, pending-permission cancellation, local energy sampling and camera framing observations |
+| `components/VoiceControls.jsx`, `hooks/useSpeech.js` | Older voice helpers outside the canonical flow |
+| `frontend/public/models/` | Vendored browser face/body/hand model manifests and binary assets; the TinyFaceDetector assets are used by the active local camera; other models remain legacy |
 | `frontend/tests/` | Resume score/validation utilities and actual API-client contract tests |
 | `backend/main.py` | FastAPI startup, canonical router mounting, rate limits, consent guard, generic DB failures, response headers |
 | `backend/app/database.py` | Mongo client, explicit environment lookup, connectivity check, indexes, shutdown |
@@ -127,6 +130,7 @@ labels do not decide hiring eligibility or certification.
 | `backend/app/interview_flow.py`, `routes/interview_flow.py` | Curated question selection, rubric/report logic, owned versioned session lifecycle |
 | `backend/data/interview_bank.json` | Canonical question domains/coding problems/test cases; reference solutions are excluded |
 | `backend/app/routes/code.py`, `safe_execution.py` | Ownership/current-question checks and bounded Judge0 execution; no host execution |
+| `backend/app/delivery.py` | Typed observation validation, transcript-derived fillers, sampled timing/coverage and weighted report summaries |
 | `backend/app/ml_service.py`, `fluency.py` | ML adapter and local textual fluency observations |
 | `backend/app/routes/tts.py`, `tts.py` | Authenticated bounded synthesis, timeout, no persistent audio cache |
 | `backend/app/routes/resume.py`, `resume_assessment.py` | Upload/latest/analysis/delete and match/history endpoints |

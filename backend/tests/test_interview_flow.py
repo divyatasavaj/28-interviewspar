@@ -77,6 +77,32 @@ class Collection:
 
 
 class InterviewApiTests(unittest.TestCase):
+    def test_delivery_observations_persist_with_owned_answer_and_report(self):
+        from test_delivery import observed
+        session = self.start()
+        response, body = self.submit(session, delivery=observed())
+        self.assertEqual(response.status_code, 200, response.text)
+        saved = response.json()['answers'][0]['evaluation']['delivery']
+        self.assertEqual(saved['filler_count'], 2)
+        self.assertEqual(saved['confidence_self_rating'], 4)
+        retry = self.client.post('/api/interview/answer', headers=self.headers, json=body)
+        self.assertEqual(len(retry.json()['answers']), 1)
+        report = self.client.get('/api/interview/'+session['id']+'/feedback', headers=self.headers).json()
+        self.assertEqual(report['delivery_summary']['spoken_answers'], 1)
+        self.assertEqual(report['qa_pairs'][0]['evaluation']['delivery'], saved)
+        self.assertEqual(self.client.get('/api/interview/'+session['id']+'/feedback').status_code, 401)
+
+    def test_invalid_delivery_is_rejected_and_skip_has_no_delivery(self):
+        from test_delivery import observed
+        session = self.start()
+        response, _ = self.submit(session, delivery=observed(consent=False))
+        self.assertEqual(response.status_code, 422)
+        response, _ = self.submit(session, skipped=True, delivery=observed())
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('delivery', response.json()['answers'][0]['evaluation'])
+        report = self.client.get('/api/interview/'+session['id']+'/feedback', headers=self.headers).json()
+        self.assertIsNone(report['delivery_summary'])
+
     def test_profile_reads_do_not_consume_credential_attempt_budget(self):
         for _ in range(35):
             response = self.client.get("/api/auth/me", headers=self.headers)

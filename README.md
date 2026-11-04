@@ -49,7 +49,9 @@ when the virtual environment is activated; Node dependencies are not required fo
 3. Choose a domain, HR/technical track, and practice/assessment mode. Consent to
    storing the interview is required; external AI feedback is separately optional.
 4. Complete screening, calibration, HR, technical/coding where applicable,
-   behavioral questions, and reflection. Progress persists after each answer.
+   behavioral questions, and reflection. Join voice mode with consent to hear each
+   question and speak your answer; optionally enable a local camera preview. Review
+   the transcript, then submit. Progress and delivery observations persist per answer.
 5. Review a report, print/save it as PDF, resume active interviews, or delete a session.
    Resume deletion also removes saved resume assessments.
 
@@ -69,9 +71,19 @@ labeled keyword/length structure indicator. Without Judge0, code is saved but co
 | `JUDGE0_API_URL`, `JUDGE0_API_KEY` | Optional isolated execution service and `X-Auth-Token` |
 | `API_PROXY_TARGET` | Optional Vite development proxy override |
 
-Text-to-speech uses Edge TTS on user request, with browser speech fallback.
-Browser dictation may use the browser vendor's speech service. No camera upload
-is required by the supported interview flow.
+Voice mode defaults to browser text-to-speech; online Edge TTS is optional and
+falls back to the browser when unavailable. Browser dictation may use the browser
+vendor's speech service. Use Chrome or Edge with microphone permission on localhost
+or HTTPS. Voice mode must be joined again after a reload; capture never resumes
+without a new user action.
+
+Delivery reports show transcript fillers, microphone-based speech/pauses and pace,
+local face presence/framing, tab visibility, and optional self-rated confidence.
+Unavailable observations stay null. These are practice cues, not verified attention,
+eye contact, emotional confidence, pronunciation assessment, or a hiring score.
+Camera frames and raw microphone audio are never stored or uploaded by InterviewSpar.
+The face model loads locally only when the camera is enabled. See
+[the delivery feature guide](docs/VOICE_VIDEO_INTERVIEW.md) for definitions and limits.
 
 ## Checks
 

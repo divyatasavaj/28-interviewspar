@@ -1,5 +1,17 @@
 # InterviewSpar repair checklist — branch b3
 
+## Core voice/video interview integration
+
+- [x] T30: Connect the call UI, local avatar/camera, automatic spoken questions, and microphone answers to the canonical saved interview.
+- [x] T31: Persist validated delivery observations and display fluency/filler, camera/page-focus, and self-rated confidence feedback with explicit limits.
+- [x] T32: Verify media cancellation, transcript finalization, permissions, persistence, and full browser journeys; document and publish on b3.
+
+Voice/video verification: 153 backend tests, 47 frontend tests, 114 full-site Chrome
+checks, and 24 final focused call checks passed. Build and lint passed (19 retained
+legacy warnings; lazy face-model bundle-size warning). Browser media is synthetic;
+real-device speech accuracy remains a separate acceptance task. See
+[the feature guide](docs/VOICE_VIDEO_INTERVIEW.md) and [verification record](docs/SITE_TEST_REPORT.md).
+
 ## Sky blue and beige UI refresh
 
 - [x] T27: Apply the approved sky blue, beige, and navy design to the original React pages; refine headings, navigation, interview setup, room, reports, and account screens.

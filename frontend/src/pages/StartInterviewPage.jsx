@@ -55,7 +55,7 @@ export default function StartInterviewPage() {
         <h2>One question.<br/>One step forward.</h2><p className="text-sm text-gray-600 leading-relaxed">Your {settings.persona==='hr'?'HR':'technical'} practice moves through these rounds.</p>
         <ol className="setup-rounds">{rounds.map((round,i)=><li key={round}><span>{i+1}</span>{round}</li>)}</ol>
         <div className="bg-white/70 border border-white p-4 rounded-xl text-xs text-gray-600 leading-relaxed">Each submitted answer is saved. You can return later, or finish early and review your report.</div>
-        <p className="flex gap-2 text-xs text-gray-600 mt-5"><UiIcon name="shield"/>Typed answers are always available. Speech is optional.</p>
+        <p className="flex gap-2 text-xs text-gray-600 mt-5"><UiIcon name="shield"/>Join voice mode in the next step to hear questions and speak your answers. Camera preview and delivery observations are optional.</p>
       </aside>
       </div>
     </main>

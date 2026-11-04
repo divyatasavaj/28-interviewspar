@@ -117,6 +117,31 @@ Behavioral questions never receive technical correctness, and technical difficul
 requires evaluated correctness. No evaluated correctness
 means **null**, not zero or a passing grade. Reports can be requested while active.
 
+## Optional delivery observations
+
+`POST /api/interview/answer` also accepts `delivery` (omit or null for typed-only
+answers). This object requires `consent: true`, an optional original recognized
+`transcript` (≤12,000 characters), `transcript_complete` (boolean; false disables pace estimation), `language` (`en-IN`, `en-US`, `en-GB`), and optional:
+
+- `audio`: `capture_ms`, `observed_ms`, `voiced_ms`, `speech_span_ms`, `pause_count`,
+  `pause_ms`, `longest_pause_ms`, `sample_count`, `clipped_samples`.
+- `camera`: `samples`, `face_samples`, `centered_samples`, `multiple_samples`.
+- `focus`: `observed_ms`, `hidden_ms`, `hidden_count`.
+- `confidence_self_rating`: integer 1–5, explicitly a candidate self-report.
+
+Durations are nonnegative integer milliseconds capped at one hour; counts are
+bounded integers. Invalid duration/count relationships, unconsented data and
+unknown observation fields return 422. Browser observations are not independently
+verified. No audio/video upload endpoint is needed or enabled.
+
+The server derives `evaluation.delivery` for non-skipped answers, including filler
+counts, eligible words/minute, coverage, camera/tab percentages, self-rating,
+coaching and measurement limits. Missing measurements remain null. The raw voice
+transcript is used to derive delivery counts; the submitted edited answer remains
+the stored answer. `delivery_summary` aggregates eligible answer observations in
+reports. Ownership, idempotent retries and deletion follow the existing session.
+See [measurement definitions](VOICE_VIDEO_INTERVIEW.md).
+
 ## Code and speech
 
 | Method / path | Request | Response / flow |
