@@ -74,8 +74,8 @@ export const FINDING_STATUS_CONFIG = {
   unknown_requirement: {
     label: "Queued for Review",
     description: "Terms detected in requirement clauses that are not yet canonical skills. Excluded from scoring pending review.",
-    badgeClass: "bg-purple-50 text-purple-800 border-purple-200",
-    dotClass: "bg-purple-500",
+    badgeClass: "bg-sky-50 text-sky-800 border-sky-200",
+    dotClass: "bg-sky-500",
   },
   not_evaluated: {
     label: "Could Not Be Evaluated",
@@ -90,7 +90,7 @@ export const RECOMMENDATION_GROUP_CONFIG = {
     label: "Skill Development",
     title: "Skill Development",
     subtitle: "Recommended core competencies to acquire or study to meet job requirements.",
-    badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
+    badgeClass: "bg-sky-50 text-sky-700 border-sky-200",
   },
   evidence_improvement: {
     label: "Evidence Improvement",

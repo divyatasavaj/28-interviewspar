@@ -85,13 +85,13 @@ export default function PracticeTracksPage() {
     activeTab === "all" ? tracks : tracks.filter((t) => t.id === activeTab)
 
   return (
-    <div className="min-h-screen bg-[#fbfaff] font-sans">
+    <div className="min-h-screen bg-[#f8f5ef] font-sans">
       <Navbar />
 
       <main className="pt-32 pb-24 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-primary uppercase bg-purple-50 border border-purple-100/70 px-3.5 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-primary uppercase bg-sky-50 border border-sky-100/70 px-3.5 py-1.5 rounded-full mb-4">
             Curriculum & Tracks
           </span>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight leading-[1.1]">
@@ -136,7 +136,7 @@ export default function PracticeTracksPage() {
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-gray-100">
                 <div>
                   <div className="flex flex-wrap items-center gap-2.5 mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-purple-50 border border-purple-100 px-3 py-1 rounded-full">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-sky-50 border border-sky-100 px-3 py-1 rounded-full">
                       {track.badge}
                     </span>
                     <span className="text-xs text-gray-500 font-medium">
@@ -157,7 +157,7 @@ export default function PracticeTracksPage() {
                 <div className="flex-shrink-0">
                   <button
                     onClick={() => handleStartTrack(track)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-[#5b22e0] text-white font-bold text-sm px-7 py-3.5 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all hover:-translate-y-0.5 cursor-pointer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-[#075985] text-white font-bold text-sm px-7 py-3.5 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all hover:-translate-y-0.5 cursor-pointer"
                   >
                     <span>{track.id === "resume-project" ? "Upload Resume" : "Choose Interview Settings"}</span>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
@@ -214,7 +214,7 @@ export default function PracticeTracksPage() {
           </div>
           <Link
             to="/student-guide"
-            className="text-xs font-bold text-primary bg-purple-50 hover:bg-purple-100 border border-purple-200 px-5 py-3 rounded-full transition-all flex items-center gap-1.5 flex-shrink-0"
+            className="text-xs font-bold text-primary bg-sky-50 hover:bg-sky-100 border border-sky-200 px-5 py-3 rounded-full transition-all flex items-center gap-1.5 flex-shrink-0"
           >
             <span>Read Student Guide</span>
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

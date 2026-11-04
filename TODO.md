@@ -1,5 +1,17 @@
 # InterviewSpar repair checklist — branch b3
 
+## Sky blue and beige UI refresh
+
+- [x] T27: Apply the approved sky blue, beige, and navy design to the original React pages; refine headings, navigation, interview setup, room, reports, and account screens.
+- [x] T28: Add subtle entrance/hover motion, visible keyboard focus, and reduced-motion support; verify phone and desktop layouts.
+- [x] T29a: Run frontend tests, lint, production build, and isolated Chrome journeys; document results.
+- [ ] T29b: Publish the verified UI refresh on b3.
+
+UI refresh verification: 36 frontend tests, 98 complete-journey Chrome checks, and
+49 final visual/accessibility checks passed. Build and lint passed (24 existing
+warnings). The interrupted run’s homepage overflow and stale coding-prompt defects
+are fixed. See [the current verification record](docs/SITE_TEST_REPORT.md).
+
 The supported application is React → FastAPI `/api` → MongoDB. Existing local
 work and upstream b3 resume-intelligence changes were preserved. Checked tasks
 below describe source repairs and local verification; they do not claim production

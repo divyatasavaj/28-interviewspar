@@ -2,6 +2,8 @@ import {useEffect,useRef,useState} from 'react';
 import {Link,useNavigate,useParams} from 'react-router-dom';
 import {apiRequest,answerInterview} from '../api/auth';
 import CodeEditor from '../components/interview/CodeEditor';
+import Brand from '../components/Brand';
+import UiIcon from '../components/UiIcon';
 import {playHumanSpeech,stopAnySpeech} from '../utils/naturalSpeech';
 import {createDictation} from '../utils/dictation';
 
@@ -40,24 +42,30 @@ export default function InterviewPage(){
   if(!session)return <main className="mx-auto max-w-3xl p-10 text-gray-900"><Link to="/dashboard">← Dashboard</Link><p role="status" className="mt-6">{error || 'Loading interview…'}</p></main>;
   if(!question)return <main className="p-10 text-gray-900"><Link to={`/interview/${sessionId}/report`}>View completed interview report →</Link></main>;
   const last=session.answers?.at(-1);
-  return <div className="min-h-screen bg-[#fbfaff] text-gray-900">
-    <header className="border-b bg-white"><div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 p-5"><Link to="/dashboard" className="font-bold text-purple-700">InterviewSpar</Link><span className="text-sm">{session.domain} · {session.mode}</span><button disabled={busy} onClick={finish} className="text-sm text-gray-600 underline">Finish and view report</button></div></header>
-    <main className="mx-auto max-w-4xl space-y-6 px-5 py-8">
-      <div className="flex flex-wrap gap-2">{session.rounds.map(round=><span key={round} className={`rounded-full px-3 py-1 text-xs capitalize ${round===session.current_round?'bg-purple-700 text-white':'bg-gray-100 text-gray-600'}`}>{round}</span>)}</div>
-      <div><p className="mb-2 text-sm text-gray-500">Question {session.progress.current} of {session.progress.total} · {question.difficulty}</p><progress aria-label="Interview progress" className="h-2 w-full accent-purple-700" value={session.progress.answered} max={session.progress.total}/></div>
-      {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-700">{error}</p>}
-      {last && session.mode==='practice' && !last.skipped && <aside className="rounded-xl border border-purple-100 bg-purple-50 p-4 text-sm"><strong>Feedback on your previous answer</strong><p className="mt-1">{last.evaluation.feedback}</p><p className="mt-2 text-xs text-gray-600">Text structure indicator: {last.evaluation.communication_score}/100 (keyword and length cues). Technical correctness: {last.evaluation.correctness_score ?? 'not evaluated'}.</p></aside>}
-      <section className="space-y-5 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-purple-700">{session.current_round}</p>
-        <h1 className="text-2xl font-semibold leading-relaxed">{question.prompt}</h1>
-        <button type="button" disabled={busy} onClick={()=>playHumanSpeech(question.prompt)} className="text-sm text-purple-700 underline">Read question aloud</button>
-        {question.type==='coding' && <CodeEditor key={question.id} question={question} sessionId={sessionId} disabled={busy} onChange={setCode}/>}
-        <form onSubmit={e=>{e.preventDefault();submit();}} className="space-y-4">
-          <label className="block text-sm font-medium">{question.type==='coding'?'Explain your approach':'Your answer'}<textarea className="mt-2 min-h-44 w-full rounded-xl border border-gray-200 p-4 font-normal focus:ring-2 focus:ring-purple-300" required maxLength={12000} value={answer} disabled={busy} onChange={e=>{setAnswer(e.target.value);requestId.current=null;}}/></label>
-          <div className="flex flex-wrap items-center gap-3"><button type="button" disabled={busy} onClick={dictate} className="rounded-xl border px-4 py-2 text-sm">{listening?'Stop microphone':'Dictate answer'}</button><button type="button" disabled={busy} onClick={()=>submit(true)} className="px-3 py-2 text-sm text-gray-600 underline">Skip question</button><button disabled={busy || !answer.trim()} className="ml-auto rounded-xl bg-purple-700 px-6 py-3 font-semibold text-white disabled:opacity-50">{busy?'Saving answer…':'Submit answer'}</button></div>
-          <p className="text-xs text-gray-500">Read-aloud sends the question to a speech service. Dictation uses your browser’s speech service. Typed answers are always available. No camera recording is required.</p>
-        </form>
-      </section>
+  const roundLabel=round=>round==='final'?'Reflection':round==='hr'?'HR':round;
+  return <div className="min-h-screen bg-[#f8f5ef] text-gray-900">
+    <header className="interview-header"><div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 p-5"><Brand to="/dashboard"/><button disabled={busy} onClick={finish} className="text-xs sm:text-sm text-primary font-semibold">Finish and view report →</button></div></header>
+    <main className="interview-workspace">
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-5"><div><p className="section-kicker">Space to think. Time to explain.</p><p className="mt-2 text-sm text-gray-600">{session.domain} · {session.mode==='practice'?'Feedback during practice':'Feedback in the final report'}</p></div><div><p className="mb-2 text-xs text-gray-600">Question {session.progress.current} of {session.progress.total} · {question.difficulty}</p><progress aria-label="Interview progress" className="interview-progress" value={session.progress.answered} max={session.progress.total}/></div></div>
+      <div className="interview-grid">
+        <aside className="interview-rounds" aria-label="Interview rounds"><p className="section-kicker">Your interview</p><ol>{session.rounds.map((round,i)=><li key={round} aria-current={round===session.current_round?'step':undefined}><span>{i<session.rounds.indexOf(session.current_round)?<UiIcon name="check"/>:i+1}</span>{roundLabel(round)}</li>)}</ol></aside>
+        <div className="min-w-0 space-y-5">
+          {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-700">{error}</p>}
+          <section className="interview-question space-y-5">
+            <div className="flex items-center justify-between gap-3"><p className="text-xs font-semibold capitalize text-primary bg-sky-50 px-3 py-1.5 rounded-lg">{roundLabel(session.current_round)}</p><span className="text-[11px] text-gray-500">Take a moment. You have time.</span></div>
+            <h1 key={`prompt-${question.id}`} className="text-2xl sm:text-3xl font-semibold leading-relaxed tracking-tight page-enter">{question.prompt}</h1>
+            <button type="button" disabled={busy} onClick={()=>playHumanSpeech(question.prompt)} className="flex items-center gap-2 text-sm text-primary"><UiIcon name="sound"/>Read question aloud</button>
+            {question.type==='coding' && <CodeEditor key={`code-${question.id}`} question={question} sessionId={sessionId} disabled={busy} onChange={setCode}/>}
+            <form onSubmit={e=>{e.preventDefault();submit();}} className="space-y-4 pt-2">
+              <label className="block text-sm font-medium">{question.type==='coding'?'Explain your approach':'Your answer'}<textarea className="mt-3 min-h-52 w-full rounded-xl border border-gray-200 bg-gray-50/40 p-4 font-normal leading-relaxed text-sm" placeholder="Start with what you know. Add an example when it helps." required maxLength={12000} value={answer} disabled={busy} onChange={e=>{setAnswer(e.target.value);requestId.current=null;}}/></label>
+              <div className="flex flex-wrap items-center justify-between gap-3"><button type="button" disabled={busy} onClick={dictate} aria-pressed={listening} className={`flex gap-2 items-center text-xs font-medium px-3 py-2 rounded-lg ${listening?'bg-red-50 text-red-700':'text-primary bg-sky-50'}`}><UiIcon name="mic"/>{listening?'Stop microphone':'Dictate answer'}</button><span className="text-[11px] text-gray-500">{answer.length.toLocaleString()} / 12,000</span></div>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-5"><button type="button" disabled={busy} onClick={()=>submit(true)} className="px-2 py-2 text-xs sm:text-sm text-gray-600">Skip question</button><button disabled={busy || !answer.trim()} className="spar-button text-sm">{busy?'Saving answer…':'Submit answer'}<UiIcon name="arrow"/></button></div>
+            </form>
+          </section>
+          {last && session.mode==='practice' && !last.skipped && <aside className="interview-feedback" aria-live="polite"><strong className="text-sm">Feedback on your previous answer</strong><p className="mt-2 text-sm text-gray-700 leading-relaxed">{last.evaluation.feedback}</p><p className="mt-3 text-xs text-gray-600 leading-relaxed">Text structure indicator: {last.evaluation.communication_score}/100 (keyword and length cues). Technical correctness: {last.evaluation.correctness_score ?? 'not evaluated'}.</p></aside>}
+          <p className="text-[11px] text-gray-500 leading-relaxed flex gap-2"><UiIcon name="shield"/>Read-aloud sends the question to a speech service. Dictation uses your browser’s speech service. Typed answers are always available. No camera recording is required.</p>
+        </div>
+      </div>
     </main>
   </div>;
 }

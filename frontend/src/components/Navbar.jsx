@@ -1,3 +1,4 @@
+import Brand from "./Brand"
 import { Link, useLocation } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { getToken } from "../api/auth"
@@ -22,32 +23,20 @@ export default function Navbar() {
   ]
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-[72px] bg-white/90 backdrop-blur-md border-b border-gray-100 transition-colors">
+    <nav className="public-nav fixed top-0 left-0 right-0 z-50 h-[72px] bg-white/90 backdrop-blur-md border-b border-gray-100 transition-colors">
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         {/* Brandmark with Logo Animation */}
-        <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shadow-md shadow-primary/20 logo-hover">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <span className="text-xl font-bold tracking-tight text-gray-950">
-            Interview<span className="text-primary font-extrabold">Spar</span>
-          </span>
-          <span className="hidden sm:inline-block text-[10px] font-semibold uppercase tracking-wider text-purple-700 bg-purple-50 border border-purple-200/60 px-2 py-0.5 rounded-full ml-1">
-            Student Edition
-          </span>
-        </Link>
+        <Brand to="/"/>
 
         {/* Desktop Navigation */}
-        <div className="hidden xl:flex items-center gap-7">
+        <div className="hidden xl:flex items-center gap-5">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.to
             return (
               <Link
                 key={link.label}
                 to={link.to}
-                className={`relative text-sm font-medium transition-all ${
+                className={`relative text-xs font-medium transition-all ${
                   isActive
                     ? "text-primary after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full font-semibold"
                     : "text-gray-600 hover:text-gray-950 hover:-translate-y-0.5"
@@ -64,9 +53,9 @@ export default function Navbar() {
           {isLoggedIn ? (
             <Link
               to="/dashboard"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-primary hover:bg-[#5b22e0] px-5 py-2.5 rounded-full transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-primary hover:bg-[#075985] px-5 py-2.5 rounded-full transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5"
             >
-              <span>Candidate Dashboard</span>
+              <span>Dashboard</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
@@ -81,9 +70,9 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/signup"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-primary hover:bg-[#5b22e0] px-5 py-2.5 rounded-full transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-primary hover:bg-[#075985] px-5 py-2.5 rounded-full transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5"
               >
-                <span>Get Started Free</span>
+                <span>Start practicing</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
@@ -131,10 +120,10 @@ export default function Navbar() {
           {isLoggedIn ? (
             <Link
               to="/dashboard"
-              className="block text-center text-sm font-bold text-white bg-primary hover:bg-[#5b22e0] px-5 py-2.5 rounded-full transition-all"
+              className="block text-center text-sm font-bold text-white bg-primary hover:bg-[#075985] px-5 py-2.5 rounded-full transition-all"
               onClick={() => setOpen(false)}
             >
-              Candidate Dashboard
+              Dashboard
             </Link>
           ) : (
             <div className="flex flex-col gap-2 pt-1">
@@ -147,10 +136,10 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/signup"
-                className="block text-center text-sm font-bold text-white bg-primary hover:bg-[#5b22e0] py-2.5 rounded-xl transition-all shadow-md"
+                className="block text-center text-sm font-bold text-white bg-primary hover:bg-[#075985] py-2.5 rounded-xl transition-all shadow-md"
                 onClick={() => setOpen(false)}
               >
-                Get Started Free
+                Start practicing
               </Link>
             </div>
           )}

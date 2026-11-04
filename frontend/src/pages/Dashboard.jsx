@@ -127,43 +127,43 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen font-sans bg-[#fbfaff]">
+    <div className="min-h-screen font-sans bg-[#f8f5ef]">
       <div
         className="fixed top-0 right-0 w-[400px] md:w-[700px] h-[400px] md:h-[700px] pointer-events-none"
         style={{
-          background: "radial-gradient(circle at top right, rgba(109,40,217,0.06) 0%, transparent 70%)",
+          background: "radial-gradient(circle at top right, rgba(125,190,229,0.12) 0%, transparent 70%)",
         }}
       />
       <DashboardNavbar name={user.name} />
 
-      <main className="pt-28 pb-20 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
+      <main className="page-enter pt-28 pb-20 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
         {loadError && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-4 text-red-700">{loadError}</p>}
         {/* Top Welcome Banner */}
-        <section className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-sm mb-8 relative overflow-hidden">
+        <section className="workspace-welcome rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-sm mb-8 relative overflow-hidden">
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 bg-purple-50 border border-purple-100/70 rounded-full px-3.5 py-1 text-xs font-semibold text-primary mb-4">
+              <div className="inline-flex items-center gap-2 bg-sky-50 border border-sky-100/70 rounded-full px-3.5 py-1 text-xs font-semibold text-primary mb-4">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Placement Simulation & AI Readiness Platform</span>
+                <span>Your practice space</span>
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                Welcome back, {user.name}
+                A little more prepared, {user.name.split(" ")[0]}.
               </h1>
               <p className="mt-3 text-sm sm:text-base text-gray-600 leading-relaxed">
                 Target Role:{" "}
                 <strong className="text-gray-900 font-semibold">{user.target_role || "Software Engineer"}</strong>.
                 {resumeData
-                  ? " Your resume evidence is available for skill matching and a project-specific interview question."
-                  : " Upload your resume to unlock deterministic role match scoring and tailored project questions."}
+                  ? " Your resume is ready to explore. Practice putting your experience into words."
+                  : " Start with an interview, or add a resume to explore your skills and projects."}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 to="/interview/start"
-                className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-sm px-6 py-3 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center gap-2 hover:-translate-y-0.5"
+                className="bg-primary hover:bg-[#075985] text-white font-semibold text-sm px-6 py-3 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all flex items-center gap-2 hover:-translate-y-0.5"
               >
-                <span>Start Mock Session</span>
+                <span>Start an interview</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
@@ -184,16 +184,16 @@ export default function Dashboard() {
         {/* Stats Row */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <p className="text-xs font-medium text-gray-400">Recent Completed Interviews</p>
+            <p className="text-xs font-medium text-gray-400">Completed interviews</p>
             <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-1">{completedSessions.length}</p>
             <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 font-semibold mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>Active Candidate</span>
+              <span>From your saved history</span>
             </div>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <p className="text-xs font-medium text-gray-400">Avg Text Structure</p>
+            <p className="text-xs font-medium text-gray-400">Recent text structure indicator</p>
             <p className="text-2xl sm:text-3xl font-extrabold text-primary mt-1">
               {averageScore !== null ? `${averageScore}/100` : "—"}
             </p>
@@ -205,7 +205,7 @@ export default function Dashboard() {
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <p className="text-xs font-medium text-gray-400">Resume Status</p>
             <p className="text-lg sm:text-xl font-bold text-gray-900 mt-2 truncate">
-              {resumeData ? "Parsed & Indexed" : "No Resume"}
+              {resumeData ? "Ready to review" : "No Resume"}
             </p>
             <Link to="/account?tab=resume" className="text-[11px] text-primary font-semibold hover:underline block mt-1">
               {resumeData ? "View parsed sections →" : "Upload document →"}
@@ -213,16 +213,16 @@ export default function Dashboard() {
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <p className="text-xs font-medium text-gray-400">Readiness Mode</p>
+            <p className="text-xs font-medium text-gray-400">Resume review mode</p>
             <p className="text-lg sm:text-xl font-bold text-gray-900 mt-2">
               {assessment?.assessment_mode === "job_description"
                 ? "Job Specific"
-                : "Role Benchmark"}
+                : "Target role"}
             </p>
             <span className="text-[11px] text-gray-400 mt-1 block">
               {assessment?.assessment_status === "heuristic"
                 ? `Coverage: ${assessment.score}%`
-                : "Taxonomy Benchmark"}
+                : "Evidence review"}
             </span>
           </div>
         </section>
@@ -234,13 +234,13 @@ export default function Dashboard() {
               <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary mb-1">
                 <span>Resume Evidence</span>
                 <span className="text-gray-300">•</span>
-                <span className="text-gray-500">Resume Match & Skill Gap Radar</span>
+                <span className="text-gray-500">Skills, projects & next steps</span>
               </div>
               <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-                Placement Skill Readiness
+                Make your experience easier to see.
               </h2>
               <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                Deterministic matching against canonical industry rubrics and target job descriptions.
+                See where your resume supports a requirement, and where more context could help.
               </p>
             </div>
 
@@ -255,7 +255,7 @@ export default function Dashboard() {
                     : "text-gray-500 hover:text-gray-900"
                 }`}
               >
-                Target Role Rubric
+                Target role
               </button>
               <button
                 type="button"
@@ -266,25 +266,25 @@ export default function Dashboard() {
                     : "text-gray-500 hover:text-gray-900"
                 }`}
               >
-                Specific Job Description
+                Job description
               </button>
             </div>
           </div>
 
           {!resumeData ? (
-            <div className="py-12 px-6 text-center bg-purple-50/40 rounded-2xl border border-dashed border-purple-200/60 mt-6">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-purple-100 text-primary flex items-center justify-center mb-3">
+            <div className="py-12 px-6 text-center bg-sky-50/40 rounded-2xl border border-dashed border-sky-200/60 mt-6">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-sky-100 text-primary flex items-center justify-center mb-3">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
               </div>
-              <h3 className="text-base font-bold text-gray-900">Upload your resume to activate Skill Intelligence</h3>
+              <h3 className="text-base font-bold text-gray-900">Your experience belongs here.</h3>
               <p className="text-xs text-gray-600 max-w-md mx-auto mt-1 leading-relaxed">
                 InterviewSpar extracts your documented skills and project evidence from PDF or DOCX to run gap analysis against target engineering roles.
               </p>
               <Link
                 to="/account?tab=resume"
-                className="mt-4 inline-flex items-center gap-2 bg-primary hover:bg-[#5b22e0] text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+                className="mt-4 inline-flex items-center gap-2 bg-primary hover:bg-[#075985] text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
               >
                 <span>Upload Resume</span>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -299,7 +299,7 @@ export default function Dashboard() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50/80 p-4 rounded-2xl border border-gray-100 mb-6">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       <label htmlFor="role-select" className="text-xs font-bold text-gray-700 whitespace-nowrap">
-                        Select Benchmark Role:
+                        Choose a target role:
                       </label>
                       <select
                         id="role-select"
@@ -319,7 +319,7 @@ export default function Dashboard() {
                       type="button"
                       onClick={() => handleRunRoleMatch(selectedRoleId)}
                       disabled={assessmentLoading}
-                      className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-60"
+                      className="bg-primary hover:bg-[#075985] text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-60"
                     >
                       {assessmentLoading ? (
                         <>
@@ -328,7 +328,7 @@ export default function Dashboard() {
                         </>
                       ) : (
                         <>
-                          <span>Run Role Fit Evaluation</span>
+                          <span>Review role evidence</span>
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                           </svg>
@@ -344,7 +344,7 @@ export default function Dashboard() {
                       <div className="bg-amber-50/70 border border-amber-200/60 rounded-2xl p-4 flex items-start gap-3">
                         <span className="text-amber-600 text-base leading-none mt-0.5">ⓘ</span>
                         <div className="text-xs text-amber-800 leading-relaxed">
-                          <strong className="font-semibold">Provisional Taxonomy Benchmark:</strong>{" "}
+                          <strong className="font-semibold">Provisional Evidence review:</strong>{" "}
                           Seed rubrics for {assessment.target_role_title} are based on curated occupational standards (ESCO/O*NET).
                           Numerical scores remain withheld until validated empirical Indian hiring weights are reviewed; skill findings and gap analysis below are live and grounded in your resume evidence.
                         </div>
@@ -353,7 +353,7 @@ export default function Dashboard() {
                       {/* Split Grid: Verified Skills vs Gaps */}
                       <div className="grid md:grid-cols-2 gap-6">
                         {/* Verified & Demonstrated Skills */}
-                        <div className="bg-[#fcfcff] border border-gray-100 rounded-2xl p-5">
+                        <div className="bg-[#f8fbfd] border border-gray-100 rounded-2xl p-5">
                           <div className="flex items-center justify-between mb-3">
                             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
@@ -387,11 +387,11 @@ export default function Dashboard() {
                         </div>
 
                         {/* Skill Gaps & Areas to Evidence */}
-                        <div className="bg-[#fcfcff] border border-gray-100 rounded-2xl p-5">
+                        <div className="bg-[#f8fbfd] border border-gray-100 rounded-2xl p-5">
                           <div className="flex items-center justify-between mb-3">
                             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                               <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                              <span>Identified Skill Gaps ({assessment.skill_gaps.length})</span>
+                              <span>Missing or limited evidence ({assessment.skill_gaps.length})</span>
                             </h3>
                             <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">
                               Not Evidenced / Weak
@@ -423,7 +423,7 @@ export default function Dashboard() {
                       {assessment.recommendations.length > 0 && (
                         <div className="pt-2">
                           <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                            <span>Targeted Preparation Roadmap</span>
+                            <span>One step to work on next</span>
                             <span className="text-xs text-gray-400 font-normal">
                               (Prioritized based on {assessment.target_role_title} requirements)
                             </span>
@@ -469,7 +469,7 @@ export default function Dashboard() {
                   )}
                 </div>
               ) : (
-                /* Specific Job Description Matching Form */
+                /* Job description Matching Form */
                 <div>
                   <form onSubmit={handleRunJdMatch} className="space-y-4">
                     <div>
@@ -484,6 +484,7 @@ export default function Dashboard() {
                       <textarea
                         id="jd-textarea"
                         rows={5}
+                        maxLength={20000}
                         value={jdInput}
                         onChange={(e) => setJdInput(e.target.value)}
                         placeholder="Paste the job requirements, responsibilities, and qualifications here (e.g., 'Required skills: Python, SQL. Preferred: Docker, AWS.')..."
@@ -497,14 +498,14 @@ export default function Dashboard() {
                       </p>
                     )}
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <p className="text-[11px] text-gray-400">
-                        Untrusted text is sanitized; prompt injections are disregarded. Content is indexed via SHA-256 hash.
+                        Coverage reflects the text in your resume, not your chances of being hired.
                       </p>
                       <button
                         type="submit"
                         disabled={assessmentLoading || !jdInput.trim()}
-                        className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-xs px-6 py-2.5 rounded-xl transition-all shadow-sm hover:shadow flex items-center gap-2 disabled:opacity-50"
+                        className="bg-primary hover:bg-[#075985] text-white font-semibold text-xs px-6 py-2.5 rounded-xl transition-all shadow-sm hover:shadow flex items-center gap-2 disabled:opacity-50"
                       >
                         {assessmentLoading ? (
                           <>
@@ -526,7 +527,7 @@ export default function Dashboard() {
                   {/* JD Assessment Results */}
                   {assessment && assessment.assessment_mode === "job_description" && (
                     <div className="mt-6 pt-6 border-t border-gray-100 space-y-5">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-purple-50/60 p-5 rounded-2xl border border-purple-100/80">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-sky-50/60 p-5 rounded-2xl border border-sky-100/80">
                         <div>
                           <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
                             Job Description Alignment
@@ -540,7 +541,7 @@ export default function Dashboard() {
                         </div>
 
                         {assessment.score !== null && (
-                          <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-purple-100 flex flex-col items-center justify-center">
+                          <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-sky-100 flex flex-col items-center justify-center">
                             <span className="text-lg font-extrabold text-primary">{Math.round(assessment.score)}%</span>
                             <span className="text-[9px] text-gray-400 uppercase font-bold">Match</span>
                           </div>
@@ -602,7 +603,7 @@ export default function Dashboard() {
         <section className="mb-10">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Choose Practice Track</h2>
+              <h2 className="text-xl font-bold text-gray-900">What would you like to practice?</h2>
               <p className="text-xs text-gray-400 mt-0.5">Practice technical and behavioral questions by domain</p>
             </div>
             <Link to="/interview-type" className="text-xs font-semibold text-primary hover:underline">
@@ -611,18 +612,18 @@ export default function Dashboard() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-purple-900 to-indigo-950 text-white rounded-3xl p-7 relative overflow-hidden shadow-md flex flex-col justify-between">
+            <div className="bg-gradient-to-br from-sky-900 to-sky-950 text-white rounded-3xl p-7 relative overflow-hidden shadow-md flex flex-col justify-between">
               <div className="relative z-10">
-                <span className="bg-white/10 text-purple-200 text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
+                <span className="bg-white/10 text-sky-200 text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
                   Behavioral & Leadership
                 </span>
                 <h3 className="text-2xl font-bold text-white mt-3">HR & Behavioral Practice</h3>
-                <p className="text-purple-200/80 text-sm mt-2 leading-relaxed">
-                  Master standard HR inquiries, the STAR method, conflict resolution, and career trajectory discussions with real-time feedback.
+                <p className="text-sky-200/80 text-sm mt-2 leading-relaxed">
+                  Work through questions about your experience, decisions and collaboration. Find a clear structure for a real example.
                 </p>
               </div>
               <div className="relative z-10 mt-6 flex items-center justify-between">
-                <span className="text-xs text-purple-300">9 Questions • Self-paced</span>
+                <span className="text-xs text-sky-300">9 Questions • Self-paced</span>
                 <Link
                   to="/interview/start?persona=hr"
                   className="bg-white text-gray-900 hover:bg-gray-100 font-bold text-xs px-5 py-2.5 rounded-full transition-all shadow-md"
@@ -639,7 +640,7 @@ export default function Dashboard() {
                 </span>
                 <h3 className="text-2xl font-bold text-white mt-3">Technical Interview</h3>
                 <p className="text-blue-200/80 text-sm mt-2 leading-relaxed">
-                  Deep-dive into architecture, caching, concurrency, databases, trade-offs, and complex system troubleshooting.
+                  Practice explaining technical decisions, debugging approaches, and trade-offs for your chosen domain.
                 </p>
               </div>
               <div className="relative z-10 mt-6 flex items-center justify-between">
@@ -674,20 +675,20 @@ export default function Dashboard() {
             </div>
           ) : sessions.length === 0 ? (
             <div className="py-12 px-4 text-center border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-purple-100/60 text-primary flex items-center justify-center mb-3">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-sky-100/60 text-primary flex items-center justify-center mb-3">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
                 </svg>
               </div>
-              <p className="text-sm font-bold text-gray-900">No mock interviews completed yet</p>
+              <p className="text-sm font-bold text-gray-900">Your first interview starts here.</p>
               <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto leading-relaxed">
                 Complete an interview to review your answers, text structure indicators, and optional AI feedback.
               </p>
               <Link
                 to="/interview-type"
-                className="mt-4 inline-flex items-center gap-2 bg-primary hover:bg-[#5b22e0] text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+                className="mt-4 inline-flex items-center gap-2 bg-primary hover:bg-[#075985] text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
               >
-                <span>Launch First Session</span>
+                <span>Start your first session</span>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
@@ -703,7 +704,7 @@ export default function Dashboard() {
                       <div
                         className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm ${
                           s.interview_type === "hr"
-                            ? "bg-purple-100 text-purple-700"
+                            ? "bg-sky-100 text-sky-700"
                             : "bg-blue-100 text-blue-700"
                         }`}
                       >
@@ -731,7 +732,7 @@ export default function Dashboard() {
                           >
                             {fb.overall_score}/100
                           </span>
-                          <span className="text-[10px] text-gray-400 block">Score</span>
+                          <span className="text-[10px] text-gray-400 block">Text structure</span>
                         </div>
                       )}
 
@@ -747,9 +748,9 @@ export default function Dashboard() {
 
                       <button
                         onClick={() => navigate(s.status === "active" ? `/interview/${s.id}` : `/interview/${s.id}/report`)}
-                        className="text-xs font-semibold text-primary hover:text-[#5b22e0] bg-purple-50 hover:bg-purple-100 px-3.5 py-1.5 rounded-full transition-all"
+                        className="text-xs font-semibold text-primary hover:text-[#075985] bg-sky-50 hover:bg-sky-100 px-3.5 py-1.5 rounded-full transition-all"
                       >
-                        View Scorecard →
+                        Open interview →
                       </button>
                     </div>
                   </div>

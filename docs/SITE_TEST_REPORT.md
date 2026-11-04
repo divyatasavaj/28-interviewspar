@@ -5,7 +5,54 @@ Tests use synthetic accounts and resumes in a unique disposable database. Existi
 application records and browser profiles are not used. No dependencies were installed
 for this pass.
 
-## Verification record
+## UI refresh verification — 4 November 2026
+
+The sky blue, warm beige, and navy refresh is applied to the supported React pages.
+The existing auth, resume, saved-interview, and reporting contracts are preserved.
+`design.md` now documents the implemented direction instead of the earlier dark/violet
+reference plan.
+
+| Check | Result |
+| --- | --- |
+| Frontend unit/component suite | 36 passed |
+| Production frontend build | Passed after the final style changes |
+| Frontend lint | Exit 0; the same 24 existing warnings remain |
+| Browser driver syntax and diff whitespace | Passed |
+| Complete Chrome application journey | 98 checks passed; no uncaught exceptions or unexpected HTTP 5xx responses; disposable database cleanup confirmed |
+| Final targeted Chrome visual checks | 49 passed across 320, 390, 768, 1024, and 1440px widths; no overflow, one authentication wordmark, unobscured preview links, visible keyboard focus, and reduced-motion behavior |
+| Report PDF extraction | HR: 6 pages, all 9 questions; technical: 8 pages, all 13 questions. Both retain the numeric score, its qualification, and the question review |
+
+The full Chrome run covered registration, saved profile edits, consented PDF upload,
+role assessment and JD matching, voice preferences, both full interview tracks,
+coding/unavailable execution, reload persistence, reports, deletion, skip/early finish,
+password change, and logout/login. The new preview track switch and reduced-motion
+checks passed. Existing external-provider limitations were not retested or resolved
+by this visual refresh.
+
+The interrupted redesign run exposed two defects: a rotated homepage decoration
+extended the page width, and the animated question heading shared a React key with
+the code editor. The latter left a stale coding prompt above the next behavioral
+question. The hero now contains its decorative overflow, and the heading/editor use
+distinct keys. The browser journey asserts one current question heading throughout
+both tracks. Printed reports retain the overall score as text when the graphical
+ring is hidden.
+
+Final visual review also corrected duplicate authentication branding caused by a
+shared display style overriding a responsive utility, and reserved space for the
+homepage note below the question-preview link. Screenshot capture now waits for
+finite entrance animations to finish, so saved images show the settled design.
+
+Full-journey artifacts: `interspars-browser-results-7EDgxw` in the machine's temporary
+directory. The final 49-check public-page review used a temporary driver derived
+from the same Chrome helpers, without account writes; its settled screenshots and
+results are in `interspars-browser-results-r9fIxQ`. These artifacts contain synthetic
+data only and are excluded from the commit.
+The backend and ML suites were not rerun for this frontend-only follow-up; their
+previous verification records below remain historical. Native speech/print dialogs,
+physical devices, screen readers, Safari, Firefox, and deployment remain outside
+this pass.
+
+## Verification record — 3 November 2026
 
 | Check | Result |
 | --- | --- |

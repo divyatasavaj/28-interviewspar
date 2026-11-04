@@ -1,3 +1,4 @@
+import Brand from "./Brand"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { logout } from "../api/auth"
@@ -18,35 +19,22 @@ export default function DashboardNavbar({ name }) {
     { label: "New Interview", to: "/interview-type" },
     { label: "Resume", to: "/account?tab=resume" },
     { label: "Reports", to: "/account?tab=reports" },
-    { label: "Plans", to: "/pricing" },
+    { label: "Account", to: "/account?tab=profile" },
   ]
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-[72px] bg-white/90 backdrop-blur-md border-b border-gray-100">
+    <nav className="workspace-nav fixed top-0 left-0 right-0 z-50 h-[72px] bg-white/90 backdrop-blur-md border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-        <Link to="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-[#7c3aed] flex items-center justify-center text-white shadow-md shadow-primary/20 transition-transform duration-300 group-hover:scale-105">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xl font-extrabold tracking-tight text-gray-900 group-hover:text-primary transition-colors">Interview</span>
-              <span className="text-xl font-extrabold tracking-tight text-primary">Spar</span>
-            </div>
-            <span className="text-[9px] font-bold uppercase tracking-wider text-gray-600 -mt-1">Student Placement Prep</span>
-          </div>
-        </Link>
+        <Brand to="/dashboard"/>
 
-        <div className="hidden xl:flex items-center gap-8">
+        <div className="hidden xl:flex items-center gap-5">
           {navLinks.map((link) => {
             const isActive = location.pathname + location.search === link.to || (link.to === "/dashboard" && location.pathname === "/dashboard")
             return (
               <Link
                 key={link.label}
                 to={link.to}
-                className={`relative text-sm font-semibold transition-all py-1 ${
+                className={`relative text-xs font-semibold transition-all py-1 ${
                   isActive
                     ? "text-primary after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full"
                     : "text-gray-600 hover:text-gray-900 hover:-translate-y-0.5"
@@ -61,10 +49,10 @@ export default function DashboardNavbar({ name }) {
         <div className="hidden xl:flex items-center gap-4">
           <Link
             to="/interview-type"
-            className="text-xs font-semibold bg-primary hover:bg-[#5b22e0] text-white px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-all flex items-center gap-2 hover:-translate-y-0.5"
+            className="text-xs font-semibold bg-primary hover:bg-[#075985] text-white px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-all flex items-center gap-2 hover:-translate-y-0.5"
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Practice Session</span>
+
+            <span>New interview</span>
           </Link>
 
           <div className="relative">
@@ -72,7 +60,7 @@ export default function DashboardNavbar({ name }) {
               onClick={() => setProfileOpen(!profileOpen)}
               aria-label="Account menu"
               aria-expanded={profileOpen}
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-indigo-600 border-2 border-white shadow-sm flex items-center justify-center text-white text-sm font-bold cursor-pointer hover:shadow-md hover:scale-105 transition-all"
+              className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-sky-600 border-2 border-white shadow-sm flex items-center justify-center text-white text-sm font-bold cursor-pointer hover:shadow-md hover:scale-105 transition-all"
             >
               {name ? name.charAt(0).toUpperCase() : "U"}
             </button>
@@ -82,7 +70,7 @@ export default function DashboardNavbar({ name }) {
                 <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-2xl shadow-xl border border-gray-100 py-2.5 z-20 transition-all animate-in fade-in zoom-in-95 duration-150">
                   <div className="px-4 py-2 border-b border-gray-100">
                     <p className="text-sm font-bold text-gray-900 truncate">{name}</p>
-                    <p className="text-[11px] text-gray-400 font-medium">Placement Candidate</p>
+                    <p className="text-[11px] text-gray-400 font-medium">Your workspace</p>
                   </div>
                   <div className="py-1">
                     <button
@@ -98,7 +86,7 @@ export default function DashboardNavbar({ name }) {
                       onClick={() => { setProfileOpen(false); navigate("/resume-intelligence") }}
                       className="w-full text-left px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 transition-colors"
                     >
-                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                       </svg>
                       <span>Resume Intelligence</span>
@@ -152,6 +140,7 @@ export default function DashboardNavbar({ name }) {
           onClick={() => setMenuOpen(!menuOpen)}
           className="xl:hidden p-2 text-gray-600"
           aria-label="Toggle menu"
+          aria-expanded={menuOpen}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {menuOpen ? (

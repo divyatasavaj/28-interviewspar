@@ -14,7 +14,7 @@ const pillars = [
       "Voice and speed preferences",
     ],
     icon: (
-      <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <svg className="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
       </svg>
     ),
@@ -65,7 +65,7 @@ const pillars = [
       "Difficulty prompts informed by previous answers",
     ],
     icon: (
-      <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <svg className="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
       </svg>
     ),
@@ -108,13 +108,13 @@ const pillars = [
 
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-[#fbfaff] font-sans">
+    <div className="min-h-screen bg-[#f8f5ef] font-sans">
       <Navbar />
 
       <main className="pt-32 pb-24 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-primary uppercase bg-purple-50 border border-purple-100/70 px-3.5 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-primary uppercase bg-sky-50 border border-sky-100/70 px-3.5 py-1.5 rounded-full mb-4">
             Platform Capabilities
           </span>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight leading-[1.1]">
@@ -131,13 +131,13 @@ export default function FeaturesPage() {
           {pillars.map((pillar) => (
             <div
               key={pillar.title}
-              className="group bg-white rounded-3xl p-8 border border-gray-100 shadow-sm hover:shadow-xl hover:border-purple-200 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between"
+              className="group bg-white rounded-3xl p-8 border border-gray-100 shadow-sm hover:shadow-xl hover:border-sky-200 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between"
             >
               <div>
                 <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                   {pillar.icon}
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-purple-50 px-2.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-sky-50 px-2.5 py-0.5 rounded-full">
                   {pillar.category}
                 </span>
                 <h3 className="text-xl font-bold text-gray-900 mt-3 mb-2 group-hover:text-primary transition-colors">
@@ -163,21 +163,21 @@ export default function FeaturesPage() {
         </div>
 
         {/* Bottom Call to Action */}
-        <section className="bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white rounded-3xl p-8 md:p-14 text-center relative overflow-hidden shadow-xl">
+        <section className="bg-gradient-to-br from-slate-900 via-sky-950 to-slate-900 text-white rounded-3xl p-8 md:p-14 text-center relative overflow-hidden shadow-xl">
           <div className="relative z-10 max-w-2xl mx-auto">
-            <span className="text-[11px] font-bold tracking-widest uppercase text-purple-300 bg-white/10 px-3 py-1 rounded-full">
+            <span className="text-[11px] font-bold tracking-widest uppercase text-sky-300 bg-white/10 px-3 py-1 rounded-full">
               Zero Commitment Practice
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold mt-4 mb-4 tracking-tight">
               Test Your Placement Readiness Today
             </h2>
-            <p className="text-purple-200/80 text-sm sm:text-base leading-relaxed mb-8">
+            <p className="text-sky-200/80 text-sm sm:text-base leading-relaxed mb-8">
               Choose a domain, optionally upload a resume for a project question, and review your saved answers after practice.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link
                 to="/interview-type"
-                className="bg-primary hover:bg-[#5b22e0] text-white font-bold text-sm px-8 py-4 rounded-full shadow-lg shadow-primary/30 transition-all hover:scale-105"
+                className="bg-primary hover:bg-[#075985] text-white font-bold text-sm px-8 py-4 rounded-full shadow-lg shadow-primary/30 transition-all hover:scale-105"
               >
                 Launch Mock Session Now
               </Link>

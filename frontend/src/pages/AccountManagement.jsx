@@ -110,7 +110,7 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
   return (
     <>
       <div className="flex flex-col lg:flex-row gap-8 mb-8">
-        <form onSubmit={handleSaveProfile} className="lg:w-[70%] bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+        <form onSubmit={handleSaveProfile} className="lg:w-[70%] bg-white rounded-3xl shadow-sm border border-gray-100 p-5 sm:p-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900">Profile Details</h2>
             {successMsg && (
@@ -184,15 +184,15 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
             <button
               type="submit"
               disabled={saving}
-              className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-xs sm:text-sm px-6 py-2.5 rounded-full shadow-md shadow-primary/20 transition-all disabled:opacity-50"
+              className="bg-primary hover:bg-[#075985] text-white font-semibold text-xs sm:text-sm px-6 py-2.5 rounded-full shadow-md shadow-primary/20 transition-all disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>
 
-        <div className="lg:w-[30%] bg-white rounded-3xl shadow-sm border border-gray-100 p-8 flex flex-col items-center justify-center text-center">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-6">Candidate Metrics</h2>
+        <div className="lg:w-[30%] bg-white rounded-3xl shadow-sm border border-gray-100 p-5 sm:p-8 flex flex-col items-center justify-center text-center">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-6">Your practice so far</h2>
           <div className="space-y-6 w-full">
             <div>
               <p className="text-3xl font-extrabold text-primary">{completedCount}</p>
@@ -211,12 +211,12 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
 
       {/* Security Section */}
       <div className="flex flex-col lg:flex-row gap-8 mb-8">
-        <div className="lg:w-[70%] bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Security & Authentication</h2>
+        <div className="lg:w-[70%] bg-white rounded-3xl shadow-sm border border-gray-100 p-5 sm:p-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Keep your account secure</h2>
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-primary">
+                <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center text-primary">
                   <Icon name="shield" />
                 </div>
                 <div>
@@ -309,7 +309,7 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
                 <button
                   type="submit"
                   disabled={pwdLoading}
-                  className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-xs px-5 py-2 rounded-xl transition-all disabled:opacity-50"
+                  className="bg-primary hover:bg-[#075985] text-white font-semibold text-xs px-5 py-2 rounded-xl transition-all disabled:opacity-50"
                 >
                   {pwdLoading ? "Updating..." : "Update Password"}
                 </button>
@@ -355,7 +355,7 @@ function ResumeView() {
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
-      <div className="lg:w-[70%] bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+      <div className="lg:w-[70%] bg-white rounded-3xl shadow-sm border border-gray-100 p-5 sm:p-8">
         <h2 className="text-xl font-bold text-gray-900 mb-2">Resume Upload & Parser</h2>
         <p className="text-xs text-gray-500 mb-6">
           Upload your resume in PDF or DOCX format. The local parser extracts evidence from your resume to personalize interview questions. It does not send your resume to an AI provider.
@@ -372,7 +372,7 @@ function ResumeView() {
             type="file"
             accept=".pdf,.docx"
             onChange={(e) => setFile(e.target.files[0])}
-            className="block w-full max-w-sm mx-auto text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white hover:file:bg-[#5b22e0] file:cursor-pointer cursor-pointer"
+            className="block w-full max-w-sm mx-auto text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white hover:file:bg-[#075985] file:cursor-pointer cursor-pointer"
           />
           <label className="mt-4 flex items-start gap-2 text-left text-xs text-gray-600">
             <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />
@@ -385,7 +385,7 @@ function ResumeView() {
             <button
               onClick={handleUpload}
               disabled={uploading || !consent}
-              className="mt-5 bg-primary hover:bg-[#5b22e0] text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-md shadow-primary/20 transition-all disabled:opacity-50"
+              className="mt-5 bg-primary hover:bg-[#075985] text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-md shadow-primary/20 transition-all disabled:opacity-50"
             >
               {uploading ? "Analyzing Resume..." : `Parse ${file.name}`}
             </button>
@@ -407,7 +407,7 @@ function ResumeView() {
                 <h4 className="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">Skills</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {data.skills.map((s, i) => (
-                    <span key={i} className="bg-purple-50 border border-purple-100 text-primary text-xs font-medium px-3 py-1 rounded-full">
+                    <span key={i} className="bg-sky-50 border border-sky-100 text-primary text-xs font-medium px-3 py-1 rounded-full">
                       {s}
                     </span>
                   ))}
@@ -504,14 +504,14 @@ function ReportsView() {
   if (sessions.length === 0) {
     return (
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-12 text-center">
-        <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-50 text-primary flex items-center justify-center mb-4">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-sky-50 text-primary flex items-center justify-center mb-4">
           <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
         </div>
         <h3 className="text-lg font-bold text-gray-900 mb-2">No interview reports yet</h3>
         <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">Complete your first mock interview to generate performance feedback reports and rubrics.</p>
-        <Link to="/interview-type" className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-sm px-6 py-3 rounded-full shadow-md shadow-primary/20 transition-all inline-flex items-center gap-2 hover:-translate-y-0.5">
+        <Link to="/interview-type" className="bg-primary hover:bg-[#075985] text-white font-semibold text-sm px-6 py-3 rounded-full shadow-md shadow-primary/20 transition-all inline-flex items-center gap-2 hover:-translate-y-0.5">
           <span>Start Practice Mock</span>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -528,11 +528,11 @@ function ReportsView() {
         return (
           <div
             key={s.id}
-            className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-purple-200 transition-all"
+            className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-sky-200 transition-all"
           >
             <div className="flex items-center gap-4">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm ${
-                s.interview_type === "hr" ? "bg-purple-50 text-primary" : "bg-blue-50 text-blue-600"
+                s.interview_type === "hr" ? "bg-sky-50 text-primary" : "bg-blue-50 text-blue-600"
               }`}>
                 {s.interview_type === "hr" ? "HR" : "DEV"}
               </div>
@@ -650,7 +650,7 @@ function PreferencesView() {
                 onClick={() => setVoice(v.id)}
                 className={`text-left p-3.5 rounded-2xl border transition-all ${
                   voice === v.id
-                    ? "bg-purple-50/80 border-primary shadow-sm"
+                    ? "bg-sky-50/80 border-primary shadow-sm"
                     : "bg-gray-50 border-gray-100 hover:bg-gray-100"
                 }`}
               >
@@ -722,7 +722,7 @@ function PreferencesView() {
           <button
             type="button"
             onClick={handleTestAudio}
-            className="text-xs font-semibold text-primary bg-purple-50 hover:bg-purple-100 border border-purple-200 px-5 py-2.5 rounded-full transition-all flex items-center gap-2"
+            className="text-xs font-semibold text-primary bg-sky-50 hover:bg-sky-100 border border-sky-200 px-5 py-2.5 rounded-full transition-all flex items-center gap-2"
           >
             {testing ? (
               <>
@@ -742,7 +742,7 @@ function PreferencesView() {
           <button
             type="button"
             onClick={handleSavePreferences}
-            className="bg-primary hover:bg-[#5b22e0] text-white text-xs font-bold px-6 py-2.5 rounded-full shadow-md transition-all"
+            className="bg-primary hover:bg-[#075985] text-white text-xs font-bold px-6 py-2.5 rounded-full shadow-md transition-all"
           >
             Save Preferences
           </button>
@@ -790,7 +790,7 @@ export default function AccountManagement() {
   }
 
   return (
-    <div className="min-h-screen font-sans flex bg-[#fbfaff]">
+    <div className="min-h-screen font-sans flex bg-[#f8f5ef]">
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/20 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -802,7 +802,7 @@ export default function AccountManagement() {
       >
         <div className="p-6 border-b border-gray-100 flex items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-[#7c3aed] flex items-center justify-center text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-[#0369a1] flex items-center justify-center text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
@@ -837,7 +837,7 @@ export default function AccountManagement() {
               key={item.label}
               onClick={() => { setView(item.view); setSidebarOpen(false) }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors ${
-                view === item.view ? "bg-primary text-white shadow-sm" : "text-gray-600 hover:bg-purple-50 hover:text-gray-900"
+                view === item.view ? "bg-primary text-white shadow-sm" : "text-gray-600 hover:bg-sky-50 hover:text-gray-900"
               }`}
             >
               <Icon name={item.icon} />
@@ -849,9 +849,9 @@ export default function AccountManagement() {
         <div className="p-4 border-t border-gray-100 space-y-3">
           <button
             onClick={() => navigate("/interview-type")}
-            className="w-full bg-primary hover:bg-[#5b22e0] text-white font-bold text-xs py-3 rounded-full shadow-md shadow-primary/20 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer"
+            className="w-full bg-primary hover:bg-[#075985] text-white font-bold text-xs py-3 rounded-full shadow-md shadow-primary/20 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer"
           >
-            <span>New Mock Interview</span>
+            <span>New interview</span>
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
@@ -867,7 +867,7 @@ export default function AccountManagement() {
         </div>
       </aside>
 
-      <div className="flex-1 min-h-screen">
+      <div className="account-content flex-1 min-h-screen">
         <div className="lg:hidden flex items-center justify-between px-6 h-[72px] bg-white border-b border-gray-100">
           <Link to="/dashboard" className="text-xl font-extrabold tracking-tight">
             <span className="text-gray-900">Interview</span>
@@ -880,9 +880,9 @@ export default function AccountManagement() {
           </button>
         </div>
 
-        <div className="p-6 lg:p-12 max-w-[1200px]">
-          <div className="mb-8">
-            <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-[#5b22e0] transition-colors mb-3">
+        <main className="p-5 sm:p-6 lg:p-10 max-w-[1200px] page-enter">
+          <div className="workspace-welcome relative overflow-hidden rounded-3xl p-6 sm:p-8 mb-8">
+            <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-[#075985] transition-colors mb-3">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
@@ -900,7 +900,7 @@ export default function AccountManagement() {
           {view === "resume" && <ResumeView />}
           {view === "reports" && <ReportsView />}
           {view === "preferences" && <PreferencesView />}
-        </div>
+        </main>
       </div>
     </div>
   )

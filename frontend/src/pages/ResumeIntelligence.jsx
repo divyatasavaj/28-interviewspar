@@ -226,30 +226,29 @@ export default function ResumeIntelligence() {
   if (!user) return <main className="p-10 text-gray-900"><p role="status">{userError || "Loading account…"}</p><Link to="/login">Sign in</Link></main>
 
   return (
-    <div className="min-h-screen font-sans bg-[#fbfaff]">
+    <div className="min-h-screen font-sans bg-[#f8f5ef]">
       <div
         className="fixed top-0 right-0 w-[400px] md:w-[700px] h-[400px] md:h-[700px] pointer-events-none"
         style={{
-          background: "radial-gradient(circle at top right, rgba(109,40,217,0.06) 0%, transparent 70%)",
+          background: "radial-gradient(circle at top right, rgba(125,190,229,0.12) 0%, transparent 70%)",
         }}
       />
       <DashboardNavbar name={user.name} />
 
-      <main className="pt-28 pb-24 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
+      <main className="page-enter pt-28 pb-24 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
         {/* Area 1: Page Header and Introduction */}
-        <header className="mb-8">
+        <header className="resume-heading mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-full px-3.5 py-1 text-xs font-semibold text-primary mb-3">
+              <div className="inline-flex items-center gap-2 bg-sky-50 border border-sky-100 rounded-full px-3.5 py-1 text-xs font-semibold text-primary mb-3">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Deterministic Skill Match Engine</span>
+                <span>Resume intelligence</span>
               </div>
               <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
-                Resume Intelligence & Skill Readiness
+                Make your experience easier to see.
               </h1>
               <p className="mt-2 text-sm sm:text-base text-gray-600 max-w-3xl leading-relaxed">
-                Compare your extracted resume evidence against versioned role rubrics or specific job descriptions.
-                Assessments are deterministic, explainable, and never fabricate scores.
+                Explore what your resume says about your skills and projects. Compare it with a target role or a job description, then choose what to improve.
               </p>
             </div>
 
@@ -265,7 +264,7 @@ export default function ResumeIntelligence() {
               </Link>
               <Link
                 to="/interview-type"
-                className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-xs px-5 py-2.5 rounded-full transition-all shadow-md shadow-primary/20 flex items-center gap-2"
+                className="bg-primary hover:bg-[#075985] text-white font-semibold text-xs px-5 py-2.5 rounded-full transition-all shadow-md shadow-primary/20 flex items-center gap-2"
               >
                 <span>Practice Interview</span>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -287,19 +286,19 @@ export default function ResumeIntelligence() {
             <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-700">{resumeState.error}</p>
           ) : !resumeState.hasResume ? (
             /* Empty State: No Resume */
-            <div className="bg-white rounded-3xl p-8 border border-dashed border-purple-200 text-center shadow-sm">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-purple-50 text-primary flex items-center justify-center mb-3">
+            <div className="bg-white rounded-3xl p-8 border border-dashed border-sky-200 text-center shadow-sm">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-sky-50 text-primary flex items-center justify-center mb-3">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
               </div>
-              <h2 className="text-base font-bold text-gray-900">No Resume Uploaded Yet</h2>
+              <h2 className="text-base font-bold text-gray-900">Start with the experience you already have.</h2>
               <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto mt-1 leading-relaxed">
                 Upload your PDF or DOCX resume to extract documented skills, project context, and work experience before running an assessment.
               </p>
               <Link
                 to="/account?tab=resume"
-                className="mt-4 inline-flex items-center gap-2 bg-primary hover:bg-[#5b22e0] text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-md shadow-primary/20 transition-all hover:-translate-y-0.5"
+                className="mt-4 inline-flex items-center gap-2 bg-primary hover:bg-[#075985] text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-md shadow-primary/20 transition-all hover:-translate-y-0.5"
               >
                 <span>Upload Resume</span>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -350,13 +349,13 @@ export default function ResumeIntelligence() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-sm font-bold text-gray-900">Active Resume Analyzed & Ready</h2>
+                    <h2 className="text-sm font-bold text-gray-900">Your resume is ready to explore</h2>
                     <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                       Indexed
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Parser Version: {resumeState.analysis.parser_version} • Uploaded {formatIsoDate(resumeState.resumeDocument.uploaded_at)}
+                    Uploaded {formatIsoDate(resumeState.resumeDocument.uploaded_at)}
                   </p>
                 </div>
               </div>
@@ -389,9 +388,9 @@ export default function ResumeIntelligence() {
         <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm mb-10" aria-label="Assessment Controls">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-100 mb-6">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Choose Assessment Mode</h2>
+              <h2 className="text-lg font-bold text-gray-900">What are you preparing for?</h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Evaluate against an approved occupational rubric or compare directly with a specific job posting.
+                Choose a target role or compare with the requirements in a specific job description.
               </p>
             </div>
 
@@ -407,7 +406,7 @@ export default function ResumeIntelligence() {
                 }`}
                 aria-pressed={activeMode === "role"}
               >
-                Mode A: Target Role
+                Target role
               </button>
               <button
                 type="button"
@@ -419,7 +418,7 @@ export default function ResumeIntelligence() {
                 }`}
                 aria-pressed={activeMode === "jd"}
               >
-                Mode B: Specific Job Description
+                Job description
               </button>
             </div>
           </div>
@@ -430,7 +429,7 @@ export default function ResumeIntelligence() {
               <div className="grid md:grid-cols-2 gap-6 items-start">
                 <div>
                   <label htmlFor="target-role-dropdown" className="block text-xs font-bold text-gray-700 mb-2">
-                    Select Canonical Target Role
+                    Target role
                   </label>
                   <select
                     id="target-role-dropdown"
@@ -446,7 +445,7 @@ export default function ResumeIntelligence() {
                     ))}
                   </select>
                   <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                    Canonical Role ID: <code className="text-primary font-mono bg-purple-50 px-1 py-0.5 rounded">{selectedRoleId}</code>
+                    Choose the role you’re preparing for now.
                   </p>
                 </div>
 
@@ -457,20 +456,20 @@ export default function ResumeIntelligence() {
                   </p>
                   <div className="text-[11px] text-gray-500 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    <span>Rubric Status: Provisional (Curated Taxonomy)</span>
+                    <span>Provisional rubric · Role score unavailable</span>
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
                 <p className="text-xs text-gray-400">
-                  Role assessment uses the canonical requirement rubric. No arbitrary hiring scores are generated for provisional rubrics.
+                  Review the written evidence. Numerical role scores stay unavailable while the rubric is provisional.
                 </p>
                 <button
                   type="button"
                   onClick={handleAnalyzeRole}
                   disabled={submitting || !resumeState.hasResume || resumeState.isOcrRequired}
-                  className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-xs px-6 py-3 rounded-full transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 hover:-translate-y-0.5"
+                  className="bg-primary hover:bg-[#075985] text-white font-semibold text-xs px-6 py-3 rounded-full transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 hover:-translate-y-0.5"
                 >
                   {submitting ? (
                     <>
@@ -532,7 +531,7 @@ export default function ResumeIntelligence() {
                 <button
                   type="submit"
                   disabled={submitting || !resumeState.hasResume || resumeState.isOcrRequired || !jdInput.trim()}
-                  className="bg-primary hover:bg-[#5b22e0] text-white font-semibold text-xs px-6 py-3 rounded-full transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 hover:-translate-y-0.5"
+                  className="bg-primary hover:bg-[#075985] text-white font-semibold text-xs px-6 py-3 rounded-full transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 hover:-translate-y-0.5"
                 >
                   {submitting ? (
                     <>
@@ -581,7 +580,7 @@ export default function ResumeIntelligence() {
                         assessment.assessment_status === "evidence_backed"
                           ? "bg-emerald-50 text-emerald-700"
                           : assessment.assessment_status === "heuristic"
-                          ? "bg-purple-50 text-purple-700"
+                          ? "bg-sky-50 text-sky-700"
                           : "bg-amber-50 text-amber-700"
                       }`}
                     >
@@ -612,7 +611,7 @@ export default function ResumeIntelligence() {
                       </p>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-4 bg-purple-50/70 border border-purple-100 rounded-2xl p-4">
+                    <div className="flex items-center gap-4 bg-sky-50/70 border border-sky-100 rounded-2xl p-4">
                       <div className="text-right">
                         <p className="text-xs text-gray-500 font-semibold">Requirement Coverage</p>
                         <p className="text-3xl font-extrabold text-primary">{assessment.score}%</p>
@@ -657,9 +656,9 @@ export default function ResumeIntelligence() {
                     <p className="text-[10px] text-rose-600 font-semibold uppercase">Not Evidenced</p>
                     <p className="text-lg font-bold text-rose-800 mt-0.5">{assessment.evidence_summary.not_evidenced_count}</p>
                   </div>
-                  <div className="p-3 bg-purple-50/60 rounded-xl text-center border border-purple-100">
-                    <p className="text-[10px] text-purple-600 font-semibold uppercase">Review Queue</p>
-                    <p className="text-lg font-bold text-purple-800 mt-0.5">{assessment.evidence_summary.unknown_requirement_count || 0}</p>
+                  <div className="p-3 bg-sky-50/60 rounded-xl text-center border border-sky-100">
+                    <p className="text-[10px] text-sky-600 font-semibold uppercase">Review Queue</p>
+                    <p className="text-lg font-bold text-sky-800 mt-0.5">{assessment.evidence_summary.unknown_requirement_count || 0}</p>
                   </div>
                 </div>
               )}
@@ -693,7 +692,7 @@ export default function ResumeIntelligence() {
             <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm" aria-label="Skill Gap Analysis">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100 mb-6">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Skill Gap & Evidence Breakdown</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Your evidence, at a glance</h2>
                   <p className="text-xs text-gray-500 mt-0.5">
                     Detailed finding status for each requirement extracted from the rubric or job description.
                   </p>
@@ -749,7 +748,7 @@ export default function ResumeIntelligence() {
                     return (
                       <div
                         key={finding.requirement_id}
-                        className="bg-[#fcfcff] border border-gray-100 rounded-2xl p-5 hover:border-gray-200 transition-colors"
+                        className="bg-[#f8fbfd] border border-gray-100 rounded-2xl p-5 hover:border-gray-200 transition-colors"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2.5">
@@ -815,7 +814,7 @@ export default function ResumeIntelligence() {
 
                         {/* Actionable Next Step */}
                         {finding.suggested_next_action && (
-                          <div className="mt-3 bg-purple-50/40 p-3 rounded-xl border border-purple-100/60 text-xs text-purple-900 flex items-start gap-2">
+                          <div className="mt-3 bg-sky-50/40 p-3 rounded-xl border border-sky-100/60 text-xs text-sky-900 flex items-start gap-2">
                             <span className="font-bold text-primary">Next Action:</span>
                             <span>{finding.suggested_next_action}</span>
                           </div>
@@ -839,7 +838,7 @@ export default function ResumeIntelligence() {
                     {unknownRequirements.map((item, idx) => (
                       <span
                         key={idx}
-                        className="text-xs font-semibold px-3 py-1 bg-purple-50 text-purple-800 border border-purple-200 rounded-xl"
+                        className="text-xs font-semibold px-3 py-1 bg-sky-50 text-sky-800 border border-sky-200 rounded-xl"
                         title={item.reason}
                       >
                         {item.source_term} ({item.requirement_type})
@@ -853,7 +852,7 @@ export default function ResumeIntelligence() {
             {/* Area 6: Personalized Recommendations Section */}
             <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm" aria-label="Personalized Recommendations">
               <div className="pb-6 border-b border-gray-100 mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Personalized Preparation Roadmap</h2>
+                <h2 className="text-xl font-bold text-gray-900">A plan for your next step</h2>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Actionable, deterministic recommendations grounded in your actual skill gaps. Ranked by priority.
                 </p>
@@ -879,7 +878,7 @@ export default function ResumeIntelligence() {
                     return (
                       <div
                         key={rec.recommendation_id}
-                        className="bg-[#fcfcff] border border-gray-100 rounded-2xl p-5 flex flex-col justify-between hover:shadow-sm transition-all"
+                        className="bg-[#f8fbfd] border border-gray-100 rounded-2xl p-5 flex flex-col justify-between hover:shadow-sm transition-all"
                       >
                         <div>
                           <div className="flex items-center justify-between mb-3">
@@ -921,7 +920,7 @@ export default function ResumeIntelligence() {
               <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm" aria-label="Previous Assessment">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
                   <div>
-                    <h2 className="text-sm font-bold text-gray-900">Previous Assessment Record</h2>
+                    <h2 className="text-sm font-bold text-gray-900">Your previous review</h2>
                     <p className="text-xs text-gray-400">Stored idempotently under your account</p>
                   </div>
                   <button

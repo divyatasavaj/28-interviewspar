@@ -1,6 +1,6 @@
 export default function FeatureCard({ iconBg, icon, badge, title, description }) {
   return (
-    <div className="group relative bg-white rounded-3xl p-8 border border-gray-100 shadow-sm hover:shadow-xl hover:border-purple-200 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
+    <div className="group relative bg-white rounded-3xl p-8 border border-gray-100 shadow-sm hover:shadow-xl hover:border-sky-200 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between mb-6">
           <div
@@ -9,7 +9,7 @@ export default function FeatureCard({ iconBg, icon, badge, title, description })
             {icon}
           </div>
           {badge && (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-50 border border-gray-200/60 px-2.5 py-1 rounded-full group-hover:text-primary group-hover:bg-purple-50 group-hover:border-purple-100 transition-colors">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-50 border border-gray-200/60 px-2.5 py-1 rounded-full group-hover:text-primary group-hover:bg-sky-50 group-hover:border-sky-100 transition-colors">
               {badge}
             </span>
           )}

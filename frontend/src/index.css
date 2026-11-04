@@ -1,8 +1,21 @@
 @import "tailwindcss";
+@import "./styles/ui.css";
 
 @theme {
-  --color-primary: #6D28D9;
-  --color-accent: #8B5CF6;
+  --color-primary: #126fa4;
+  --color-accent: #278bc2;
+  --color-sand-50: #fcfaf6;
+  --color-sand-100: #f5eddf;
+  --color-sand-200: #eadac1;
+  --color-sand-700: #786044;
+  --color-gray-950: #102a3e;
+  --color-gray-900: #193449;
+  --color-gray-600: #526477;
+  --color-gray-500: #617286;
+  --color-gray-400: #6d7d8e;
+  --color-gray-100: #e7edf1;
+  --color-gray-50: #f5f8fa;
+  --color-sky-600: #0975ad;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -51,7 +64,7 @@
   }
 
   .animate-float-slow {
-    animation: floatSlow 4s ease-in-out infinite;
+    animation: floatSlow 4s ease-in-out 1;
   }
 
   .animate-modal-pop {
@@ -71,8 +84,8 @@
   }
   .card-hover:hover {
     transform: translateY(-3px);
-    box-shadow: 0 14px 30px -10px rgba(109, 40, 217, 0.12);
-    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: 0 14px 30px -10px rgba(18, 111, 164, 0.12);
+    border-color: rgba(125, 190, 229, 0.6);
   }
 
   .logo-hover {
@@ -96,5 +109,5 @@
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(109, 40, 217, 0.5);
+  background: rgba(18, 111, 164, 0.5);
 }

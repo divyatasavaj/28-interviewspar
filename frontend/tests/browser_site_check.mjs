@@ -93,6 +93,11 @@ async function viewport(width, height = 900) {
   await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 600 });
 }
 async function screenshot(name) {
+  // Capture the settled design, rather than a half-transparent entrance frame.
+  await command('Runtime.evaluate', {
+    expression: `Promise.all(document.getAnimations().filter(a => Number.isFinite(a.effect.getComputedTiming().endTime)).map(a => a.finished.catch(() => {})))`,
+    awaitPromise: true, timeout: 10000,
+  });
   const shot = await command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
   await writeFile(join(artifacts, `${name}.png`), Buffer.from(shot.data, 'base64'));
 }
@@ -160,6 +165,18 @@ try {
     await layout(`desktop ${path}`);
   }
   check('All public pages load with a primary heading', true);
+  await goto('/');
+  await click('button', 'HR & behavioral');
+  check('Homepage question preview switches tracks', await evaluate(hasText('project that changed direction')));
+  await click('button', 'Technical thinking');
+  await command('Emulation.setEmulatedMedia', {features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+  check('Reduced motion stops decorative movement and button transitions', await evaluate(`
+    getComputedStyle(document.querySelector('.practice-window')).animationName === 'none' &&
+    getComputedStyle(document.querySelector('.hero-sky')).animationName === 'none' &&
+    getComputedStyle(document.querySelector('.spar-button')).transitionDuration === '0s'
+  `));
+  await command('Emulation.setEmulatedMedia', {features:[]});
+  await screenshot('home-desktop');
   await viewport(1024,768);
   await goto('/'); await layout('tablet home'); await screenshot('home-tablet');
   await viewport(1440);
@@ -210,13 +227,13 @@ try {
   await click('input[type="checkbox"]'); await click('button','Parse synthetic.pdf');
   await waitFor(hasText('Extracted Background Profile'),'parsed resume');
   check('PDF file upload renders extracted skills',await evaluate(hasText('Python')));
-  await goto('/resume-intelligence',hasText('Mode A: Target Role'));
+  await goto('/resume-intelligence',hasText('What are you preparing for?'));
   await click('button','Analyze');
   await waitFor(hasText('Score Unavailable'),'provisional role result');
   check('Provisional role assessment renders unavailable score',true);
   await click('button','View assessment limitations');
   await waitFor(hasText('Hide assessment limitations'),'assessment limitations');
-  await click('button','Mode B: Specific Job Description');
+  await click('button','Job description');
   await fill('#jd-input-box','short');
   await click('button[type="submit"]');
   await waitFor(hasText('too short'),'JD minimum-length validation');
@@ -239,6 +256,7 @@ try {
     await click('input[type="checkbox"]'); await click('button','Start interview');
     await waitFor('document.querySelector("progress")','first interview question');
     for(let i=0;i<count;i++) {
+      assert.equal(await evaluate('document.querySelectorAll("h1").length'), 1, `${persona} question ${i+1} must replace the previous prompt`);
       const question = await evaluate('document.querySelector("h1").innerText');
       if(i===0) {
         await viewport(390,844); await layout(`mobile ${persona} interview`); await screenshot(`${persona}-interview-mobile`); await viewport(1440);

@@ -4,9 +4,9 @@ export default {
   theme: {
     extend: {
       colors: {
-        // locked palette — docs/design.md
+        // Legacy compatibility. The active Tailwind 4 theme lives in src/index.css.
         brand: {
-          violet: "#7C3AED",
+          violet: "#126FA4", // old token name retained for unmounted components
           amber: "#F5A623",
           green: "#0F7A5C",
         },
