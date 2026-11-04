@@ -40,9 +40,8 @@ export default function CallRoom({call,questionPrompt,busy,error,progress,onSubm
         </div>
         <div className="camera-toolbar"><span>{!webcam.on?'You':detector.status==='loading'?'Connecting camera…':detector.status!=='ready'?'Face detection unavailable':faces?.length?'Face detected':'No face detected'}</span><button type="button" disabled={!call.enabled} onClick={()=>webcam.on || webcam.pending ? webcam.stop() : startCamera()}>{webcam.pending?'Cancel camera':webcam.on?'Turn camera off':'Turn camera on'}</button></div>
       </div>
-      <div className="call-question-caption"><span>Interviewer</span><h1 key={questionPrompt}>{questionPrompt}</h1></div>
       {!call.enabled && <div className="call-lobby"><div className="call-join">
-        <span className="section-kicker">Your interview call</span><h2>Let’s talk.</h2><p>Hear the question and answer aloud. Your transcript is read-only; you can record an answer again before sending it.</p>
+        <span className="section-kicker">Your interview call</span><h2>Let’s talk.</h2><p>Hear the question and answer aloud. Review the captions, record again if needed, then send your answer.</p>
         <div className="call-join-options"><label>Spoken language<select value={call.language} onChange={e=>call.setLanguage(e.target.value)}><option value="en-IN">English (India)</option><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option></select></label><label>Question voice<select value={call.engine} onChange={e=>call.setEngine(e.target.value)}><option value="browser">Browser voice</option><option value="neural">Online neural voice</option></select></label></div>
         <label className="call-consent"><input type="checkbox" checked={cameraWanted} onChange={e=>setCameraWanted(e.target.checked)}/>Connect my camera for framing and attention cues</label>
         <label className="call-consent"><input type="checkbox" aria-label="Speech recognition consent" checked={consent} onChange={e=>setConsent(e.target.checked)}/><span>I agree to browser speech recognition and saved delivery observations. The browser may send audio to its speech provider. Camera frames and raw audio are not saved by InterviewSpar.</span></label>
@@ -50,12 +49,13 @@ export default function CallRoom({call,questionPrompt,busy,error,progress,onSubm
         <small>Microphone access is required. Use Chrome or Edge.</small>
       </div></div>}
     </section>
+      <div className="call-question-caption"><span>Interviewer</span><h1 key={questionPrompt}>{questionPrompt}</h1></div>
     <footer className="call-footer">
       {(error || webcam.error || fullscreenError) && <p role="alert" className="call-error">{error || webcam.error || fullscreenError}</p>}
       {call.enabled ? <VoicePanel call={call} disabled={busy} onSubmit={onSubmit} onSkip={onSkip}/> : <p className="call-offline-note">Speech-only interview · Automatic delivery feedback · Local camera preview</p>}
       {call.enabled && <div className="call-footer-meta">
-        <details className="call-observations"><summary>Live observations</summary><div className="delivery-live-stats"><span>Recognized words <strong>{signals.word_count}</strong></span><span>Transcript fillers <strong>{call.voiceText?signals.filler_count:'—'}</strong></span><span>Observed audio <strong>{call.audio?`${(call.audio.observed_ms/1000).toFixed(1)}s`:'—'}</strong></span><span>Pauses ≥0.5s <strong>{call.audio?call.audio.pause_count:'—'}</strong></span></div><p>Confidence cues describe delivery steadiness. Attention cues describe camera presence and tab visibility. These are practice estimates.</p></details>
-        {feedback && <details className="call-previous-feedback"><summary>Previous answer feedback</summary><p>{feedback.feedback}</p></details>}
+        <details name="call-information" className="call-observations"><summary>Live observations</summary><div className="delivery-live-stats"><span>Recognized words <strong>{signals.word_count}</strong></span><span>Transcript fillers <strong>{call.voiceText?signals.filler_count:'—'}</strong></span><span>Observed audio <strong>{call.audio?`${(call.audio.observed_ms/1000).toFixed(1)}s`:'—'}</strong></span><span>Pauses ≥0.5s <strong>{call.audio?call.audio.pause_count:'—'}</strong></span></div><p>Confidence cues describe delivery steadiness. Attention cues describe camera presence and tab visibility. These are practice estimates.</p></details>
+        {feedback && <details name="call-information" className="call-previous-feedback"><summary>Previous answer feedback</summary><p>{feedback.feedback}</p></details>}
         <button type="button" disabled={busy} onClick={call.leave}>Disconnect devices</button>
       </div>}
     </footer>

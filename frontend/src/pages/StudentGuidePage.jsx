@@ -111,14 +111,14 @@ export default function StudentGuidePage() {
     <div className="min-h-screen bg-[#f8f5ef] font-sans">
       <Navbar />
 
-      <main className="pt-32 pb-24 px-4 sm:px-6 md:px-8 max-w-5xl mx-auto">
+      <main className="public-page pt-32 pb-24 px-4 sm:px-6 md:px-8 max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-primary uppercase bg-sky-50 border border-sky-100/70 px-3.5 py-1.5 rounded-full mb-4">
             University Placement Playbook
           </span>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight leading-[1.1]">
-            The Student's Guide To <span className="text-primary">Acing Tech Interviews</span>
+            Your interview <span className="text-primary">preparation guide.</span>
           </h1>
           <p className="mt-5 text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
             A comprehensive roadmap engineered for university students and fresh graduates preparing for campus recruitments and off-campus tech drives.

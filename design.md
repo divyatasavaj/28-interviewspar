@@ -19,7 +19,7 @@ to the supported React application and its existing forms and interview flow.
 
 Use Inter with system sans-serif fallbacks; code keeps a monospace font. Preserve
 red, amber, and green for meaningful error, caution, and evidence states. Main
-buttons use blue with white text, rounded corners, and a small pressed effect.
+buttons use blue with white text, rounded corners, and a subtle pressed effect. Avoid deep button shadows or competing accent cards.
 
 Shared tokens live in `frontend/src/index.css`, with component and responsive
 styles in `frontend/src/styles/ui.css`. `Brand`, `UiIcon`, and `AuthLayout` supply
@@ -34,29 +34,35 @@ configuration remains a legacy compatibility file; Vite uses Tailwind 4 tokens.
 - **Authentication:** split story/form layout on desktop and a compact form on
   phones. Keep explicit field labels, validation, autocomplete, pending states,
   and error announcements connected to the existing API.
-- **Dashboard and account:** light cards, a sky/beige welcome panel, readable
-  saved-session history, resume upload, and existing profile/voice controls.
+- **Dashboard:** place practice and recent history before expandable resume matching.
+  Keep all role/JD matching controls and evidence in the expandable section.
+- **Account:** use the shared workspace navigation and persistent section links for
+  profile, resume, reports, and voice preferences. Keep identity compact.
 - **Resume intelligence:** evidence, role/JD controls, findings, recommendations,
   and assessment limitations remain accessible. Provisional numerical scores
   remain unavailable; missing evidence is not a zero score.
 - **Interview setup:** retain domain, experience, track, mode, and consent controls.
-  Show the selected track's rounds and explain saved progress and optional speech.
-- **Interview room:** a round list on desktop wraps above the question on phones.
-  Display answered progress, one current prompt, coding where applicable, typed
-  answers, optional speech, skip/finish controls, and practice-mode feedback.
+  Group interview details separately from feedback/privacy. Explain the spoken call.
+- **Interview room:** preserve the full-screen, speech-only flow. Separate participant
+  tiles, the current question, read-only captions, and grouped controls. Keep microphone,
+  re-record, repeat, skip, send, camera, disconnect, fullscreen, and finish available.
+  Live observations and previous feedback use distinct, mutually exclusive disclosures.
 - **Reports:** display the score with its qualification, round details, saved
   answers, and feedback. Print layouts keep the score as text, omit action
-  buttons, and preserve the question review and evidence limitations.
+  buttons, and preserve the question review and evidence limitations. Group speech
+  metrics separately from camera/attention metrics. Detailed definitions expand on
+  demand and automatically open for printing, restoring their earlier state afterward.
 
 ## Motion and accessibility
 
 Page entrances finish in about half a second; the homepage card floats once and
 settles. Hover and pressed feedback are brief. `prefers-reduced-motion: reduce`
 disables animations and transitions. Controls retain visible keyboard focus;
-icons supplement text, and the current interview round uses `aria-current`.
+icons supplement text, and active page/section links use `aria-current`.
 
 Keep decorative overflow inside the hero without hiding page-wide content.
-Public/workspace navigation switches to a compact menu below 1280px; interview
+Public navigation switches to a compact menu below 1280px and workspace navigation
+below 900px; interview
 and authentication layouts adapt below 768px. Tables may scroll within their own
 container. UI numbers must come from saved application evidence, with unavailable
 scores and unverified technical correctness visibly distinguished.
@@ -66,3 +72,13 @@ scores and unverified technical correctness visibly distinguished.
 See `docs/SITE_TEST_REPORT.md` for the current checks, browser evidence, and
 remaining device/provider limitations. The redesign does not enable the retained
 legacy marketplace, payments, live rooms, anti-cheat, or certificate flows.
+
+## Layout organization
+
+Workspace pages share a 1160px content width, 28px desktop/20px mobile gutters,
+32px desktop headings, 18px card corners, and a restrained border/shadow treatment.
+Use one prominent next action per area. Related actions stay together; destructive
+or exit actions stay apart. Page-section links help navigate long resume/report pages.
+Mobile account sections form a two-column grid so all settings remain discoverable.
+All original routes, forms, saved evidence, report actions, and media capabilities
+remain available; reorganization does not change scoring or interview behavior.

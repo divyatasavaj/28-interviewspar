@@ -1,5 +1,16 @@
 # InterviewSpar repair checklist — branch b3
 
+## Page organization and navigation
+
+- [x] T36: Standardize navigation, page widths, headings, cards, forms, and action hierarchy across public and workspace pages.
+- [x] T37: Reorganize dashboard, account sections, resume results, report metrics, and call controls while preserving all existing features.
+- [x] T38: Verify desktop/mobile journeys and print evidence, publish, and leave the user's localhost app running.
+
+Organization verification: 48 frontend tests, 126 complete-site browser checks,
+44 focused workspace/call/print checks, and 2 final setup layout checks passed.
+Report PDF evidence was extracted and verified. Build and lint passed with existing
+warnings. See [the site test report](docs/SITE_TEST_REPORT.md).
+
 ## Full-screen speech-only call
 
 - [x] T33: Replace round steps and answer/code editors with a full-screen call and read-only spoken captions; support re-recording and voice-only API enforcement.

@@ -36,6 +36,7 @@ export default function Navbar() {
               <Link
                 key={link.label}
                 to={link.to}
+                aria-current={isActive ? "page" : undefined}
                 className={`relative text-xs font-medium transition-all ${
                   isActive
                     ? "text-primary after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full font-semibold"
@@ -100,13 +101,14 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {open && (
-        <div className="xl:hidden bg-white/95 backdrop-blur-xl border-b border-gray-100 px-6 py-5 space-y-3 animate-modal-pop shadow-xl">
+        <div className="public-mobile-menu xl:hidden bg-white/95 backdrop-blur-xl border-b border-gray-100 px-6 py-5 space-y-3 animate-modal-pop shadow-xl">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.to
             return (
               <Link
                 key={link.label}
                 to={link.to}
+                aria-current={isActive ? "page" : undefined}
                 className={`block text-sm font-medium py-1.5 ${
                   isActive ? "text-primary font-bold" : "text-gray-700"
                 }`}

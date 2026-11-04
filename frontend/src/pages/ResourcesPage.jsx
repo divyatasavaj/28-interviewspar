@@ -84,7 +84,7 @@ export default function ResourcesPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <Navbar />
 
-      <main className="flex-1 pt-28 pb-16 px-6 max-w-7xl mx-auto w-full">
+      <main className="public-page flex-1 pt-28 pb-16 px-6 max-w-7xl mx-auto w-full">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
             Study Guides & Documentation

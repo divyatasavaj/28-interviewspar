@@ -104,6 +104,47 @@ async function screenshot(name) {
   const shot = await command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
   await writeFile(join(artifacts, `${name}.png`), Buffer.from(shot.data, 'base64'));
 }
+async function savePdf(name) {
+  const pdf = await command('Page.printToPDF', {printBackground:true});
+  await writeFile(join(artifacts, `${name}.pdf`), Buffer.from(pdf.data, 'base64'));
+  check(`${name} produces a PDF`, Buffer.from(pdf.data, 'base64').subarray(0,5).toString() === '%PDF-');
+}
+async function checkWorkspaceOrganization() {
+  await viewport(390,844);
+  await click('button[aria-label="Toggle menu"]');
+  await click('#workspace-mobile-menu a','Personal profile');
+  await waitFor(hasText('Profile Details'),'mobile profile');
+  check('Mobile workspace navigation follows a link and closes',await evaluate('!document.querySelector("#workspace-mobile-menu")'));
+  for (const tab of ['preferences','reports','resume','profile']) {
+    await click(`nav[aria-label="Account sections"] a[href="/account?tab=${tab}"]`);
+    await waitFor(`location.search==='?tab=${tab}'`,'account tab URL');
+    await evaluate('window.__beforeReload=true');
+    await command('Page.reload');
+    await waitFor(`!window.__beforeReload && document.querySelector('nav[aria-label="Account sections"] a[aria-current="page"]')?.getAttribute('href')==='/account?tab=${tab}'`,'account tab reload');
+    check(`Mobile ${tab} tab survives reload`,true);
+  }
+  await screenshot('account-profile-mobile');
+  await goto('/account?tab=resume',hasText('Resume Upload & Parser'));
+  const document = await command('DOM.getDocument');
+  const input = await command('DOM.querySelector',{nodeId:document.root.nodeId,selector:'input[type="file"]'});
+  await command('DOM.setFileInputFiles',{nodeId:input.nodeId,files:[resolve(fixture)]});
+  await click('input[type="checkbox"]');await click('button','Parse synthetic.pdf');
+  await waitFor(hasText('Extracted Background Profile'),'organization resume');
+  await goto('/dashboard',hasText('Resume matching'));
+  await click('a[href="#resume-tools"]');
+  await waitFor('document.querySelector("#role-select")','expanded role tools');
+  await click('button','Review role evidence');
+  await waitFor(hasText('Provisional Evidence review:'),'dashboard role result');
+  check('Expanded dashboard role form remains usable',true);
+  await click('button','Job description');
+  await fill('#jd-textarea','Required: Python, SQL, React and REST API development. Build dashboards and backend services with clear tests and documentation.');
+  await click('button','Analyze Match Coverage');
+  await waitFor(hasText('Textual Coverage Score:'),'dashboard JD result');
+  check('Expanded dashboard job-description form remains usable',true);
+  await layout('mobile expanded resume tools');await screenshot('dashboard-matching-mobile');
+  await goto('/interview/start');await layout('mobile interview setup');await screenshot('setup-mobile');
+  await viewport(1440);await screenshot('setup-desktop');
+}
 async function layout(label) {
   const dimensions = await evaluate('({page:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth})');
   check(`${label} has no horizontal overflow`, dimensions.page <= dimensions.viewport + 1);
@@ -216,16 +257,20 @@ try {
   await waitFor('location.pathname==="/dashboard" && document.querySelector("h1")','signed-in dashboard');
   check('Signup validation and successful registration', true);
   if (process.env.CALL_ONLY === '1') {
-    await checkInterviewCall({goto,click,fill,select,waitFor,evaluate,check,command,screenshot,viewport,layout,hasText});
+    await checkWorkspaceOrganization();
+    await checkInterviewCall({goto,click,fill,select,waitFor,evaluate,check,command,screenshot,savePdf,viewport,layout,hasText});
   } else {
+  check('Dashboard puts practice before resume tools and retains matching controls',await evaluate(`document.querySelector('#practice').compareDocumentPosition(document.querySelector('#resume-tools')) & Node.DOCUMENT_POSITION_FOLLOWING`));
   await layout('desktop dashboard'); await screenshot('dashboard-desktop');
   await viewport(768,1024); await layout('tablet dashboard'); await screenshot('dashboard-tablet'); await viewport(1440);
   await goto('/account',hasText('Profile Details'));
+  check('Account sections share workspace navigation',await evaluate(`!!document.querySelector('.workspace-nav') && document.querySelectorAll('nav[aria-label="Account sections"] a').length===4`));
   await fill('input[type="text"]','Browser Updated');
   await click('button','Save Changes');
   await waitFor(hasText('Profile details saved successfully'),'profile save');
   await goto('/account',hasText('Profile Details'));
   check('Profile changes survive reload', await evaluate('document.querySelector("input[type=text]").value==="Browser Updated"'));
+  await screenshot('account-profile-desktop');
   await goto('/account?tab=resume',hasText('Resume Upload & Parser'));
   const document = await command('DOM.getDocument');
   const fileInput = await command('DOM.querySelector',{nodeId:document.root.nodeId,selector:'input[type="file"]'});
@@ -256,12 +301,12 @@ try {
   await click('button','Calm (-7%)'); await click('button','Save Preferences');
   await goto('/account?tab=preferences',hasText('Interviewer Voice & Speech Preferences'));
   check('Voice preferences survive reload',await evaluate('localStorage.getItem("interviewer_rate")==="-7%"'));
-  await checkInterviewCall({goto,click,fill,select,waitFor,evaluate,check,command,screenshot,viewport,layout,hasText});
+  await checkInterviewCall({goto,click,fill,select,waitFor,evaluate,check,command,screenshot,savePdf,viewport,layout,hasText});
   for (const [persona,count] of [['hr',9],['technical',13]]) {
     await goto(`/interview/start?persona=${persona}`,hasText('Start interview'));
     await waitFor('document.querySelectorAll("select option").length>4','interview domains');
     check(`${persona} start link selects the intended track`,await evaluate(`document.querySelectorAll('select')[1].value===${JSON.stringify(persona)}`));
-    if(persona==='hr') await select('form label:nth-of-type(5) select','assessment');
+    if(persona==='hr') await select('#interview-feedback-mode','assessment');
     await click('input[type="checkbox"]'); await click('button','Start interview');
     await waitFor('document.querySelector("progress")','first interview question');
     for(let i=0;i<count;i++) {
@@ -325,6 +370,7 @@ try {
   await waitFor(hasText('Password changed successfully'),'password change');
   await waitFor(`!${hasText('Password changed successfully')}`,'password dialog close');
   check('Password change works through the account form',true);
+  await click('button[aria-label="Account menu"]');
   await click('button','Logout');
   await waitFor('location.pathname==="/login"','logout');
   await fill('#login-email','browser@example.com');await fill('#login-password','wrong-password');

@@ -7,10 +7,10 @@ import {
   listSessions,
   getMe,
   deleteResume,
-  logout,
   updateUserProfile,
   changeUserPassword,
 } from "../api/auth"
+import DashboardNavbar from "../components/DashboardNavbar"
 import { fetchTtsVoices } from "../api/tts"
 import { playHumanSpeech, stopAnySpeech } from "../utils/naturalSpeech"
 
@@ -756,17 +756,9 @@ export default function AccountManagement() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [user, setUser] = useState(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [view, setView] = useState(() => searchParams.get("tab") || "profile")
+  const view = ["profile", "resume", "reports", "preferences"].includes(searchParams.get("tab")) ? searchParams.get("tab") : "profile"
   const [completedCount, setCompletedCount] = useState(0)
   const [accountError, setAccountError] = useState("")
-
-  useEffect(() => {
-    const tabParam = searchParams.get("tab")
-    if (tabParam && ["profile", "resume", "reports", "preferences"].includes(tabParam)) {
-      setView(tabParam)
-    }
-  }, [searchParams])
 
   useEffect(() => {
     getMe()
@@ -785,123 +777,20 @@ export default function AccountManagement() {
 
   if (!user) return <main className="p-10 text-gray-900"><p role="status">{accountError || "Loading account…"}</p><Link to="/login">Sign in</Link></main>
 
-  async function handleLogout() {
-    try { await logout(); } catch {} finally { navigate("/login"); }
-  }
-
-  return (
-    <div className="min-h-screen font-sans flex bg-[#f8f5ef]">
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/20 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <aside
-        className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-[260px] bg-white border-r border-gray-100 flex flex-col transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
-      >
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-          <Link to="/dashboard" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-[#0369a1] flex items-center justify-center text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <div className="flex items-center">
-              <span className="text-lg font-extrabold tracking-tight text-gray-900 group-hover:text-primary transition-colors">Interview</span>
-              <span className="text-lg font-extrabold tracking-tight text-primary">Spar</span>
-            </div>
-          </Link>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Close menu"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="flex flex-col items-center pt-8 pb-6 px-6 border-b border-gray-100">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent border-4 border-white shadow-xl flex items-center justify-center text-white text-2xl font-bold">
-            {user ? user.name.charAt(0).toUpperCase() : "U"}
-          </div>
-          <h2 className="mt-4 text-base font-extrabold text-gray-900 text-center">{user?.name}</h2>
-          <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[200px]">{user?.email}</p>
-        </div>
-
-        <nav className="flex-1 p-4 space-y-1">
-          {menuItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => { setView(item.view); setSidebarOpen(false) }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors ${
-                view === item.view ? "bg-primary text-white shadow-sm" : "text-gray-600 hover:bg-sky-50 hover:text-gray-900"
-              }`}
-            >
-              <Icon name={item.icon} />
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-gray-100 space-y-3">
-          <button
-            onClick={() => navigate("/interview-type")}
-            className="w-full bg-primary hover:bg-[#075985] text-white font-bold text-xs py-3 rounded-full shadow-md shadow-primary/20 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer"
-          >
-            <span>New interview</span>
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </button>
-
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-red-500 hover:text-red-600 py-2 transition-colors"
-          >
-            <Icon name="logout" className="w-4 h-4" />
-            <span>Logout</span>
-          </button>
-        </div>
-      </aside>
-
-      <div className="account-content flex-1 min-h-screen">
-        <div className="lg:hidden flex items-center justify-between px-6 h-[72px] bg-white border-b border-gray-100">
-          <Link to="/dashboard" className="text-xl font-extrabold tracking-tight">
-            <span className="text-gray-900">Interview</span>
-            <span className="text-primary">Spar</span>
-          </Link>
-          <button onClick={() => setSidebarOpen(true)} className="p-2 text-gray-600" aria-label="Open menu">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
-
-        <main className="p-5 sm:p-6 lg:p-10 max-w-[1200px] page-enter">
-          <div className="workspace-welcome relative overflow-hidden rounded-3xl p-6 sm:p-8 mb-8">
-            <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-[#075985] transition-colors mb-3">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span>Back to Dashboard</span>
-            </Link>
-            <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-gray-900">
-              {view === "profile" && <>Personal <span className="text-primary">Profile</span></>}
-              {view === "resume" && <>Resume <span className="text-primary">Management</span></>}
-              {view === "reports" && <>Interview <span className="text-primary">Reports</span></>}
-              {view === "preferences" && <>Voice & <span className="text-primary">Preferences</span></>}
-            </h1>
-          </div>
-
-          {view === "profile" && <ProfileView user={user} onUserUpdate={setUser} completedCount={completedCount} />}
-          {view === "resume" && <ResumeView />}
-          {view === "reports" && <ReportsView />}
-          {view === "preferences" && <PreferencesView />}
-        </main>
+  const titles={profile:'Personal profile',resume:'Resume & projects',reports:'Interview reports',preferences:'Voice & preferences'};
+  const descriptions={profile:'Keep your details and target role up to date.',resume:'Manage your resume and the evidence used in your interviews.',reports:'Return to an interview or review your saved feedback.',preferences:'Choose how your interviewer sounds and save your voice settings.'};
+  return <div className="min-h-screen bg-[#f8f5ef]">
+    <DashboardNavbar name={user.name}/>
+    <main className="workspace-page account-page page-enter">
+      <header className="page-heading"><div><p className="section-kicker">Your account</p><h1>{titles[view]}</h1><p>{descriptions[view]}</p></div><div className="account-identity"><strong>{user.name}</strong><span>{user.email}</span></div></header>
+      <nav className="page-tabs" aria-label="Account sections">{menuItems.map(item=><Link key={item.view} to={`/account?tab=${item.view}`} aria-current={view===item.view?'page':undefined}><Icon name={item.icon}/>{item.label}</Link>)}</nav>
+      {accountError && <p role="alert" className="mb-5 rounded-xl bg-red-50 p-4 text-red-700">{accountError}</p>}
+      <div className="account-content">
+        {view==='profile' && <ProfileView user={user} onUserUpdate={setUser} completedCount={completedCount}/>}
+        {view==='resume' && <ResumeView/>}
+        {view==='reports' && <ReportsView/>}
+        {view==='preferences' && <PreferencesView/>}
       </div>
-    </div>
-  )
+    </main>
+  </div>;
 }

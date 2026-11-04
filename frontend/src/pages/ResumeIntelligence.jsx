@@ -235,7 +235,7 @@ export default function ResumeIntelligence() {
       />
       <DashboardNavbar name={user.name} />
 
-      <main className="page-enter pt-28 pb-24 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
+      <main className="workspace-page resume-page page-enter">
         {/* Area 1: Page Header and Introduction */}
         <header className="resume-heading mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -245,7 +245,7 @@ export default function ResumeIntelligence() {
                 <span>Resume intelligence</span>
               </div>
               <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
-                Make your experience easier to see.
+                Resume intelligence
               </h1>
               <p className="mt-2 text-sm sm:text-base text-gray-600 max-w-3xl leading-relaxed">
                 Explore what your resume says about your skills and projects. Compare it with a target role or a job description, then choose what to improve.
@@ -275,8 +275,9 @@ export default function ResumeIntelligence() {
           </div>
         </header>
 
+        <nav className="page-tabs" aria-label="Resume sections"><a href="#resume-status">Your resume</a><a href="#assessment-controls">Compare requirements</a>{assessment && <><a href="#assessment-summary">Overview</a><a href="#skill-evidence">Skill evidence</a><a href="#recommendations">Next steps</a></>}</nav>
         {/* Area 2: Resume Status & Selection Banner */}
-        <section className="mb-8" aria-label="Resume Status">
+        <section className="mb-8" id="resume-status" aria-label="Resume Status">
           {resumeState.loading ? (
             <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center justify-center gap-3 text-gray-400 text-sm">
               <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -385,7 +386,7 @@ export default function ResumeIntelligence() {
         </section>
 
         {/* Area 3: Assessment Mode Selection & Controls */}
-        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm mb-10" aria-label="Assessment Controls">
+        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm mb-10" id="assessment-controls" aria-label="Assessment Controls">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-100 mb-6">
             <div>
               <h2 className="text-lg font-bold text-gray-900">What are you preparing for?</h2>
@@ -567,7 +568,7 @@ export default function ResumeIntelligence() {
         {assessment && (
           <div className="space-y-10">
             {/* Area 4: Assessment Summary Card */}
-            <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm" aria-label="Assessment Summary">
+            <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm" id="assessment-summary" aria-label="Assessment Summary">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-gray-100">
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -689,7 +690,7 @@ export default function ResumeIntelligence() {
             </section>
 
             {/* Area 5: Skill Gap Analysis Section */}
-            <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm" aria-label="Skill Gap Analysis">
+            <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm" id="skill-evidence" aria-label="Skill Gap Analysis">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100 mb-6">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">Your evidence, at a glance</h2>
@@ -850,7 +851,7 @@ export default function ResumeIntelligence() {
             </section>
 
             {/* Area 6: Personalized Recommendations Section */}
-            <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm" aria-label="Personalized Recommendations">
+            <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm" id="recommendations" aria-label="Personalized Recommendations">
               <div className="pb-6 border-b border-gray-100 mb-6">
                 <h2 className="text-xl font-bold text-gray-900">A plan for your next step</h2>
                 <p className="text-xs text-gray-500 mt-0.5">

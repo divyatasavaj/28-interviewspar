@@ -88,14 +88,14 @@ export default function PracticeTracksPage() {
     <div className="min-h-screen bg-[#f8f5ef] font-sans">
       <Navbar />
 
-      <main className="pt-32 pb-24 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
+      <main className="public-page pt-32 pb-24 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-primary uppercase bg-sky-50 border border-sky-100/70 px-3.5 py-1.5 rounded-full mb-4">
             Curriculum & Tracks
           </span>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight leading-[1.1]">
-            Practice Tracks Built For <span className="text-primary">Campus Placements</span>
+            Choose what you want to <span className="text-primary">practice.</span>
           </h1>
           <p className="mt-5 text-base sm:text-lg text-gray-600 leading-relaxed">
             Choose HR or technical practice, with optional resume context. Review your answers and the limits of automated feedback.

@@ -56,7 +56,7 @@ export default function InterviewType() {
       })
   }, [navigate])
 
-  if (!user) return <main className="p-10 text-gray-900"><p role="status">{loadError || "Loading account…"}</p><Link to="/login">Sign in</Link></main>
+  if (!user) return <main className="workspace-page tracks-page p-10 text-gray-900"><p role="status">{loadError || "Loading account…"}</p><Link to="/login">Sign in</Link></main>
 
   return (
     <div className="min-h-screen font-sans bg-[#f8f5ef]">

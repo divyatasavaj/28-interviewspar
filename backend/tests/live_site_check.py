@@ -33,6 +33,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:5173/api")
+    parser.add_argument("--api-port", type=int, default=8000, help="Free local port for the disposable API")
     parser.add_argument("--check-providers", action="store_true")
     parser.add_argument(
         "--browser",
@@ -48,6 +49,8 @@ def main():
         "--headful", action="store_true", help="Show the temporary Chrome test window"
     )
     args = parser.parse_args()
+    if not 1024 <= args.api_port <= 65535:
+        parser.error("--api-port must be between 1024 and 65535")
     target = urlsplit(args.base_url)
     if (
         target.scheme != "http"
@@ -121,7 +124,7 @@ def main():
                 "--host",
                 "127.0.0.1",
                 "--port",
-                "8000",
+                str(args.api_port),
                 "--no-access-log",
             ],
             cwd=ROOT / "backend",
@@ -153,9 +156,9 @@ def main():
         import socket
 
         with socket.socket() as probe:
-            if probe.connect_ex(("127.0.0.1", 8000)) == 0:
+            if probe.connect_ex(("127.0.0.1", args.api_port)) == 0:
                 raise RuntimeError(
-                    "Port 8000 is occupied; do not test an unknown API process."
+                    f"Port {args.api_port} is occupied; do not test an unknown API process."
                 )
         env = {
             **os.environ,
@@ -164,7 +167,7 @@ def main():
             "JWT_SECRET": secrets.token_urlsafe(48),
             "JUDGE0_API_URL": "",
             "GROQ_API_KEY": "",
-            "CLIENT_ORIGIN": "http://localhost:5173,http://127.0.0.1:5173",
+            "CLIENT_ORIGIN": f"http://localhost:{target.port},http://127.0.0.1:{target.port}",
         }
         if args.check_providers:
             env["GROQ_API_KEY"] = (
@@ -191,9 +194,9 @@ def main():
             )
             # Vite answers OPTIONS itself; test the API's CORS policy directly.
             preflight = client.options(
-                "http://127.0.0.1:8000/api/auth/signup",
+                f"http://127.0.0.1:{args.api_port}/api/auth/signup",
                 headers={
-                    "Origin": "http://localhost:5173",
+                    "Origin": f"http://localhost:{target.port}",
                     "Access-Control-Request-Method": "POST",
                     "Access-Control-Request-Headers": "content-type",
                 },
@@ -202,7 +205,7 @@ def main():
                 "CORS allows configured frontend",
                 preflight.status_code == 200
                 and preflight.headers.get("access-control-allow-origin")
-                == "http://localhost:5173",
+                == f"http://localhost:{target.port}",
             )
             payload = {
                 "name": "Synthetic Site Tester",

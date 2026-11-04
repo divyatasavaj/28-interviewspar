@@ -40,7 +40,7 @@ export const installCallMedia = (denied=false) => `(() => {
     state.restore=()=>{window.SpeechRecognition=originalRecognition;window.webkitSpeechRecognition=originalWebkit;speechSynthesis.speak=originalSpeak;speechSynthesis.cancel=originalCancel;navigator.mediaDevices.getUserMedia=originalMedia;window.fetch=originalFetch;};
   })()`;
 
-export async function checkInterviewCall({goto,click,waitFor,evaluate,check,command,screenshot,viewport,layout,hasText}) {
+export async function checkInterviewCall({goto,click,waitFor,evaluate,check,command,screenshot,savePdf,viewport,layout,hasText}) {
   const start=async()=>{
     await goto('/interview/start?persona=hr',hasText('Start interview'));
     await waitFor('document.querySelectorAll("select option").length>4','domains');
@@ -96,6 +96,14 @@ export async function checkInterviewCall({goto,click,waitFor,evaluate,check,comm
   await screenshot('voice-report-desktop');await viewport(390,844);await layout('mobile voice report');await screenshot('voice-report-mobile');await viewport(1440);
   await evaluate('window.__beforeReload=true');await command('Page.reload');await waitFor(`!window.__beforeReload && ${hasText('Speaking, confidence & attention cues')}`,'report reload');
   check('Automatic delivery report survives reload',true);
+  await click('.measurement-details summary');
+  await evaluate('window.dispatchEvent(new Event("beforeprint"))');
+  check('Printing opens all delivery evidence',await evaluate('document.querySelectorAll(".measurement-details").length>1 && !document.querySelector(".measurement-details:not([open])")'));
+  await evaluate('window.dispatchEvent(new Event("afterprint"))');
+  check('Printing restores the previously open evidence panel',await evaluate('document.querySelectorAll(".measurement-details[open]").length===1 && document.querySelector(".measurement-details").open'));
+  await click('.measurement-details summary');
+  await savePdf('voice-report');
+  check('PDF export restores collapsed delivery evidence',await evaluate('!document.querySelector(".measurement-details[open]")'));
   await click('button','Delete this interview');await waitFor('location.pathname==="/dashboard"','deletion');
   await start();await join(true);await waitFor(hasText('Microphone unavailable'),'permission denial');
   check('Denied microphone cannot submit a typed or empty answer',await evaluate(`!document.querySelector('textarea') && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Send spoken answer').disabled`));

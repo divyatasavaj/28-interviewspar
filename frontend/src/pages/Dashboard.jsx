@@ -136,10 +136,10 @@ export default function Dashboard() {
       />
       <DashboardNavbar name={user.name} />
 
-      <main className="page-enter pt-28 pb-20 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
+      <main className="workspace-page dashboard-page page-enter">
         {loadError && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-4 text-red-700">{loadError}</p>}
         {/* Top Welcome Banner */}
-        <section className="workspace-welcome rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-sm mb-8 relative overflow-hidden">
+        <section className="workspace-welcome dashboard-welcome">
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 bg-sky-50 border border-sky-100/70 rounded-full px-3.5 py-1 text-xs font-semibold text-primary mb-4">
@@ -147,7 +147,7 @@ export default function Dashboard() {
                 <span>Your practice space</span>
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                A little more prepared, {user.name.split(" ")[0]}.
+                Welcome back, {user.name.split(" ")[0]}.
               </h1>
               <p className="mt-3 text-sm sm:text-base text-gray-600 leading-relaxed">
                 Target Role:{" "}
@@ -182,7 +182,7 @@ export default function Dashboard() {
         </section>
 
         {/* Stats Row */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        <section className="dashboard-stats grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <p className="text-xs font-medium text-gray-400">Completed interviews</p>
             <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-1">{completedSessions.length}</p>
@@ -227,8 +227,169 @@ export default function Dashboard() {
           </div>
         </section>
 
+        <nav className="page-tabs" aria-label="Dashboard sections"><a href="#practice">Practice</a><a href="#recent-interviews">Recent interviews</a><a href="#resume-tools" onClick={()=>{document.getElementById('resume-tools').open=true;}}>Resume matching</a></nav>
+        {/* Practice Modes */}
+        <section id="practice" className="dashboard-practice mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">What would you like to practice?</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Practice technical and behavioral questions by domain</p>
+            </div>
+            <Link to="/interview-type" className="text-xs font-semibold text-primary hover:underline">
+              View All Tracks →
+            </Link>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="practice-choice">
+              <div className="relative z-10">
+                <span className="bg-white/10 text-sky-200 text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
+                  Behavioral & Leadership
+                </span>
+                <h3 className="text-2xl font-bold text-white mt-3">HR & Behavioral Practice</h3>
+                <p className="text-sky-200/80 text-sm mt-2 leading-relaxed">
+                  Work through questions about your experience, decisions and collaboration. Find a clear structure for a real example.
+                </p>
+              </div>
+              <div className="relative z-10 mt-6 flex items-center justify-between">
+                <span className="text-xs text-sky-300">9 Questions • Self-paced</span>
+                <Link
+                  to="/interview/start?persona=hr"
+                  className="bg-white text-gray-900 hover:bg-gray-100 font-bold text-xs px-5 py-2.5 rounded-full transition-all shadow-md"
+                >
+                  Start HR Spar →
+                </Link>
+              </div>
+            </div>
+
+            <div className="practice-choice">
+              <div className="relative z-10">
+                <span className="bg-white/10 text-blue-200 text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
+                  System Design & Engineering
+                </span>
+                <h3 className="text-2xl font-bold text-white mt-3">Technical Interview</h3>
+                <p className="text-blue-200/80 text-sm mt-2 leading-relaxed">
+                  Practice explaining technical decisions, debugging approaches, and trade-offs for your chosen domain.
+                </p>
+              </div>
+              <div className="relative z-10 mt-6 flex items-center justify-between">
+                <span className="text-xs text-blue-300">Up to 13 Questions • Self-paced</span>
+                <Link
+                  to="/interview/start?persona=technical"
+                  className="bg-white text-gray-900 hover:bg-gray-100 font-bold text-xs px-5 py-2.5 rounded-full transition-all shadow-md"
+                >
+                  Start Tech Spar →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Recent Interviews / Reports Section */}
+        <section id="recent-interviews" className="dashboard-history bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Recent Interview Reports</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Review saved answers and feedback sources</p>
+            </div>
+            <Link to="/account?tab=reports" className="text-xs font-semibold text-primary hover:underline">
+              All Reports ({sessions.length}) →
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="py-12 text-center text-gray-400 text-sm">
+              <div className="inline-block animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full mb-2" />
+              <p>Loading your past mock sessions...</p>
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="py-12 px-4 text-center border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-sky-100/60 text-primary flex items-center justify-center mb-3">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+                </svg>
+              </div>
+              <p className="text-sm font-bold text-gray-900">Your first interview starts here.</p>
+              <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                Complete an interview to review your answers, text structure indicators, and optional AI feedback.
+              </p>
+              <Link
+                to="/interview-type"
+                className="mt-4 inline-flex items-center gap-2 bg-primary hover:bg-[#075985] text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+              >
+                <span>Start your first session</span>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </Link>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {sessions.slice(0, 5).map((s) => {
+                const fb = feedbacks[s.id]
+                return (
+                  <div key={s.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div
+                        className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm ${
+                          s.interview_type === "hr"
+                            ? "bg-sky-100 text-sky-700"
+                            : "bg-blue-100 text-blue-700"
+                        }`}
+                      >
+                        {s.interview_type === "hr" ? "HR" : "DEV"}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-gray-900">
+                          {s.interview_type === "hr" ? "HR Behavioral Interview" : "Technical Interview"}
+                        </h4>
+                        <p className="text-xs text-gray-400 mt-0.5">{formatDate(s.created_at)}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      {fb && typeof fb.overall_score === "number" && (
+                        <div className="text-right">
+                          <span
+                            className={`text-base font-extrabold ${
+                              fb.overall_score >= 80
+                                ? "text-emerald-600"
+                                : fb.overall_score >= 60
+                                ? "text-amber-500"
+                                : "text-rose-500"
+                            }`}
+                          >
+                            {fb.overall_score}/100
+                          </span>
+                          <span className="text-[10px] text-gray-400 block">Text structure</span>
+                        </div>
+                      )}
+
+                      <span
+                        className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${
+                          s.status === "completed"
+                            ? "bg-green-50 text-green-700"
+                            : "bg-amber-50 text-amber-700"
+                        }`}
+                      >
+                        {s.status === "completed" ? "COMPLETED" : "IN PROGRESS"}
+                      </span>
+
+                      <button
+                        onClick={() => navigate(s.status === "active" ? `/interview/${s.id}` : `/interview/${s.id}/report`)}
+                        className="text-xs font-semibold text-primary hover:text-[#075985] bg-sky-50 hover:bg-sky-100 px-3.5 py-1.5 rounded-full transition-all"
+                      >
+                        Open interview →
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
         {/* Phase 4: Resume Intelligence & Skill Gap Alignment Section */}
-        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm mb-10">
+        <details id="resume-tools" className="dashboard-resume-tools"><summary><span><strong>Resume matching tools</strong><small>Compare your resume with a role or job description, and review the evidence.</small></span><span aria-hidden="true">⌄</span></summary><section className="p-5 sm:p-7">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100">
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary mb-1">
@@ -598,167 +759,7 @@ export default function Dashboard() {
             </div>
           )}
         </section>
-
-        {/* Practice Modes */}
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">What would you like to practice?</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Practice technical and behavioral questions by domain</p>
-            </div>
-            <Link to="/interview-type" className="text-xs font-semibold text-primary hover:underline">
-              View All Tracks →
-            </Link>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-sky-900 to-sky-950 text-white rounded-3xl p-7 relative overflow-hidden shadow-md flex flex-col justify-between">
-              <div className="relative z-10">
-                <span className="bg-white/10 text-sky-200 text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
-                  Behavioral & Leadership
-                </span>
-                <h3 className="text-2xl font-bold text-white mt-3">HR & Behavioral Practice</h3>
-                <p className="text-sky-200/80 text-sm mt-2 leading-relaxed">
-                  Work through questions about your experience, decisions and collaboration. Find a clear structure for a real example.
-                </p>
-              </div>
-              <div className="relative z-10 mt-6 flex items-center justify-between">
-                <span className="text-xs text-sky-300">9 Questions • Self-paced</span>
-                <Link
-                  to="/interview/start?persona=hr"
-                  className="bg-white text-gray-900 hover:bg-gray-100 font-bold text-xs px-5 py-2.5 rounded-full transition-all shadow-md"
-                >
-                  Start HR Spar →
-                </Link>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-blue-900 to-slate-950 text-white rounded-3xl p-7 relative overflow-hidden shadow-md flex flex-col justify-between">
-              <div className="relative z-10">
-                <span className="bg-white/10 text-blue-200 text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
-                  System Design & Engineering
-                </span>
-                <h3 className="text-2xl font-bold text-white mt-3">Technical Interview</h3>
-                <p className="text-blue-200/80 text-sm mt-2 leading-relaxed">
-                  Practice explaining technical decisions, debugging approaches, and trade-offs for your chosen domain.
-                </p>
-              </div>
-              <div className="relative z-10 mt-6 flex items-center justify-between">
-                <span className="text-xs text-blue-300">Up to 13 Questions • Self-paced</span>
-                <Link
-                  to="/interview/start?persona=technical"
-                  className="bg-white text-gray-900 hover:bg-gray-100 font-bold text-xs px-5 py-2.5 rounded-full transition-all shadow-md"
-                >
-                  Start Tech Spar →
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Recent Interviews / Reports Section */}
-        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Recent Interview Reports</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Review saved answers and feedback sources</p>
-            </div>
-            <Link to="/account?tab=reports" className="text-xs font-semibold text-primary hover:underline">
-              All Reports ({sessions.length}) →
-            </Link>
-          </div>
-
-          {loading ? (
-            <div className="py-12 text-center text-gray-400 text-sm">
-              <div className="inline-block animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full mb-2" />
-              <p>Loading your past mock sessions...</p>
-            </div>
-          ) : sessions.length === 0 ? (
-            <div className="py-12 px-4 text-center border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-sky-100/60 text-primary flex items-center justify-center mb-3">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
-                </svg>
-              </div>
-              <p className="text-sm font-bold text-gray-900">Your first interview starts here.</p>
-              <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto leading-relaxed">
-                Complete an interview to review your answers, text structure indicators, and optional AI feedback.
-              </p>
-              <Link
-                to="/interview-type"
-                className="mt-4 inline-flex items-center gap-2 bg-primary hover:bg-[#075985] text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
-              >
-                <span>Start your first session</span>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </Link>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {sessions.slice(0, 5).map((s) => {
-                const fb = feedbacks[s.id]
-                return (
-                  <div key={s.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3.5">
-                      <div
-                        className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm ${
-                          s.interview_type === "hr"
-                            ? "bg-sky-100 text-sky-700"
-                            : "bg-blue-100 text-blue-700"
-                        }`}
-                      >
-                        {s.interview_type === "hr" ? "HR" : "DEV"}
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-gray-900">
-                          {s.interview_type === "hr" ? "HR Behavioral Interview" : "Technical Interview"}
-                        </h4>
-                        <p className="text-xs text-gray-400 mt-0.5">{formatDate(s.created_at)}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      {fb && typeof fb.overall_score === "number" && (
-                        <div className="text-right">
-                          <span
-                            className={`text-base font-extrabold ${
-                              fb.overall_score >= 80
-                                ? "text-emerald-600"
-                                : fb.overall_score >= 60
-                                ? "text-amber-500"
-                                : "text-rose-500"
-                            }`}
-                          >
-                            {fb.overall_score}/100
-                          </span>
-                          <span className="text-[10px] text-gray-400 block">Text structure</span>
-                        </div>
-                      )}
-
-                      <span
-                        className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${
-                          s.status === "completed"
-                            ? "bg-green-50 text-green-700"
-                            : "bg-amber-50 text-amber-700"
-                        }`}
-                      >
-                        {s.status === "completed" ? "COMPLETED" : "IN PROGRESS"}
-                      </span>
-
-                      <button
-                        onClick={() => navigate(s.status === "active" ? `/interview/${s.id}` : `/interview/${s.id}/report`)}
-                        className="text-xs font-semibold text-primary hover:text-[#075985] bg-sky-50 hover:bg-sky-100 px-3.5 py-1.5 rounded-full transition-all"
-                      >
-                        Open interview →
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </section>
+        </details>
       </main>
     </div>
   )

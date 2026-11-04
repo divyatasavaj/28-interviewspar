@@ -2,7 +2,7 @@ import {Link} from 'react-router-dom';
 import Navbar from '../components/Navbar';
 export default function SubscriptionPage(){
   return <div className="min-h-screen bg-[#f8f5ef] text-gray-900"><Navbar/>
-    <main className="mx-auto max-w-5xl px-6 pb-20 pt-32">
+    <main className="public-page mx-auto max-w-5xl px-6 pb-20 pt-32">
       <p className="text-sm font-semibold uppercase tracking-wider text-sky-700">Practice access</p>
       <h1 className="mt-4 text-4xl font-bold">Build confidence, one interview at a time.</h1>
       <p className="mt-5 max-w-2xl text-gray-600">The current application is free to use. Paid subscriptions and university billing are not available, and no payment is collected.</p>

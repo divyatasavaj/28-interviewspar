@@ -5,6 +5,55 @@ Tests use synthetic accounts and resumes in a unique disposable database. Existi
 application records and browser profiles are not used. No dependencies were installed
 for this pass.
 
+## Page organization verification — 4 November 2026
+
+Public pages and signed-in pages now use consistent widths, headings, spacing,
+cards, and actions. Workspace navigation groups account settings; account section
+links retain their selection after refresh. Practice and recent interviews appear
+before expandable dashboard resume tools. Interview setup separates interview
+details from feedback/privacy. Reports group speech metrics and camera observations,
+with expandable definitions that open for printing and restore afterward.
+
+The full-screen speech-only call, every recording/question control, resume upload
+and role/JD analysis, account forms, saved reports, deletion, and voice preferences
+remain available. Scoring and media collection behavior were not changed.
+
+| Check | Result |
+| --- | --- |
+| Frontend unit/component suite | 48 passed |
+| Production build | Passed; retained lazy face-model bundle-size warning |
+| Frontend lint | Exit 0; 19 retained legacy warnings |
+| Complete Chrome journey | 126 checks passed; no uncaught exceptions or unexpected HTTP 5xx responses |
+| Focused workspace/call/print journey | 44 checks passed; mobile account navigation/reload, both dashboard matching forms, media flow, evidence printing/restoration, permission denial |
+| Final setup spacing review | Desktop/mobile screenshots reviewed; both mobile layout checks passed |
+| PDF text extraction | HR: all 9 questions across 20 pages; technical: all 13 across 28 pages; score qualification and answer review retained |
+| Spoken report PDF evidence | Four pages; final spoken words, confidence/attention cues, microphone coverage, filler examples, evidence, definitions, and pronunciation limitation retained |
+
+Both successful integration runs confirmed disposable-database cleanup. They used
+API port 8001 and frontend port 5174 so the user's existing app on 8000/5173 stayed
+running. An initial browser attempt lost its Chrome connection after a study-note
+download; its disposable database was cleaned and the complete retry passed.
+
+Screenshots were reviewed for desktop/mobile homepage, dashboard, account, resume
+analysis, setup, call, and report organization. Artifacts in the machine's temporary
+directory: `interspars-browser-results-GJFcqQ` (full journey),
+`interspars-browser-results-z2i4kI` (focused journey), and
+`interspars-browser-results-BmTYnH` (final setup spacing, synthetic API responses).
+Runtime artifacts are excluded from the commit. BrowserOS tools were unavailable;
+the existing isolated Chrome acceptance runner was used.
+
+Media inputs are synthetic; these checks establish integration and layout, not
+speech-recognition or behavioral-score accuracy. Physical devices, native print
+dialogs, other browsers, and external providers retain their documented limits.
+The production backend and ML code were unchanged; their suites were not repeated
+for this layout task.
+
+To verify alongside a running local app, start a separate Vite instance with
+`API_PROXY_TARGET=http://127.0.0.1:8001 npm run dev -- --host 127.0.0.1 --port 5174 --strictPort`,
+then run `../.venv/bin/python tests/live_site_check.py --browser --browser-only --headful --api-port 8001 --base-url http://127.0.0.1:5174/api`
+from `backend`. Prefix the latter command with `CALL_ONLY=1` for the focused
+workspace, call, and print journey.
+
 ## Full-screen speech-only follow-up — 4 November 2026
 
 The call now fills the viewport, hides the round sequence, and has no answer editor,
