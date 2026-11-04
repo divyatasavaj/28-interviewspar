@@ -5,7 +5,7 @@
 - [x] T27: Apply the approved sky blue, beige, and navy design to the original React pages; refine headings, navigation, interview setup, room, reports, and account screens.
 - [x] T28: Add subtle entrance/hover motion, visible keyboard focus, and reduced-motion support; verify phone and desktop layouts.
 - [x] T29a: Run frontend tests, lint, production build, and isolated Chrome journeys; document results.
-- [ ] T29b: Publish the verified UI refresh on b3.
+- [x] T29b: Publish the verified UI refresh on b3 (`81cb677`, pushed and fetched back for verification).
 
 UI refresh verification: 36 frontend tests, 98 complete-journey Chrome checks, and
 49 final visual/accessibility checks passed. Build and lint passed (24 existing
