@@ -18,6 +18,7 @@ import docx
 from main import app, requests
 from app.database import get_db
 from app.interview_flow import make_questions, DOMAINS
+from app.coding_practice import CODING_DOMAINS, EXERCISES, practice_exercises
 from app.safe_execution import run_problem
 
 
@@ -77,6 +78,99 @@ class Collection:
 
 
 class InterviewApiTests(unittest.TestCase):
+    def test_all_supported_domains_have_three_distinct_domain_exercises(self):
+        for domain in CODING_DOMAINS:
+            with self.subTest(domain=domain):
+                self.assertIn(domain, DOMAINS)
+                advanced = practice_exercises(domain, "senior", 2)
+                early = practice_exercises(domain, "junior", 2)
+                self.assertEqual(len({row["id"] for row in advanced}), 3)
+                self.assertEqual(len({row["id"] for row in early}), 2)
+                self.assertTrue(all(domain in row["domains"] for row in advanced + early))
+        self.assertTrue(all(len(row["samples"]) == 2 and len(row["hidden"]) == 3 for row in EXERCISES.values()))
+
+    def test_hands_on_exercises_use_samples_then_grade_and_save_only_counts(self):
+        session = self.start(domain="Frontend", experience_level="junior", coding_practice=True,
+                             response_mode="voice", allow_ai=True)
+        self.assertEqual(session["progress"]["total"], 14)
+        question = session["current_question"]
+        self.assertEqual((question["type"], question["title"]), ("coding", "Class list builder"))
+        self.assertNotIn("hidden", question)
+        self.assertEqual(len(question["samples"]), 2)
+        payload = {
+            "session_id": session["id"], "problem_id": question["problem_id"],
+            "code": "def solve(classes): return []", "language": "python",
+        }
+        submitted = {key: payload[key] for key in ("code", "language")}
+        observation = {"consent": True,
+                       "camera": {"samples": 10, "face_samples": 8, "centered_samples": 4, "multiple_samples": 0},
+                       "focus": {"observed_ms": 20000, "hidden_ms": 1000, "hidden_count": 1}}
+
+        def runner(code, language, cases):
+            results = [{"passed": i < 2, "actual": "private-result"} for i, _ in enumerate(cases)]
+            return {"status": "evaluated", "passed": 2, "total": len(results), "results": results}
+
+        with patch("app.coding_practice.execute_cases", side_effect=runner) as execute, patch(
+            "app.coding_practice.review_code", return_value="Handle repeated class names."
+        ) as review:
+            samples = self.client.post("/api/code/run", headers=self.headers, json=payload)
+            self.assertEqual(samples.status_code, 200, samples.text)
+            self.assertEqual(execute.call_args.args[2], question["samples"])
+            invalid, _ = self.submit(session, answer="spoken instead", **submitted)
+            self.assertEqual(invalid.status_code, 422)
+            response, body = self.submit(session, answer="", coding_observation=observation, **submitted)
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual(len(execute.call_args.args[2]), 5)
+            self.assertEqual(execute.call_args.args[2][:2], question["samples"])
+            retry = self.client.post("/api/interview/answer", headers=self.headers, json=body)
+            self.assertEqual(retry.status_code, 200)
+            self.assertEqual(execute.call_count, 2)
+            review.assert_called_once()
+            self.assertNotIn("private-result", retry.text)
+            self.assertNotIn("results", retry.json()["answers"][0]["evaluation"]["code_result"])
+
+        saved = response.json()["answers"][0]["evaluation"]
+        self.assertEqual((saved["correctness_score"], saved["communication_score"]), (40, None))
+        self.assertEqual(saved["code_result"]["hidden_passed"], 0)
+        self.assertEqual(saved["coding_observation"]["face_presence_percent"], 80)
+        self.assertEqual(saved["coding_observation"]["page_visible_percent"], 95)
+        self.assertEqual(saved["ai_review"], "Handle repeated class names.")
+        self.assertNotEqual(response.json()["current_question"]["problem_id"], question["problem_id"])
+        stale = self.client.post("/api/code/run", headers=self.headers, json=payload)
+        self.assertEqual(stale.status_code, 409)
+        report = self.client.get(f'/api/interview/{session["id"]}/feedback', headers=self.headers).json()
+        self.assertEqual(report["answered"], 1)
+        self.assertEqual(report["round_scores"]["coding"]["correctness_score"], 40)
+        self.assertIsNone(report["overall_score"])
+        self.assertIsNone(report["delivery_summary"])
+
+    def test_coding_outage_is_unscored_and_three_exercises_lead_into_speech(self):
+        session = self.start(domain="Data Science", coding_practice=True, response_mode="voice")
+        self.assertEqual(session["progress"]["total"], 15)
+        first = session["current_question"]
+        self.assertEqual(first["title"], "Binary confusion counts")
+        with patch("app.coding_practice.review_code") as review:
+            response, _ = self.submit(session, answer="", code="function solve() { return []; }")
+            review.assert_not_called()
+        self.assertEqual(response.status_code, 200, response.text)
+        session = response.json()
+        self.assertIsNone(session["answers"][0]["evaluation"]["correctness_score"])
+        self.assertEqual(session["answers"][0]["evaluation"]["code_result"]["status"], "unavailable")
+        for _ in range(2):
+            self.assertTrue(session["current_question"]["hands_on"])
+            session = self.submit(session, skipped=True)[0].json()
+        self.assertEqual(session["current_round"], "screening")
+        response, _ = self.submit(session, answer="", code="function solve() {}")
+        self.assertEqual(response.status_code, 422)
+
+    def test_hands_on_is_off_for_unsupported_tracks(self):
+        for selection in ({"persona": "hr"}, {"domain": "Product Management"}):
+            response = self.client.post(
+                "/api/interview/start", headers=self.headers,
+                json={"save_consent": True, "coding_practice": True, **selection},
+            )
+            self.assertEqual(response.status_code, 400)
+
     def test_experience_and_rotation_change_new_voice_sessions(self):
         def reach_round(session, name):
             while session["current_round"] != name:

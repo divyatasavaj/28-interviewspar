@@ -71,6 +71,7 @@ export default function Dashboard() {
           <div className="mt-5 flex flex-wrap gap-3">
             {active && <Link className="spar-button" to={`/interview/${active.id}`}>Resume interview</Link>}
             <Link className={active ? "spar-button secondary" : "spar-button"} to="/interview/start">Start interview</Link>
+            <Link className="spar-button secondary" to="/interview/start?coding=1">Practice coding</Link>
             {latestReport && <Link className="spar-button secondary" to={`/interview/${latestReport.id}/report`}>View latest report</Link>}
           </div>
           {active && <p className="mt-3 text-sm text-gray-600">

@@ -44,7 +44,9 @@ configuration remains a legacy compatibility file; Vite uses Tailwind 4 tokens.
   remain unavailable; missing evidence is not a zero score.
 - **Interview setup:** retain domain, experience, track, mode, and consent controls.
   Group interview details separately from feedback/privacy. Explain the spoken call.
-- **Interview room:** preserve the full-screen, speech-only flow. Show playback,
+- **Interview room:** use spoken prompts and read-only captions for the interview.
+  For hands-on coding, place the prompt, editor, and sample controls alongside the
+  live camera tile. Show playback,
   microphone, and transcript review status by the captions and controls. Require
   transcript review before sending. Separate participant
   tiles, the current question, read-only captions, and grouped controls. Keep microphone,

@@ -1,5 +1,15 @@
 # InterviewSpar repair checklist — branch b3
 
+## Hands-on coding rounds
+
+- [x] T44: Add domain exercises, sample runs, isolated hidden grading, and optional AI code review.
+- [x] T45: Add the in-call editor, camera and tab observations, and saved coding feedback.
+- [x] T46: Verify the coding and speech journeys, then publish to b3.
+
+Live provider setup: configure `JUDGE0_API_URL` for execution. The local Judge0
+endpoint is unset. The app uses `openai/gpt-oss-20b` as its default Groq model.
+The editor and report show when provider results are unavailable.
+
 ## Interview practice improvements
 
 - [x] T39: Clarify playback, microphone recovery, transcript review, and submission in the call.

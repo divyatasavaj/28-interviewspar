@@ -16,8 +16,11 @@ export default function StartInterviewPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [domains, setDomains] = useState([]);
+  const [codingDomains, setCodingDomains] = useState([]);
+  const [codingRunnerConfigured, setCodingRunnerConfigured] = useState(false);
   const [settings, setSettings] = useState({name:'', domain:'Software Engineering', experience_level:'mid',
-    persona:params.get('persona') === 'hr' ? 'hr' : 'technical',mode:'practice',save_consent:false,allow_ai:false});
+    persona:params.get('persona') === 'hr' ? 'hr' : 'technical',mode:'practice',save_consent:false,allow_ai:false,
+    coding_practice:params.get('coding') === '1'});
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState('');
   useEffect(() => {
@@ -26,14 +29,18 @@ export default function StartInterviewPage() {
       if(alive) {
         setSettings(s=>({...s,name:user.name,experience_level:Object.hasOwn(experienceLevels,user.experience_level) ? user.experience_level : s.experience_level}));
         setDomains(data.domains);
+        setCodingDomains(data.coding_domains || []);
+        setCodingRunnerConfigured(data.coding_runner_configured);
       }
     }).catch(e=>{if(alive)setError(e.message);});
     return ()=>{alive=false;};
   },[]);
   const update=(key,value)=>setSettings(s=>({...s,[key]:value}));
+  const canCode = settings.persona === 'technical' && codingDomains.includes(settings.domain);
+  const hasCoding = canCode && settings.coding_practice;
   async function submit(event) {
     event.preventDefault(); setBusy(true); setError('');
-    try { const session=await startInterview({...settings,response_mode:'voice'}); navigate(`/interview/${session.id}`); }
+    try { const session=await startInterview({...settings,coding_practice:hasCoding,response_mode:'voice'}); navigate(`/interview/${session.id}`); }
     catch(e){setError(e.message);} finally{setBusy(false);}
   }
   const field='mt-2 w-full rounded-xl border border-gray-200 bg-white p-3 text-gray-900';
@@ -54,12 +61,20 @@ export default function StartInterviewPage() {
           {Object.entries(experienceLevels).map(([value,label])=><option key={value} value={value}>{label}</option>)}
         </select></label>
         <label className="block text-sm font-medium">Interview track<select id="interview-track" className={field} value={settings.persona} onChange={e=>update('persona',e.target.value)}><option value="technical">Technical + behavioral</option><option value="hr">HR + behavioral</option></select></label>
-        </div></fieldset><fieldset className="form-section"><legend>Feedback & privacy</legend><label className="block text-sm font-medium">When would you like feedback?<select id="interview-feedback-mode" className={field} value={settings.mode} onChange={e=>update('mode',e.target.value)}><option value="practice">During practice — after each answer</option><option value="assessment">In the final report — when I finish</option></select></label>
+        </div>
+        {canCode && <label className="mt-5 flex items-start gap-3 text-xs leading-relaxed text-gray-600">
+          <input id="coding-practice" className="mt-1 size-4 shrink-0" type="checkbox" checked={hasCoding} onChange={e=>update('coding_practice',e.target.checked)}/>
+          <span><strong className="mb-1 block text-sm text-gray-900">Start with a hands-on coding round</strong>
+          Write JavaScript or Python for {['intern','junior'].includes(settings.experience_level) ? 'two' : 'three'} exercises, then continue to spoken questions. Run samples in the editor and get hidden-test results on submission.</span>
+        </label>}
+        </fieldset><fieldset className="form-section"><legend>Feedback & privacy</legend><label className="block text-sm font-medium">When would you like feedback?<select id="interview-feedback-mode" className={field} value={settings.mode} onChange={e=>update('mode',e.target.value)}><option value="practice">During practice — after each answer</option><option value="assessment">In the final report — when I finish</option></select></label>
         <div className="border-t border-gray-100 pt-5 space-y-4">
-          <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600"><input className="mt-1 size-4 shrink-0" type="checkbox" required checked={settings.save_consent} onChange={e=>update('save_consent',e.target.checked)}/><span><strong className="block text-sm text-gray-900 mb-1">Save my interview for review</strong>I consent to saving my spoken answers and delivery observations in my history. I can delete this interview from its report.</span></label>
-          <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600"><input className="mt-1 size-4 shrink-0" type="checkbox" checked={settings.allow_ai} onChange={e=>update('allow_ai',e.target.checked)}/><span><strong className="block text-sm text-gray-900 mb-1">Add AI assessment · Optional</strong>Send questions and my answers to the configured AI provider. My resume stays on the server; questions may include details extracted from it.</span></label>
+          <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600"><input id="interview-save-consent" className="mt-1 size-4 shrink-0" type="checkbox" required checked={settings.save_consent} onChange={e=>update('save_consent',e.target.checked)}/><span><strong className="block text-sm text-gray-900 mb-1">Save my interview for review</strong>{hasCoding ? 'Save my spoken answers, submitted code, delivery observations, and coding camera and tab observations.' : 'Save my spoken answers and delivery observations.'} I can delete the interview from its report.</span></label>
+          <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600"><input id="interview-ai-consent" className="mt-1 size-4 shrink-0" type="checkbox" checked={settings.allow_ai} onChange={e=>update('allow_ai',e.target.checked)}/><span><strong className="block text-sm text-gray-900 mb-1">Add AI assessment · Optional</strong>Send questions and my answers{hasCoding ? ', including submitted code,' : ''} to the configured AI provider. Questions may include details extracted from my resume.</span></label>
         </div>
         <p className="text-xs leading-relaxed text-gray-500">Without AI assessment, feedback highlights keyword and length cues. Technical correctness is only scored when an evaluator is available.</p>
+        {hasCoding && <p className="text-xs leading-relaxed text-gray-600">Code and test inputs are sent to the configured isolated runner. During coding, the interview samples face presence if your camera is on and tracks tab visibility. Camera frames stay on your device.</p>}
+        {hasCoding && !codingRunnerConfigured && <p role="status" className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">The test runner needs configuration. You can write and save code, but this session cannot score test cases.</p>}
         </fieldset><button disabled={busy || !domains.length || !settings.save_consent} className="spar-button w-full">{busy?'Starting…':'Start interview'}<UiIcon name="arrow"/></button>
       </form>
       <aside className="setup-aside">

@@ -530,3 +530,37 @@ input:not([type=checkbox]):not([type=radio]), select, textarea { max-width: 100%
   .report-print-full .report-qa { break-inside:auto; }
   .report-print-full .report-qa summary { break-after:avoid; }
 }
+
+.call-room--coding { display:grid; grid-template-columns:minmax(0, 1fr) minmax(240px, 28%); grid-template-rows:auto auto 1fr; align-items:start; column-gap:24px; }
+.call-room--coding .call-header { grid-column:1/-1; }
+.call-room--coding .call-stage { grid-area:2 / 2 / 4 / 3; display:block; min-height:0; padding:0; }
+.call-room--coding .camera-tile { min-height:180px; }
+.call-room--coding .camera-preview { aspect-ratio:16/9; flex:auto; }
+.call-room--coding .call-question-caption { grid-area:2 / 1; max-height:none; margin-top:16px; }
+.call-room--coding .call-footer { grid-area:3 / 1; min-width:0; }
+.call-room--coding .call-stage { margin-top:16px; }
+.coding-prompt { margin-top:8px; color:#c3d9e8; font-size:14px; line-height:1.6; overflow-wrap:anywhere; }
+.coding-editor { display:grid; gap:8px; color:#e7f3fb; font-size:13px; }
+.coding-language { justify-self:end; display:flex; gap:8px; align-items:center; }
+.coding-language select { background:#193449; border:1px solid #506778; border-radius:8px; padding:7px 9px; }
+.coding-editor textarea { background:#0b1d2a; border:1px solid #506778; border-radius:12px; padding:14px; color:#e7f3fb; font:14px/1.55 ui-monospace, monospace; min-height:190px; height:clamp(190px, 32dvh, 420px); resize:vertical; width:100%; tab-size:4; }
+.coding-editor textarea:focus-visible { outline:2px solid #7dd3fc; outline-offset:2px; }
+.coding-samples { background:#193449; border:1px solid #36566c; border-radius:10px; padding:9px 12px; }
+.coding-samples summary { font-weight:600; cursor:pointer; }
+.coding-samples ol { list-style:decimal; padding-inline-start:22px; display:grid; gap:7px; margin-top:7px; }
+.coding-samples code { display:block; font-size:12px; overflow-wrap:anywhere; }
+.coding-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+.coding-actions button { padding:9px 14px; border:1px solid #506778; border-radius:9px; }
+.coding-actions .coding-submit { margin-left:auto; background:#b5e3fc; border-color:#b5e3fc; color:#12334b; font-weight:700; }
+.coding-report { margin-top:8px; font-size:13px; line-height:1.55; }
+.coding-report > p + p { margin-top:6px; }
+
+@media (max-width:767px) {
+  .call-room--coding { display:flex; min-height:100dvh; align-items:stretch; }
+  .call-room--coding .call-stage { flex:0 0 auto; align-self:flex-end; margin-top:10px; width:min(100%, 220px); }
+  .call-room--coding .camera-tile { position:static; width:100%; min-height:0; height:118px; }
+  .call-room--coding .camera-toolbar > span { display:inline; }
+  .call-room--coding .call-question-caption { margin-top:10px; }
+  .coding-editor textarea { height:clamp(185px, 25dvh, 300px); min-height:185px; }
+  .coding-actions .coding-submit { margin-left:0; }
+}

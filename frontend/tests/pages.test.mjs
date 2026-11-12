@@ -70,7 +70,7 @@ test('active call exposes read-only speech and no round steps or confidence inpu
   const {default:CallRoom}=await server.ssrLoadModule('/src/components/interview/CallRoom.jsx');
   const html=renderToStaticMarkup(createElement(MemoryRouter,{},createElement(CallRoom,{
     call:{enabled:true,status:'listening',voiceText:'A recognized answer',interim:'',audio:null},
-    questionPrompt:'Explain one decision.',progress:{current:1,total:9,answered:0},busy:false,
+    question:{id:'screening-1',prompt:'Explain one decision.'},progress:{current:1,total:9,answered:0},busy:false,
   })));
   assert.match(html,/Spoken answer transcript/);
   assert.match(html,/Send spoken answer/);

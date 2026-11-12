@@ -56,7 +56,7 @@ The detailed assessment schema is in OpenAPI and
 
 | Method / path | Request | Response / flow |
 | --- | --- | --- |
-| `GET /api/interview/domains` | Public | `{domains:[...]}` |
+| `GET /api/interview/domains` | Public | Domains, hands-on coding domains, and a runner configuration indicator |
 | `POST /api/interview/start` | Settings below | 201 saved session and current question |
 | `GET /api/interview/sessions` | Bearer | Up to 100 owned session summaries with overall_score, newest first; transcripts omitted |
 | `GET /api/interview/{session_id}` | Bearer | Current session state, for reload/resume |
@@ -74,6 +74,7 @@ Start request example (optional fields shown):
   "experience_level": "intern",
   "persona": "technical",
   "mode": "practice",
+  "coding_practice": true,
   "save_consent": true,
   "allow_ai": false,
   "response_mode": "voice"
@@ -85,9 +86,12 @@ Experience levels are `intern`, `junior`, `mid` (default), `senior`, and `lead`.
 The selected level sets prompt depth. New interviews rotate domain prompts and
 algorithm exercises using the latest saved interview in the same domain and
 track. The existing free-text `experience` field is still accepted as context.
-React uses `response_mode: "voice"`; omitted response mode defaults to `text` for
-legacy API compatibility. Voice questions request spoken algorithm explanations
-instead of code. `POST /api/interview/{id}/voice` upgrades owned active older sessions
+React uses `response_mode: "voice"`. The default for older clients is `text`.
+Opting into `coding_practice` starts an eligible technical session with two domain
+exercises at intern/junior level or three at other levels. Each exercise has
+`hands_on: true`, a `problem_id`, language starters, and public `samples`.
+The remaining questions use the existing spoken answer contract.
+`POST /api/interview/{id}/voice` upgrades owned active older sessions
 idempotently, preserving saved answers and converting pending coding prompts.
 An actual upgrade increments the session revision; concurrent changes are checked.
 Unsupported domains or missing storage consent return 400. The session includes
@@ -129,8 +133,8 @@ means **null**, not zero or a passing grade. Reports can be requested while acti
 
 ## Optional delivery observations
 
-`POST /api/interview/answer` requires `delivery` for voice answers (omit or null
-only for legacy text-mode answers or skipped questions). This object requires `consent: true`, an optional original recognized
+`POST /api/interview/answer` requires `delivery` for spoken answers. Omit it for
+hands-on code, legacy text answers, and skips. This object requires `consent: true`, an optional original recognized
 `transcript` (≤12,000 characters), `transcript_complete` (boolean; false disables pace estimation), `language` (`en-IN`, `en-US`, `en-GB`), and optional:
 
 - `audio`: `capture_ms`, `observed_ms`, `voiced_ms`, `speech_span_ms`, `pause_count`,
@@ -161,7 +165,7 @@ See [measurement definitions](VOICE_VIDEO_INTERVIEW.md).
 | Method / path | Request | Response / flow |
 | --- | --- | --- |
 | `GET /api/code/problems` | Bearer | Problem descriptions/starters; test cases omitted |
-| `POST /api/code/run` | `{session_id,problem_id,language,code}` | Requires owned active matching question, calls isolated Judge0 |
+| `POST /api/code/run` | `{session_id,problem_id,language,code}` | Requires owned active matching coding question. For hands-on exercises, executes public samples only. |
 | `GET /api/tts/voices` | Bearer | Supported voices and defaults |
 | `POST /api/tts/synthesize` | `{text,voice?,rate?,pitch?}` | MP3 bytes, bounded to 6,000 text characters and 15s provider timeout |
 | `GET /api/tts/speak` | Same fields as query parameters, Bearer | Compatibility MP3 response; prefer POST to keep text out of URLs |
@@ -171,6 +175,15 @@ Code results use `status: evaluated|unavailable|invalid`, `passed`, `total`,
 means unavailable. Compilation/runtime errors and invalid, non-finite, or excessively nested JSON output are failed
 tests. Two Sum accepts indices in either order. No expected outputs are sent
 to submitted programs; the API compares the returned values itself.
+
+For a hands-on submission, send the session ID, question ID, revision, unique
+request ID, `code` (up to 12,000 characters), and `language` (`javascript` or
+`python`). Optional `coding_observation` contains `consent: true` and the same
+`camera` and `focus` shapes described above. The API grades all cases and stores
+aggregate sample and hidden counts without returning hidden inputs, expected
+outputs, or per-case results. It stores coding observations separately from speech.
+With `allow_ai` enabled, Groq may return `ai_review` alongside the test result.
+AI review does not set correctness. An unavailable runner leaves correctness null.
 
 Judge0 receives code with CPU/wall-time/memory/process/file limits and networking
 disabled. It must be an independently secured service. The app never falls back

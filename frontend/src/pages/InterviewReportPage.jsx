@@ -11,6 +11,21 @@ function roundLabel(round) {
   return round;
 }
 
+function CodingResult({ evaluation }) {
+  const result = evaluation.code_result;
+  const observation = evaluation.coding_observation;
+  return <div className="coding-report">
+    {result?.status === 'evaluated' && <p>Sample tests {result.sample_passed}/{result.sample_total} · Hidden tests {result.hidden_passed}/{result.hidden_total}</p>}
+    {evaluation.ai_review && <p><strong>AI code review</strong> · {evaluation.ai_review}</p>}
+    {evaluation.ai_status === 'unavailable' && <p>AI code review is unavailable.</p>}
+    {observation && <p className="report-answer-detail">
+      Face present in camera samples · {observation.face_presence_percent == null ? 'Not measured' : `${observation.face_presence_percent}%`}
+      {' · '}Tab visible · {observation.page_visible_percent == null ? 'Not measured' : `${observation.page_visible_percent}%`}
+      {observation.focus && ` · Tab switches ${observation.focus.hidden_count}`}
+    </p>}
+  </div>;
+}
+
 function AnswerReview({ row, index }) {
   const evaluation = row.evaluation;
   return <details id={`answer-${index + 1}`} className="report-qa">
@@ -20,14 +35,20 @@ function AnswerReview({ row, index }) {
     </summary>
     <div className="report-qa-body">
       {row.skipped ? <p className="text-sm text-gray-600">You skipped this question.</p> : <>
-        <div className="report-answer-text report-transcript">
+        {!row.hands_on && <div className="report-answer-text report-transcript">
           <span>Your answer</span>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">{row.answer}</p>
-        </div>
-        {row.code && <pre className="report-transcript mt-4 overflow-x-auto whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-xs">{row.code}</pre>}
+        </div>}
+        {row.code && <div className="report-transcript mt-3">
+          <p className="text-xs font-semibold">{row.language === 'python' ? 'Python' : 'JavaScript'} solution</p>
+          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-xs">{row.code}</pre>
+        </div>}
         <div className="report-answer-feedback">
           <p className="text-sm leading-relaxed">{evaluation.feedback}</p>
-          <p className="mt-2 text-xs text-gray-600">Evaluation method · {evaluation.source}{evaluation.code_result?.message && ` · ${evaluation.code_result.message}`}</p>
+          <p className="mt-2 text-xs text-gray-600">Evaluation method · {row.hands_on
+            ? (evaluation.code_result?.status === 'evaluated' ? 'Isolated test runner' : 'Solution saved for review')
+            : evaluation.source}{!row.hands_on && evaluation.code_result?.message && ` · ${evaluation.code_result.message}`}</p>
+          {row.hands_on && <CodingResult evaluation={evaluation}/>}
           {evaluation.mistake_tag?.label && <p className="report-answer-detail mt-2 text-xs text-gray-600">Experimental coaching signal · {evaluation.mistake_tag.label} ({evaluation.mistake_tag.source})</p>}
         </div>
         {evaluation.delivery && <div className="report-answer-detail"><InterviewAnalytics delivery={evaluation.delivery}/></div>}
@@ -98,10 +119,12 @@ export default function InterviewReportPage() {
   }
 
   const scored = Number.isFinite(report?.overall_score);
-  const practiceAnswer = report?.qa_pairs.reduce((lowest, row) => {
+  const spokenPracticeAnswer = report?.qa_pairs.reduce((lowest, row) => {
     if (row.skipped || !Number.isFinite(row.evaluation?.communication_score)) return lowest;
     return !lowest || row.evaluation.communication_score < lowest.evaluation.communication_score ? row : lowest;
   }, null);
+  const codingPracticeAnswer = report?.qa_pairs.find(row => row.hands_on && !row.skipped);
+  const practiceAnswer = spokenPracticeAnswer || codingPracticeAnswer;
   const practiceIndex = report?.qa_pairs.indexOf(practiceAnswer) + 1;
   const practiceId = `answer-${practiceIndex}`;
 
@@ -136,12 +159,12 @@ export default function InterviewReportPage() {
           <h2>What to practice next</h2>
           {practiceAnswer ? <>
             <p className="mb-2 text-xs font-semibold text-primary">Question {practiceIndex} · {roundLabel(practiceAnswer.round)}</p>
-            <p className="text-sm leading-relaxed text-gray-700">{practiceAnswer.evaluation.feedback}</p>
+            <p className="text-sm leading-relaxed text-gray-700">{practiceAnswer.evaluation.ai_review || practiceAnswer.evaluation.feedback}</p>
             <a className="mt-3 inline-block text-sm font-semibold text-primary underline print:hidden" href={`#${practiceId}`}
               onClick={() => { const answer = document.getElementById(practiceId); if (answer) answer.open = true; }}>
               Review question {practiceIndex}
             </a>
-          </> : <p className="text-sm leading-relaxed text-gray-700">Submit a spoken answer in your next interview to get feedback here.</p>}
+          </> : <p className="text-sm leading-relaxed text-gray-700">Submit an answer in your next interview to get feedback here.</p>}
         </section>
         <section className="report-score">
           <div className="report-score-ring" style={{ '--score': scored ? report.overall_score : 0 }} aria-hidden="true">

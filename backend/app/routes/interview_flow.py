@@ -17,8 +17,9 @@ from app.interview_flow import (
     spoken_question,
     set_question_depth,
 )
-from app.safe_execution import run_problem
-from app.delivery import DeliveryObservation, delivery_feedback
+from app.safe_execution import execution_endpoint, run_problem
+from app.coding_practice import CODING_DOMAINS, evaluate_code
+from app.delivery import CodingObservation, DeliveryObservation, coding_feedback, delivery_feedback
 
 router = APIRouter(prefix="/interview", tags=["interview"])
 
@@ -33,6 +34,7 @@ class StartRequest(BaseModel):
     save_consent: bool = False
     allow_ai: bool = False
     response_mode: Literal["text", "voice"] = "text"
+    coding_practice: bool = False
 
 
 class AnswerRequest(BaseModel):
@@ -46,6 +48,7 @@ class AnswerRequest(BaseModel):
     latency_ms: int = Field(default=0, ge=0, le=86400000)
     skipped: bool = False
     delivery: DeliveryObservation | None = None
+    coding_observation: CodingObservation | None = None
 
 
 def owned_session(db, session_id, user):
@@ -61,7 +64,10 @@ def owned_session(db, session_id, user):
 
 @router.get("/domains")
 def domains():
-    return {"domains": DOMAINS}
+    return {
+        "domains": DOMAINS, "coding_domains": CODING_DOMAINS,
+        "coding_runner_configured": bool(execution_endpoint()),
+    }
 
 
 @router.post("/start", status_code=201)
@@ -73,17 +79,21 @@ def start(body: StartRequest, db=Depends(get_db), user=Depends(require_user)):
         )
     if body.domain not in DOMAINS:
         raise HTTPException(400, "Unsupported domain")
+    persona = "technical" if body.persona == "tech" else body.persona
+    if body.coding_practice and (persona != "technical" or body.domain not in CODING_DOMAINS):
+        raise HTTPException(400, "Hands-on coding is unavailable for this track and domain.")
     resume = next(
         iter(db.resumes.find({"user_id": str(user["_id"])}).sort("_id", -1).limit(1)),
         None,
     )
-    persona = "technical" if body.persona == "tech" else body.persona
     previous = next(iter(db.interview_sessions.find({
         "user_id": str(user["_id"]), "engine_version": 2,
         "domain": body.domain, "persona": persona,
     }).sort("_id", -1).limit(1)), None)
     variant = previous.get("question_variant", 0) + 1 if previous else 0
-    questions = make_questions(body.domain, persona, resume, body.experience_level, variant)
+    questions = make_questions(
+        body.domain, persona, resume, body.experience_level, variant, body.coding_practice
+    )
     session = {
         "user_id": str(user["_id"]),
         "engine_version": 2,
@@ -95,6 +105,7 @@ def start(body: StartRequest, db=Depends(get_db), user=Depends(require_user)):
         "persona": persona,
         "mode": body.mode,
         "response_mode": body.response_mode,
+        "coding_practice": body.coding_practice,
         "questions": [spoken_question(q) if body.response_mode == "voice" else q
                       for q in questions],
         "answers": [],
@@ -120,7 +131,7 @@ def session_summary(session):
 
 @router.post("/{session_id}/voice")
 def enable_voice(session_id: str, db=Depends(get_db), user=Depends(require_user)):
-    """Resume older sessions in the speech-only UI without changing saved answers."""
+    """Enable speech on older sessions while preserving hands-on coding prompts."""
     session = owned_session(db, session_id, user)
     if session.get("response_mode") == "voice" or session["status"] != "active":
         return public_session(session)
@@ -165,12 +176,18 @@ def answer(body: AnswerRequest, db=Depends(get_db), user=Depends(require_user)):
         raise HTTPException(
             409, "This question has already changed. Reload the interview."
         )
-    if session.get("response_mode") == "voice" and not body.skipped:
+    hands_on = question.get("hands_on", False)
+    if hands_on and not body.skipped:
+        if not body.code.strip() or len(body.code) > 12000 or body.answer or body.delivery:
+            raise HTTPException(422, "Submit up to 12,000 characters of code for this exercise.")
+    elif not body.skipped and body.coding_observation is not None:
+        raise HTTPException(422, "Coding observations apply only to a hands-on exercise.")
+    if session.get("response_mode") == "voice" and not body.skipped and not hands_on:
         if not body.delivery or not body.delivery.transcript.strip():
             raise HTTPException(422, "A spoken answer is required. Enable the microphone and try again.")
         if body.answer.strip() != body.delivery.transcript.strip() or body.code:
             raise HTTPException(422, "Voice interviews accept the recognized spoken answer only.")
-    if not body.skipped and (
+    if not body.skipped and not hands_on and (
         not body.answer.strip()
         or (question["type"] == "coding" and not body.code.strip())
     ):
@@ -178,11 +195,8 @@ def answer(body: AnswerRequest, db=Depends(get_db), user=Depends(require_user)):
             422,
             "Enter an answer and, for coding questions, your code; or skip this question.",
         )
-    code_result = None
-    if question["type"] == "coding" and not body.skipped:
-        code_result = run_problem(question["problem_id"], body.code, body.language)
-    evaluation = (
-        {
+    if body.skipped:
+        evaluation = {
             "communication_score": None,
             "correctness_score": None,
             "source": "skipped",
@@ -191,23 +205,29 @@ def answer(body: AnswerRequest, db=Depends(get_db), user=Depends(require_user)):
             "code_result": None,
             "mistake_tag": None,
         }
-        if body.skipped
-        else evaluate_answer(
+    elif hands_on:
+        evaluation = evaluate_code(question, body.code, body.language, session.get("allow_ai", False))
+        evaluation["coding_observation"] = coding_feedback(body.coding_observation)
+    else:
+        code_result = (
+            run_problem(question["problem_id"], body.code, body.language)
+            if question["type"] == "coding" else None
+        )
+        evaluation = evaluate_answer(
             question,
             body.answer.strip(),
             body.latency_ms,
             session.get("allow_ai", False),
             code_result,
         )
-    )
-    if not body.skipped:
         evaluation["delivery"] = delivery_feedback(body.delivery, body.answer.strip())
     entry = {
         "question_id": question["id"],
         "question": question["prompt"],
         "round": question["round"],
-        "answer": body.answer.strip(),
-        "code": body.code,
+        "hands_on": hands_on,
+        "answer": body.answer.strip() if not body.skipped else "",
+        "code": body.code if not body.skipped else "",
         "language": body.language,
         "skipped": body.skipped,
         "request_id": body.request_id,

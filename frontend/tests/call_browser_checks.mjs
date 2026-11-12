@@ -44,7 +44,7 @@ export async function checkInterviewCall({goto,click,waitFor,evaluate,check,comm
   const start=async()=>{
     await goto('/interview/start?persona=hr',hasText('Start interview'));
     await waitFor('document.querySelectorAll("#interview-domain option").length>4','domains');
-    await click('input[type="checkbox"]');await click('button','Start interview');
+    await click('#interview-save-consent');await click('button','Start interview');
     await waitFor('document.querySelector("progress")','call lobby');
   };
   const join=async(denied=false)=>{
@@ -54,6 +54,7 @@ export async function checkInterviewCall({goto,click,waitFor,evaluate,check,comm
   await start();
   check('Call lobby requires explicit speech consent',await evaluate(`Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Join interview').disabled`));
   check('Interview has no round list, answer editor, or confidence questionnaire',await evaluate(`!document.querySelector('textarea,[contenteditable="true"],.interview-rounds,select[aria-label="Self-rated confidence"]') && !document.querySelector('.call-room').textContent.includes('Calibration')`));
+  await command('Page.bringToFront');
   await click('button','Full screen');await waitFor('document.fullscreenElement?.classList.contains("call-room")','browser fullscreen');
   check('Browser full screen opens the call surface',true);
   await click('button','Exit full screen');await waitFor('!document.fullscreenElement','fullscreen exit');

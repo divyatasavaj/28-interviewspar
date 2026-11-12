@@ -17,14 +17,16 @@ export default function InterviewPage(){
   },[sessionId]);
   useEffect(()=>{started.current=Date.now();requestId.current=null;},[sessionId,question?.id]);
   function accept(next){setSession(next);requestId.current=null;if(next.status==='completed')navigate(`/interview/${sessionId}/report`,{replace:true});}
-  async function submit(skipped=false){
+  async function submit(skipped=false, solution=null){
     if(gate.current)return; gate.current=true; setBusy(true); setError('');
     try{
-      const delivery=await call.finishAnswer();
-      if(!skipped && !delivery?.transcript?.trim())throw new Error('No spoken answer was captured. Check your microphone and speak again.');
+      const coding=question.hands_on;
+      const delivery=coding ? null : await call.finishAnswer();
+      if(!coding && !skipped && !delivery?.transcript?.trim())throw new Error('No spoken answer was captured. Check your microphone and speak again.');
       requestId.current ||= crypto.randomUUID();
       accept(await answerInterview({session_id:sessionId,question_id:question.id,version:session.version,request_id:requestId.current,
-        answer:skipped?'':delivery.transcript,skipped,delivery:skipped?null:delivery,
+        answer:skipped || coding ? '' : delivery.transcript,skipped,delivery:skipped?null:delivery,
+        ...(coding && !skipped ? {...solution,coding_observation:call.codingObservation()} : {}),
         latency_ms:Math.max(0,Math.min(86400000,Date.now()-started.current))}));
     }catch(e){setError(e.message);if(e.status===409){try{setSession(await apiRequest(`/interview/${sessionId}`));requestId.current=null;}catch(reloadError){setError(reloadError.message);}}}
     finally{gate.current=false;setBusy(false);}
@@ -37,7 +39,8 @@ export default function InterviewPage(){
   if(!session)return <main className="call-loading"><Link to="/dashboard">← Dashboard</Link><p role="status">{error || 'Preparing your interview call…'}</p></main>;
   if(!question)return <main className="call-loading"><Link to={`/interview/${sessionId}/report`}>View completed interview report →</Link></main>;
   const last=session.answers?.at(-1);
-  return <CallRoom call={call} questionPrompt={question.prompt} busy={busy} error={error}
+  return <CallRoom call={call} question={question} sessionId={sessionId} hasCoding={session.coding_practice} busy={busy} error={error}
     progress={session.progress} onSubmit={()=>submit()} onSkip={()=>submit(true)} onFinish={finish}
+    onCodeChange={()=>{requestId.current=null;}} onCodeSubmit={solution=>submit(false,solution)}
     feedback={session.mode==='practice' && last && !last.skipped ? last.evaluation : null}/>;
 }

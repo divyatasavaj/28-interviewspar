@@ -5,6 +5,28 @@ Tests use synthetic accounts and resumes in a unique disposable database. Existi
 application records and browser profiles are not used. No dependencies were installed
 for this pass.
 
+## Hands-on coding rounds — 12 November 2026
+
+The dashboard opens an opt-in coding round with two or three exercises drawn
+from the selected domain. The editor supports JavaScript and Python, public
+sample runs, and solution submission. Reports show aggregate sample and hidden
+results, optional AI review, and the camera and tab observations for each
+exercise. Camera frames stay on the device.
+
+All 165 backend, 48 frontend, and 3 ML tests passed. The build and lint passed
+with existing warnings. Independent reference implementations matched all 80
+expected outputs in the 16-exercise bank. Backend tests also cover provider
+unavailability, stale and duplicate requests, and hidden-result redaction.
+
+The focused Chrome journey passed 15 checks with a local Judge0 response fixture
+and synthetic media. The opted-in AI path was verified against live Groq in the
+saved browser report using synthetic code and the new `openai/gpt-oss-20b` default.
+The full regression passed 37 live API checks and 144 desktop/mobile Chrome
+checks. Both disposable MongoDB databases were removed.
+Live Judge0 execution still requires `JUDGE0_API_URL`. The default unconfigured
+runner state was verified. Reproduce the focused journey with
+`--browser-only --mock-code-runner`, adding `--check-providers` to exercise Groq.
+
 ## Interview practice improvements — 12 November 2026
 
 The call now shows playback, recording, and review states next to the captions.

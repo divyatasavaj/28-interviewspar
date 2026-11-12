@@ -8,7 +8,9 @@ No real application collection is accessed. Credentials and API payloads are not
 from __future__ import annotations
 
 import argparse
+import base64
 from concurrent.futures import ThreadPoolExecutor
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import io
 import json
 import os
@@ -17,6 +19,7 @@ import secrets
 import subprocess
 import sys
 import tempfile
+from threading import Thread
 import time
 import uuid
 from urllib.parse import urlsplit
@@ -28,6 +31,27 @@ from pymongo import MongoClient
 from test_resume_intelligence_parser import make_pdf
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+class SyntheticCodeRunner(BaseHTTPRequestHandler):
+    """Fixed response for browser integration. Never executes a submission."""
+
+    def do_POST(self):
+        request = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+        if request["enable_network"] or "expected_output" in request:
+            self.send_error(400)
+            return
+        payload = json.dumps({
+            "status": {"id": 3, "description": "Accepted"},
+            "stdout": base64.b64encode(b"[]\n").decode(),
+        }).encode()
+        self.send_response(201)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def log_message(self, *_args):
+        pass
 
 
 def main():
@@ -48,7 +72,13 @@ def main():
     parser.add_argument(
         "--headful", action="store_true", help="Show the temporary Chrome test window"
     )
+    parser.add_argument(
+        "--mock-code-runner", action="store_true",
+        help="Use a fixed local Judge0 response for the coding browser journey",
+    )
     args = parser.parse_args()
+    if args.mock_code_runner and not args.browser_only:
+        parser.error("--mock-code-runner requires --browser-only")
     if not 1024 <= args.api_port <= 65535:
         parser.error("--api-port must be between 1024 and 65535")
     target = urlsplit(args.base_url)
@@ -80,6 +110,7 @@ def main():
         )
         return 1
     server = None
+    code_runner = None
     checks = []
     results = {
         "database": database_name,
@@ -169,6 +200,10 @@ def main():
             "GROQ_API_KEY": "",
             "CLIENT_ORIGIN": f"http://localhost:{target.port},http://127.0.0.1:{target.port}",
         }
+        if args.mock_code_runner:
+            code_runner = ThreadingHTTPServer(("127.0.0.1", 0), SyntheticCodeRunner)
+            Thread(target=code_runner.serve_forever, daemon=True).start()
+            env["JUDGE0_API_URL"] = f"http://127.0.0.1:{code_runner.server_port}"
         if args.check_providers:
             env["GROQ_API_KEY"] = (
                 os.getenv("GROQ_API_KEY") or config.get("GROQ_API_KEY") or ""
@@ -176,7 +211,7 @@ def main():
             env["GROQ_MODEL"] = (
                 os.getenv("GROQ_MODEL")
                 or config.get("GROQ_MODEL")
-                or "llama-3.3-70b-versatile"
+                or "openai/gpt-oss-20b"
             )
         boot_server(env)
         if not args.browser_only:
@@ -650,7 +685,12 @@ def main():
                         str(pdf_path),
                     ],
                     cwd=ROOT / "frontend",
-                    env={**os.environ, "CHROME_HEADLESS": "0" if args.headful else "1"},
+                    env={
+                        **os.environ,
+                        "CHROME_HEADLESS": "0" if args.headful else "1",
+                        **({"CODING_ONLY": "1", "MOCK_CODE_RUNNER": "1"} if args.mock_code_runner else {}),
+                        **({"LIVE_CODE_REVIEW": "1"} if args.mock_code_runner and args.check_providers else {}),
+                    },
                     timeout=900,
                 )
                 check("Chrome browser acceptance suite", browser.returncode == 0)
@@ -679,6 +719,9 @@ def main():
                 results["cleanup_error"] = type(exc).__name__
         stdout.close()
         mongo.close()
+        if code_runner:
+            code_runner.shutdown()
+            code_runner.server_close()
         print(json.dumps(results, indent=2), flush=True)
     return 0 if results.get("status") == "passed" and results["database_cleaned"] else 1
 

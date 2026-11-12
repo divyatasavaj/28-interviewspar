@@ -66,11 +66,13 @@ not in a process-local session manager.
 | Calibration | Two domain questions; HR track uses HR calibration |
 | HR | Ownership question plus a question from an actual parsed project/skill, or a generic learning question |
 | Technical | Three domain prompts for technical track; observed round ability adjusts prompt depth |
-| Coding | One rotating algorithm exercise for eligible technical domains. The voice call asks for a verbal solution. HR, Product Management, and System Design exclude this round. |
+| Coding | Opted-in technical sessions open with two or three domain exercises in the editor. Other eligible technical sessions use a single spoken algorithm exercise. |
 | Behavioral | Team disagreement and learning from a mistake |
 | Reflection | What to improve and practice next |
 
-Technical interviews usually contain 13 questions; HR interviews contain 9.
+Technical interviews usually contain 13 questions, or 14–15 with hands-on
+coding. System Design hands-on sessions also have 14–15 questions. HR interviews
+contain 9.
 Ability uses an exponential update, not a validated psychometric scale. Technical
 ability requires evaluated correctness. The selected experience level sets the
 initial depth of calibration, technical, behavioral, and spoken algorithm prompts.
@@ -105,13 +107,13 @@ labels do not decide hiring eligibility or certification.
 | `pages/Dashboard.jsx` | Profile summary, owned session list, report/resume navigation |
 | `pages/ResumeIntelligence.jsx`, `utils/resumeIntelligence.js` | Role/JD analysis, evidence/gaps/recommendations, null-score semantics, input/error formatting |
 | `pages/StartInterviewPage.jsx`, `InterviewType.jsx`, `PracticeTracksPage.jsx` | Track/domain selection and consented start |
-| `pages/InterviewPage.jsx` | Full-screen speech-only call, read-only transcript, re-record/skip/finish, compact practice feedback |
+| `pages/InterviewPage.jsx` | Full-screen call with spoken prompts, optional coding turns, and compact practice feedback |
 | `pages/InterviewReportPage.jsx`, `InterviewComplete.jsx` | Evidence report, print/PDF, session deletion; old completion URL adapter |
 | `pages/Home.jsx`, `FeaturesPage.jsx`, `StudentGuidePage.jsx`, `ResourcesPage.jsx` | Public explanation, preparation guidance, generated Markdown study notes |
 | `pages/SubscriptionPage.jsx`, `ContactPage.jsx` | Current free access/planned team features and real GitHub support link |
 | `components/ProtectedRoute.jsx`, `DashboardNavbar.jsx`, `Navbar.jsx` | Token presence guard and navigation/logout |
 | `components/Hero.jsx`, `Features.jsx`, `FeatureCard.jsx`, `TrustedCompanies.jsx`, `DashboardHero.jsx`, `ProfileCard.jsx` | Presentational sections/cards; usage claims corrected where reviewed |
-| `components/interview/CodeEditor.jsx` | Retained JS/Python editor for legacy contracts; not rendered in the speech-only call |
+| `components/interview/CodeEditor.jsx` | JavaScript/Python editor, public sample runs, and solution submission |
 | `utils/naturalSpeech.js`, `utils/dictation.js` | Saved voice preferences, abortable playback, one-shot fallback, and invalidated dictation callbacks |
 | `src/api.js`, `AuthContext.jsx` | Old Express client/auth context; not mounted by `main.jsx` |
 | `pages/Interview.jsx`, `components/SessionView.jsx`, `AuthPage.jsx`, `Home.jsx`, `Dashboard.jsx` | Earlier UI generations, outside the current route tree |
@@ -131,6 +133,7 @@ labels do not decide hiring eligibility or certification.
 | `backend/app/interview_flow.py`, `routes/interview_flow.py` | Curated question selection, rubric/report logic, owned versioned session lifecycle |
 | `backend/data/interview_bank.json` | Canonical question domains/coding problems/test cases; reference solutions are excluded |
 | `backend/app/routes/code.py`, `safe_execution.py` | Ownership/current-question checks and bounded Judge0 execution; no host execution |
+| `backend/app/coding_practice.py`, `backend/data/coding_practice.json` | Domain exercise selection, sample runs, aggregate hidden-test results, and optional code review |
 | `backend/app/delivery.py` | Typed observation validation, transcript-derived fillers, sampled timing/coverage and weighted report summaries |
 | `backend/app/ml_service.py`, `fluency.py` | ML adapter and local textual fluency observations |
 | `backend/app/routes/tts.py`, `tts.py` | Authenticated bounded synthesis, timeout, no persistent audio cache |

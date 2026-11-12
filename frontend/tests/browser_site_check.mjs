@@ -88,7 +88,6 @@ async function goto(path, ready = 'document.querySelector("h1")') {
     await delay(Math.max(100,60050-(Date.now()-oldest)));
   }
   phase = `navigate to ${path}`;
-  await command('Page.bringToFront');
   await command('Page.navigate', { url: new URL(path, baseUrl).href });
   await waitFor(`location.pathname===${JSON.stringify(new URL(path, baseUrl).pathname)} && (${ready})`, path);
 }
@@ -144,6 +143,56 @@ async function checkWorkspaceOrganization() {
   check('Dashboard entry reaches both dedicated matching modes',true);
   await goto('/interview/start');await layout('mobile interview setup');await screenshot('setup-mobile');
   await viewport(1440);await screenshot('setup-desktop');
+}
+async function checkCodingRound() {
+  await click('#practice a', 'Practice coding');
+  await waitFor('document.querySelector("#coding-practice")?.checked', 'coding setup');
+  await select('#interview-domain', 'Frontend');
+  await select('#interview-experience', 'junior');
+  await click('#interview-save-consent');
+  const liveReview = process.env.LIVE_CODE_REVIEW === '1';
+  if (liveReview) await click('#interview-ai-consent');
+  await click('button', 'Start interview');
+  await waitFor(hasText('Class list builder'), 'first frontend exercise');
+  await evaluate(installCallMedia());
+  await click('input[aria-label="Speech recognition consent"]');
+  await click('button', 'Join interview');
+  await waitFor('document.querySelector(".call-room--coding textarea")', 'coding editor');
+  await waitFor('document.querySelector("video").srcObject?.active && document.querySelector("video").videoWidth>0', 'live coding camera');
+  check('Coding starts with camera and no microphone', await evaluate('window.__callTest.starts===0 && !!document.querySelector("video").srcObject?.active'));
+  await fill('#solution-code', 'function solve(classes) { return []; }');
+  await select('[aria-label="Code language"]', 'python');
+  await fill('#solution-code', 'def solve(classes): return []');
+  await select('[aria-label="Code language"]', 'javascript');
+  check('Editor retains each language draft', await evaluate('document.querySelector("#solution-code").value==="function solve(classes) { return []; }"'));
+  await click('button', 'Run samples');
+  const mock = process.env.MOCK_CODE_RUNNER === '1';
+  await waitFor(hasText(mock ? '1 of 2 sample tests passed' : 'Code execution is not configured'), 'sample results');
+  check('Visible sample run has a clear result', true);
+  await layout('desktop coding editor');
+  await screenshot('coding-desktop');
+  await viewport(390,844);
+  await layout('mobile coding editor');
+  await screenshot('coding-mobile');
+  await viewport(1440);
+  await click('.call-observations summary');
+  await waitFor(`Number(document.querySelector('.call-observations .delivery-live-stats strong')?.textContent)>0`, 'camera samples during coding');
+  await click('.call-observations summary');
+  await click('button', 'Submit solution');
+  await waitFor(hasText('Search suggestions'), 'next frontend exercise');
+  check('Submitting moves to the next domain exercise with the same camera', await evaluate('window.__callTest.starts===0 && document.querySelector("video").srcObject?.active'));
+  await click('button', 'Skip exercise');
+  await waitFor('window.__callTest.starts===1 && document.querySelector(".call-avatar-listening")', 'spoken round after coding');
+  check('Speech starts after coding and the editor leaves the call', await evaluate('!document.querySelector("textarea") && document.querySelector("video").srcObject?.active'));
+  await click('button', 'End interview');
+  await waitFor(hasText('Your interview feedback'), 'coding report');
+  check('Report overview links to the submitted exercise', await evaluate('document.querySelector("#report-overview a")?.hash==="#answer-1"'));
+  await click('#answer-1 summary');
+  check('Report retains code, grading, and coding observations', await evaluate(`${hasText('JavaScript solution')} && ${hasText('Face present in camera samples')} && ${hasText(mock ? 'Hidden tests 1/3' : 'Code execution is not configured')}`));
+  if (liveReview) check('Opted-in coding report includes live Groq review', await evaluate('!!document.querySelector(".coding-report strong")'));
+  await screenshot('coding-report');
+  await click('button', 'Delete this interview');
+  await waitFor('location.pathname==="/dashboard"', 'coding report deletion');
 }
 async function layout(label) {
   const dimensions = await evaluate('({page:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth})');
@@ -203,7 +252,7 @@ try {
   await command('Page.enable'); await command('Runtime.enable'); await command('Network.enable');
   await command('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: artifacts });
   await viewport(1440);
-  if (process.env.CALL_ONLY !== '1') {
+  if (process.env.CALL_ONLY !== '1' && process.env.CODING_ONLY !== '1') {
   const publicPages = ['/', '/features', '/practice-tracks', '/student-guide', '/pricing', '/subscription', '/resources', '/contact', '/login', '/signup'];
   for (const path of publicPages) {
     await goto(path);
@@ -256,7 +305,9 @@ try {
   await click('button[type="submit"]');
   await waitFor('location.pathname==="/dashboard" && document.querySelector("h1")','signed-in dashboard');
   check('Signup validation and successful registration', true);
-  if (process.env.CALL_ONLY === '1') {
+  if (process.env.CODING_ONLY === '1') {
+    await checkCodingRound();
+  } else if (process.env.CALL_ONLY === '1') {
     await checkWorkspaceOrganization();
     await checkInterviewCall({goto,click,fill,select,waitFor,evaluate,check,command,screenshot,savePdf,viewport,layout,hasText});
   } else {
@@ -314,7 +365,7 @@ try {
     check(`${persona} start link selects the intended track`,await evaluate(`document.querySelector('#interview-track').value===${JSON.stringify(persona)}`));
     if(persona==='hr') await select('#interview-feedback-mode','assessment');
     if(persona==='technical') await select('#interview-experience','senior');
-    await click('input[type="checkbox"]'); await click('button','Start interview');
+    await click('#interview-save-consent'); await click('button','Start interview');
     await waitFor('document.querySelector("progress")','first interview question');
     const sessionPath = await evaluate('location.pathname');
     await goto('/dashboard',hasText('Resume interview'));
@@ -366,7 +417,7 @@ try {
   }
   await viewport(1440);
   await goto('/interview/start',hasText('Start interview'));
-  await click('input[type="checkbox"]'); await click('button','Start interview');
+  await click('#interview-save-consent'); await click('button','Start interview');
   await waitFor('document.querySelector("progress")','skip scenario');
   await evaluate(installCallMedia());await click('input[aria-label="Speech recognition consent"]');await click('button','Join interview');
   await waitFor('document.querySelector(".call-avatar-listening")','skip call joined');

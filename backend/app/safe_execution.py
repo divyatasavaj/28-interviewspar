@@ -59,8 +59,13 @@ def same_json_value(actual, expected):
     return actual == expected
 
 
-def execute_cases(code, language, cases, function_name="solve"):
+def execution_endpoint():
     endpoint = os.getenv("JUDGE0_API_URL", "").rstrip("/")
+    return endpoint if endpoint.startswith(("https://", "http://")) else ""
+
+
+def execute_cases(code, language, cases, function_name="solve"):
+    endpoint = execution_endpoint()
     unavailable = {
         "status": "unavailable",
         "passed": 0,
@@ -68,7 +73,7 @@ def execute_cases(code, language, cases, function_name="solve"):
         "results": [],
         "message": "Code execution is not configured. Your code can still be saved for review.",
     }
-    if not endpoint or not endpoint.startswith(("https://", "http://")):
+    if not endpoint:
         return unavailable
     if language not in LANGUAGES or not re.fullmatch(
         r"[A-Za-z_][A-Za-z0-9_]*", function_name

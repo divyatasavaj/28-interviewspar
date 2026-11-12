@@ -71,6 +71,24 @@ class DeliveryObservation(Observation):
     focus: FocusObservation | None = None
 
 
+class CodingObservation(Observation):
+    consent: Literal[True]
+    camera: CameraObservation | None = None
+    focus: FocusObservation | None = None
+
+
+def coding_feedback(observation):
+    if observation is None:
+        return None
+    data = observation.model_dump(exclude={"consent"})
+    camera, focus = data["camera"], data["focus"]
+    return {
+        **data,
+        "face_presence_percent": percent(camera["face_samples"], camera["samples"]) if camera else None,
+        "page_visible_percent": percent(focus["observed_ms"] - focus["hidden_ms"], focus["observed_ms"]) if focus else None,
+    }
+
+
 def percent(numerator, denominator):
     return round(100 * numerator / denominator, 1) if denominator else None
 

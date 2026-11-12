@@ -21,7 +21,7 @@ export function useInterviewCall(question, onTranscript) {
   const append = useRef(onTranscript), prompt = useRef(question), options = useRef({language,engine});
   append.current = onTranscript; prompt.current = question; options.current = {language,engine};
   const changePhase = useCallback(value => {
-    focusData.current.setRunning(value === 'listening',performance.now(),document.hidden);
+    focusData.current.setRunning(['listening','coding'].includes(value),performance.now(),document.hidden);
     phase.current = value; setStatus(value);
   }, []);
   const finishMeter = useCallback(() => {
@@ -114,7 +114,11 @@ export function useInterviewCall(question, onTranscript) {
       if (result.status === 'unavailable') setError('Question audio is unavailable. Read the question and start the microphone when you’re ready.');
     }
   }, [changePhase, listen, stopListening]);
-  const join = useCallback(() => { active.current = true; setEnabled(true); void speak(true); }, [speak]);
+  const beginTurn = useCallback(() => {
+    if (prompt.current?.hands_on) changePhase('coding');
+    else if (prompt.current) void speak(true);
+  }, [changePhase, speak]);
+  const join = useCallback(() => { active.current = true; setEnabled(true); beginTurn(); }, [beginTurn]);
   const leave = useCallback(() => {
     if (microphone.current) incomplete.current = true;
     active.current = false; setEnabled(false); finishMeter(); cancel(); changePhase('review'); setInterim('');
@@ -123,12 +127,12 @@ export function useInterviewCall(question, onTranscript) {
     cancel(); records.current = []; recognized.current = ''; cameraData.current = null; incomplete.current = false;
     focusData.current = new VisibilityActivity();
     setVoiceText(''); setAudio(null); setCamera(null); setFocus({...focusData.current.data}); setInterim(''); setError(''); changePhase('idle');
-    if (active.current && prompt.current) void speak(true);
+    if (active.current) beginTurn();
     return cancel;
-  }, [question?.id, cancel, changePhase, speak]);
+  }, [question?.id, cancel, changePhase, beginTurn]);
   useEffect(() => {
     const tick = setInterval(() => {
-      if (phase.current === 'listening') setFocus(focusData.current.tick(performance.now()));
+      if (['listening','coding'].includes(phase.current)) setFocus(focusData.current.tick(performance.now()));
     }, 500);
     const hidden = () => { focusData.current.visibility(document.hidden,performance.now()); };
     document.addEventListener('visibilitychange',hidden);
@@ -140,7 +144,7 @@ export function useInterviewCall(question, onTranscript) {
     return () => clearTimeout(timeout);
   }, [status,stopListening]);
   const observeFaces = useCallback((faces,width,height) => {
-    if (!active.current || phase.current !== 'listening') return;
+    if (!active.current || !['listening','coding'].includes(phase.current)) return;
     const observation = cameraObservation(faces,width,height);
     if (!observation) return;
     const c = cameraData.current ||= {samples:0, face_samples:0, centered_samples:0, multiple_samples:0};
@@ -161,6 +165,17 @@ export function useInterviewCall(question, onTranscript) {
     return {consent:true, transcript:recognized.current, transcript_complete:!incomplete.current, language, audio:audioTotal(records.current), camera:cameraData.current,
       focus:focusData.current.data.observed_ms ? {...focusData.current.data} : null};
   }
+  function codingObservation() {
+    const focus = focusData.current.tick(performance.now());
+    // Bound very long practice sessions while preserving the visibility ratio.
+    const duration = Math.min(focus.observed_ms, 3600000);
+    return {
+      consent:true, camera:cameraData.current,
+      focus: duration ? {...focus, observed_ms:duration,
+        hidden_ms:Math.round(duration * focus.hidden_ms / focus.observed_ms),
+        hidden_count:Math.min(focus.hidden_count,100000)} : null,
+    };
+  }
   return {enabled,status,error,interim,audio,voiceText,camera,focus,language,setLanguage,engine,setEngine,
-    join,leave,speak,listen,retryAnswer,stopListening,finishAnswer,observeFaces};
+    join,leave,speak,listen,retryAnswer,stopListening,finishAnswer,codingObservation,observeFaces};
 }

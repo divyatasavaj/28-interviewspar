@@ -47,12 +47,12 @@ when the virtual environment is activated; Node dependencies are not required fo
 2. Optionally upload a text PDF or DOCX with storage consent. Resume Intelligence
    shows extracted evidence, role findings, job-description coverage, and recommendations.
 3. Choose a domain, experience level, HR/technical track, and practice/assessment
-   mode. Experience sets the starting depth. Repeat sessions in the same domain
-   and track rotate through the curated questions and eligible algorithm exercises.
+   mode. **Practice coding** opens setup with hands-on exercises selected. The
+   session starts with two domain exercises for student/junior levels or three
+   for other levels, then continues into the spoken interview.
    Saving the interview requires consent. External AI feedback is optional.
-4. Complete screening, calibration, HR, technical/coding where applicable,
-   behavioral questions, and reflection in one full-screen call with no round list.
-   Join with speech consent, hear each question, and answer aloud. Select **Review
+4. Complete your selected rounds in one call. Join with speech consent. For each
+   spoken prompt, hear the question and answer aloud. Select **Review
    transcript** to finish recording. Check the read-only captions, then send the
    answer or record again. Progress and observations persist.
 5. Resume interviews or open reports from the dashboard. Reports surface feedback
@@ -60,10 +60,16 @@ when the virtual environment is activated; Node dependencies are not required fo
    compact PDF, or opt in to the full transcripts and delivery details before
    printing. You can delete an interview from its report.
 
-Without Groq, the interview still runs using curated prompts and an explicitly
-labeled keyword/length structure indicator. The call asks for spoken technical reasoning,
-including algorithm explanations, without a code editor. Legacy API code execution is
-separately bounded by Judge0; code never executes on the application host.
+The coding editor supports JavaScript and Python. **Run samples** runs the
+examples shown with the prompt. **Submit solution** grades the samples and hidden
+tests using isolated Judge0. Set `JUDGE0_API_URL` for execution and, if required,
+`JUDGE0_API_KEY`. With execution unavailable, the app saves submitted code and
+leaves correctness unscored. Optional Groq code review gives feedback on edge
+cases, complexity, and improvements. Test results determine correctness.
+
+The microphone pauses while candidates code. The consented camera stays connected
+and samples face presence locally. The report shows camera and tab visibility
+observations separately from code scores.
 
 ## Configuration
 
@@ -73,7 +79,7 @@ separately bounded by Judge0; code never executes on the application host.
 | `MONGODB_DATABASE` | Database name, default `interspars` |
 | `JWT_SECRET` | Required random signing secret |
 | `CLIENT_ORIGIN` | Comma-separated allowed browser origins |
-| `GROQ_API_KEY`, `GROQ_MODEL` | Optional evaluation, only for opted-in sessions |
+| `GROQ_API_KEY`, `GROQ_MODEL` | Optional evaluation for opted-in sessions. Defaults to `openai/gpt-oss-20b` when a key is set. |
 | `JUDGE0_API_URL`, `JUDGE0_API_KEY` | Optional isolated execution service and `X-Auth-Token` |
 | `API_PROXY_TARGET` | Optional Vite development proxy override |
 

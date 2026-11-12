@@ -1,9 +1,9 @@
-# Speech-only interview call
+# Interview call and coding observations
 
 The supported `/interview/:sessionId` page fills the viewport with an interviewer
-and local camera view. The call has no round list, written-answer field, code editor,
-or confidence questionnaire. A browser **Full screen** button is available where
-supported; the page already fills the viewport without browser fullscreen permission.
+and local camera view. Spoken prompts use read-only captions. Hands-on coding
+prompts use a JavaScript or Python editor. A browser **Full screen** button is
+available where supported.
 
 ## Candidate journey
 
@@ -25,6 +25,17 @@ Assessment feedback appears only in the report. Device access requires joining a
 after reload. If microphone permission is denied, allow it in the browser’s site
 settings, then select **Start microphone** in the call. Skip and early finish are
 also available. Each recording stops after ten minutes.
+
+## Hands-on coding
+
+The **Practice coding** shortcut opens setup with the coding option selected.
+When a candidate joins, the first two or three exercises use the selected domain.
+The microphone is paused during coding and starts automatically for the next spoken
+prompt. The camera stays connected if enabled. The editor can run the displayed
+samples through Judge0. Submission grades public samples and hidden tests. Optional
+Groq review explains edge cases or improvements. The report saves the code and
+grading summary. Face-presence samples and tab visibility during coding appear with
+the exercise, separate from spoken delivery and correctness.
 
 ## Automatic observations
 
@@ -65,13 +76,12 @@ recognition may send audio to the browser vendor. Online neural voice sends ques
 text to the configured TTS service; browser voice is the default. Local face detection
 loads only when the camera is enabled and does not use an external CDN.
 
-React starts sessions with `response_mode: "voice"`. The API requires a consented,
-nonempty `delivery.transcript` equal to the submitted answer, and rejects written
-replacements/code in those sessions. Browser observations cannot cryptographically
-prove someone spoke. Text-mode API compatibility remains for existing integrations;
-it is not exposed in the interview UI. `POST /api/interview/{id}/voice` upgrades an
-owned older active session, preserving submitted answers and converting remaining
-coding prompts to spoken problems. It is idempotent and uses a version check.
+React starts sessions with `response_mode: "voice"`. For spoken prompts the API
+requires a consented, nonempty `delivery.transcript` equal to the submitted answer.
+Hands-on exercises accept code and optional coding observations. Browser
+observations report what the device measured. Existing text-mode API integrations
+can still submit through the text contract. `POST /api/interview/{id}/voice` upgrades
+owned older active sessions idempotently and uses a version check.
 
 Generation ownership prevents old speech events from affecting a new answer.
 Repeated stop requests share finalization; disconnect cancels queued playback and
