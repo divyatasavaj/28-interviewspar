@@ -12,7 +12,7 @@ const pages = [
   ['PracticeTracksPage', '/practice-tracks'], ['StudentGuidePage', '/student-guide'],
   ['SubscriptionPage', '/pricing'], ['ResourcesPage', '/resources'],
   ['ContactPage', '/contact'], ['Login', '/login'], ['Signup', '/signup'],
-  ['Dashboard', '/dashboard'], ['ResumeIntelligence', '/resume-intelligence'],
+  ['Preparation', '/preparation'], ['Dashboard', '/dashboard'], ['ResumeIntelligence', '/resume-intelligence'],
   ['AccountManagement', '/account'], ['InterviewType', '/interview-type'],
   ['StartInterviewPage', '/interview/start'], ['InterviewPage', '/interview/example'],
   ['InterviewReportPage', '/interview/example/report'], ['InterviewComplete', '/interview-complete'],

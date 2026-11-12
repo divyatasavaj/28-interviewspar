@@ -11,6 +11,7 @@ import {
   getMatchById,
   compareRoleEvidence,
 } from "../api/auth"
+import ResumeChecklist from "../components/ResumeChecklist"
 import DashboardNavbar from "../components/DashboardNavbar"
 
 import {
@@ -913,6 +914,7 @@ export default function ResumeIntelligence() {
             </section>
 
             {/* Area 6: Personalized Recommendations Section */}
+            <ResumeChecklist key={assessment.assessment_id} assessment={assessment} findings={allFindings} practiceLink={practiceLink}/>
             <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm" id="recommendations" aria-label="Personalized Recommendations">
               <div className="pb-6 border-b border-gray-100 mb-6">
                 <h2 className="text-xl font-bold text-gray-900">A plan for your next step</h2>

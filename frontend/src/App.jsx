@@ -10,6 +10,7 @@ import ContactPage from "./pages/ContactPage"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import Dashboard from "./pages/Dashboard"
+import Preparation from "./pages/Preparation"
 import ResumeIntelligence from "./pages/ResumeIntelligence"
 import AccountManagement from "./pages/AccountManagement"
 import InterviewType from "./pages/InterviewType"
@@ -22,6 +23,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/preparation" element={<ProtectedRoute><Preparation /></ProtectedRoute>} />
         <Route path="/" element={<Home />} />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/practice-tracks" element={<PracticeTracksPage />} />

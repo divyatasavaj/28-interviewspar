@@ -4,7 +4,7 @@ import {logout} from '../api/auth';
 import Brand from './Brand';
 import UiIcon from './UiIcon';
 
-const mainLinks=[['Dashboard','/dashboard'],['Resume intelligence','/resume-intelligence'],['Reports','/account?tab=reports']];
+const mainLinks=[['Dashboard','/dashboard'],['Preparation','/preparation'],['Resume intelligence','/resume-intelligence'],['Reports','/account?tab=reports']];
 const accountLinks=[['Personal profile','/account?tab=profile'],['Resume & projects','/account?tab=resume'],['Voice & preferences','/account?tab=preferences']];
 
 export default function DashboardNavbar({name}) {

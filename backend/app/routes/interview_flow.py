@@ -1,6 +1,7 @@
 """Owned, persistent interview API used by the current React application."""
 
 import os
+from copy import deepcopy
 from typing import Literal
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException
@@ -40,6 +41,8 @@ class StartRequest(BaseModel):
     coding_only: bool = False
     focus_topic: str | None = Field(default=None, max_length=80)
     coding_topic: str | None = Field(default=None, max_length=80)
+    retry_session_id: str | None = None
+    retry_question_id: str | None = Field(default=None, max_length=200)
 
 
 class AnswerRequest(BaseModel):
@@ -115,6 +118,20 @@ def start(body: StartRequest, db=Depends(get_db), user=Depends(require_user)):
         coding_only=body.coding_only, focus_topic=body.focus_topic, coding_topic=body.coding_topic,
         history=practice_history(recent_sessions),
     )
+    if body.retry_session_id or body.retry_question_id:
+        if not body.retry_session_id or not body.retry_question_id:
+            raise HTTPException(400, "Select both the saved interview and question")
+        original = owned_session(db, body.retry_session_id, user)
+        if not any(a["question_id"] == body.retry_question_id for a in original["answers"]):
+            raise HTTPException(404, "Answered question not found")
+        question = next((q for q in original["questions"] if q["id"] == body.retry_question_id), None)
+        if not question:
+            raise HTTPException(404, "Question is no longer available")
+        if body.domain != original["domain"] or persona != original["persona"]:
+            raise HTTPException(400, "Use the original question's domain and track")
+        if bool(question.get("hands_on")) != bool(body.coding_only):
+            raise HTTPException(400, "Use the original question's coding or spoken track")
+        questions = [deepcopy(question)]
     session = {
         "user_id": str(user["_id"]),
         "engine_version": 2,
@@ -128,7 +145,7 @@ def start(body: StartRequest, db=Depends(get_db), user=Depends(require_user)):
         "response_mode": body.response_mode,
         "coding_practice": coding,
         "coding_only": body.coding_only,
-        "focus_topic": body.focus_topic,
+        "focus_topic": None if body.retry_question_id else body.focus_topic,
         "questions": [spoken_question(q) if body.response_mode == "voice" else q
                       for q in questions],
         "answers": [],
@@ -148,7 +165,13 @@ def session_summary(session):
     summary = public_session(session)
     for field in ("answers", "current_question", "ability"):
         summary.pop(field, None)
-    summary["overall_score"] = compile_report(session)["overall_score"]
+    report = compile_report(session)
+    summary["overall_score"] = report["overall_score"]
+    summary["answered_count"] = report["answered"]
+    tested = [a["evaluation"]["code_result"] for a in session.get("answers", [])
+              if not a.get("skipped") and (a.get("evaluation", {}).get("code_result") or {}).get("status") == "evaluated"]
+    total = sum(result["total"] for result in tested)
+    summary["coding_score"] = round(100 * sum(result["passed"] for result in tested) / total) if total else None
     return summary
 
 

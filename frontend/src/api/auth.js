@@ -89,3 +89,8 @@ export async function getLatestMatch(mode, target_role_id) {
 export const getMatchById = id => apiRequest(`/resume/analysis/match/${encodeURIComponent(id)}`);
 export const getLatestResumeAnalysis = () => apiRequest("/resume/analysis/latest");
 export const compareRoleEvidence = () => apiRequest("/resume/analysis/role-fit");
+
+export const getPreparation = () => apiRequest("/preparation");
+export const savePreparationPlan = plan => apiRequest("/preparation/plan", {method:"PUT",body:JSON.stringify(plan)});
+export const savePreparationCheck = (key, completed) => apiRequest("/preparation/check", {method:"PUT",body:JSON.stringify({key,completed})});
+export const saveQuestionBookmark = (session_id, question_id, saved) => apiRequest("/preparation/bookmark", {method:"PUT",body:JSON.stringify({session_id,question_id,saved})});

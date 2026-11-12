@@ -14,7 +14,9 @@ const experienceLevels = {
 
 export default function StartInterviewPage() {
   const navigate = useNavigate();
+  const [loadRevision, setLoadRevision] = useState(0);
   const [params] = useSearchParams();
+  const isRetry = Boolean(params.get('retry_question'));
   const requestedDomain = params.get('domain');
   const requestedTopic = params.get('topic');
   const requestedCodingTopic = params.get('skill');
@@ -31,6 +33,7 @@ export default function StartInterviewPage() {
   const [error,setError] = useState('');
   useEffect(() => {
     let alive=true;
+    setError('');
     Promise.all([getMe(),apiRequest('/interview/domains')]).then(([user,data]) => {
       if(alive) {
         const practiceTopics=data.practice_topics || {};
@@ -52,7 +55,7 @@ export default function StartInterviewPage() {
       }
     }).catch(e=>{if(alive)setError(e.message);});
     return ()=>{alive=false;};
-  },[params,requestedDomain,requestedTopic,requestedLevel,requestedCodingTopic]);
+  },[params,requestedDomain,requestedTopic,requestedLevel,requestedCodingTopic,loadRevision]);
   const update=(key,value)=>setSettings(s=>({...s,[key]:value}));
   const canCode = settings.persona === 'technical' && codingDomains.includes(settings.domain);
   const hasCoding = canCode && (settings.coding_only || (settings.coding_practice && !settings.focus_topic));
@@ -66,7 +69,7 @@ export default function StartInterviewPage() {
   }
   async function submit(event) {
     event.preventDefault(); setBusy(true); setError('');
-    try { const session=await startInterview({...settings,coding_practice:hasCoding,coding_topic:codingTopic || null,focus_topic:canFocus ? settings.focus_topic || null : null,response_mode:'voice'}); navigate(`/interview/${session.id}`); }
+    try { const session=await startInterview({...settings,coding_practice:hasCoding,coding_topic:codingTopic || null,focus_topic:canFocus ? settings.focus_topic || null : null,response_mode:'voice',retry_session_id:params.get('retry_session'),retry_question_id:params.get('retry_question')}); navigate(`/interview/${session.id}`); }
     catch(e){setError(e.message);} finally{setBusy(false);}
   }
   const field='mt-2 w-full rounded-xl border border-gray-200 bg-white p-3 text-gray-900';
@@ -77,29 +80,31 @@ export default function StartInterviewPage() {
       <p className="section-kicker mt-7">Set up your practice</p>
       <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight">Set up your interview.</h1>
       <p className="mt-3 mb-8 text-sm text-gray-600 max-w-xl leading-relaxed">Choose your focus and when you’d like feedback. You can start with what you know; a resume is optional.</p>
+      {isRetry && <p className="retry-notice">You’re setting up a single saved question with its original domain and track. <Link className="text-action" to="/interview/start">Start a different interview</Link></p>}
+      {error && !domains.length && <button className="spar-button secondary" onClick={() => setLoadRevision(value => value + 1)}>Retry loading setup</button>}
       <div className="setup-layout">
       <form onSubmit={submit} className="space-y-5 rounded-3xl border border-gray-100 bg-white p-6 sm:p-8 shadow-sm">
         <fieldset className="form-section"><legend>Interview details</legend><p className="form-help">Choose the role and experience you want to practice.</p><div className="form-field-grid">
         {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-red-700">{error}</p>}
         <label className="block text-sm font-medium">Your name<input className={field} autoComplete="name" required maxLength={120} value={settings.name} onChange={e=>update('name',e.target.value)}/></label>
-        <label className="block text-sm font-medium">Target domain<select id="interview-domain" className={field} value={settings.domain} onChange={e=>update('domain',e.target.value)}>{domainChoices.map(d=><option key={d}>{d}</option>)}</select></label>
-        <label className="block text-sm font-medium">Experience level<select id="interview-experience" className={field} value={settings.experience_level} onChange={e=>update('experience_level',e.target.value)}>
+        <label className="block text-sm font-medium">Target domain<select id="interview-domain" disabled={isRetry} className={field} value={settings.domain} onChange={e=>update('domain',e.target.value)}>{domainChoices.map(d=><option key={d}>{d}</option>)}</select></label>
+        <label className="block text-sm font-medium">Experience level<select id="interview-experience" disabled={isRetry} className={field} value={settings.experience_level} onChange={e=>update('experience_level',e.target.value)}>
           {Object.entries(experienceLevels).map(([value,label])=><option key={value} value={value}>{label}</option>)}
         </select></label>
-        <label className="block text-sm font-medium">Interview track<select id="interview-track" className={field} value={settings.coding_only ? 'coding' : settings.persona} onChange={e=>selectTrack(e.target.value)}><option value="technical">Technical + behavioral</option><option value="hr">HR + behavioral</option><option value="coding">Coding only</option></select></label>
+        <label className="block text-sm font-medium">Interview track<select id="interview-track" disabled={isRetry} className={field} value={settings.coding_only ? 'coding' : settings.persona} onChange={e=>selectTrack(e.target.value)}><option value="technical">Technical + behavioral</option><option value="hr">HR + behavioral</option><option value="coding">Coding only</option></select></label>
         </div>
-        {canFocus && <label className="mt-4 block text-sm font-medium">Practice focus<select id="practice-topic" className={field} value={settings.focus_topic} onChange={e=>update('focus_topic',e.target.value)}>
+        {canFocus && <label className="mt-4 block text-sm font-medium">Practice focus<select id="practice-topic" disabled={isRetry} className={field} value={settings.focus_topic} onChange={e=>update('focus_topic',e.target.value)}>
           <option value="">Full technical interview</option>
           {Object.entries(topics).map(([key,topic])=><option key={key} value={key}>{topic.label} · short session</option>)}
         </select></label>}
         {settings.coding_only && <label className="mt-4 block text-sm font-medium">Coding focus
-          <select className={field} value={codingTopic} onChange={event=>update('coding_topic',event.target.value)}>
+          <select disabled={isRetry} className={field} value={codingTopic} onChange={event=>update('coding_topic',event.target.value)}>
             <option value="">Mixed skills</option>
             {eligibleCodingTopics.map(id=><option value={id} key={id}>{topics[id]?.label || id}</option>)}
           </select>
         </label>}
-        {settings.coding_only && !codingTopic && <p className="mt-4 text-sm text-gray-600">Solve {['intern','junior'].includes(settings.experience_level) ? 'two' : 'three'} exercises, then go straight to your report.</p>}
-        {canCode && !settings.coding_only && !settings.focus_topic && <label className="mt-5 flex items-start gap-3 text-xs leading-relaxed text-gray-600">
+        {settings.coding_only && !codingTopic && !isRetry && <p className="mt-4 text-sm text-gray-600">Solve {['intern','junior'].includes(settings.experience_level) ? 'two' : 'three'} exercises, then go straight to your report.</p>}
+        {canCode && !settings.coding_only && !settings.focus_topic && !isRetry && <label className="mt-5 flex items-start gap-3 text-xs leading-relaxed text-gray-600">
           <input id="coding-practice" className="mt-1 size-4 shrink-0" type="checkbox" checked={hasCoding} onChange={e=>update('coding_practice',e.target.checked)}/>
           <span><strong className="mb-1 block text-sm text-gray-900">Start with a hands-on coding round</strong>
           Write JavaScript or Python for {['intern','junior'].includes(settings.experience_level) ? 'two' : 'three'} exercises, then continue to spoken questions. Run samples in the editor and get hidden-test results on submission.</span>

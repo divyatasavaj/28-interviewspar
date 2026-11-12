@@ -16,6 +16,7 @@ from app.routes.resume_assessment import router as assessments
 from app.routes.interview_flow import router as interview
 from app.routes.code import router as code
 from app.routes.tts import router as tts
+from app.routes.preparation import router as preparation
 
 
 @asynccontextmanager
@@ -38,7 +39,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Data-Consent"],
 )
-for router in [auth, resume, assessments, interview, code, tts]:
+for router in [auth, resume, assessments, interview, code, tts, preparation]:
     app.include_router(router, prefix="/api")
 
 # Bounded process-local protection; production ingress should also enforce limits.
