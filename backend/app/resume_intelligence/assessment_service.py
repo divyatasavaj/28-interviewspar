@@ -12,7 +12,7 @@ from .assessment_engine import (
     make_assessment_id,
 )
 from .assessment_errors import AssessmentError
-from .assessment_schemas import AssessmentMode, ResumeAssessment
+from .assessment_schemas import AssessmentMode, MatchStatus, RequirementType, ResumeAssessment
 from .catalog import ResumeIntelligenceCatalog, load_catalog
 from .job_description import hash_job_description
 from .schemas import ResumeAnalysis
@@ -42,7 +42,13 @@ def create_role_assessment(
         )
 
     resume_document, analysis = _latest_resume_analysis(db, user_id)
-    resume_id = str(resume_document["_id"])
+    assessment = _role_assessment(
+        user_id, str(resume_document["_id"]), analysis, role, rubric, active_catalog,
+    )
+    return _persist_assessment(db, user_id, assessment)
+
+
+def _role_assessment(user_id, resume_id, analysis, role, rubric, active_catalog):
     assessment_id = make_assessment_id(
         user_id=user_id,
         resume_id=resume_id,
@@ -52,7 +58,7 @@ def create_role_assessment(
         rubric_version=rubric.version,
         catalog_version=active_catalog.skills_catalog_version,
     )
-    assessment = assess_role(
+    return assess_role(
         analysis,
         role,
         rubric,
@@ -60,7 +66,33 @@ def create_role_assessment(
         resume_id=resume_id,
         assessment_id=assessment_id,
     )
-    return _persist_assessment(db, user_id, assessment)
+
+
+def compare_role_evidence(db: Any, user_id: str):
+    catalog = load_catalog()
+    resume, analysis = _latest_resume_analysis(db, user_id)
+    rows = []
+    for role in catalog.roles.values():
+        rubric = catalog.published_rubric_for_role(role.role_id)
+        if role.status != "active" or rubric is None:
+            continue
+        assessment = _role_assessment(user_id, str(resume["_id"]), analysis, role, rubric, catalog)
+        findings = assessment.matched_requirements + assessment.skill_gaps + assessment.not_evaluated_requirements
+        required = [finding for finding in findings if finding.requirement_type == RequirementType.REQUIRED]
+        demonstrated = [finding.display_name for finding in required if finding.match_status == MatchStatus.DEMONSTRATED]
+        limited = [finding.display_name for finding in required if finding.match_status in (
+            MatchStatus.MENTIONED_ONLY, MatchStatus.WEAK_EVIDENCE,
+        )]
+        missing = [finding.display_name for finding in required if finding.match_status == MatchStatus.NOT_EVIDENCED]
+        rows.append({
+            "role_id": role.role_id, "title": assessment.target_role_title,
+            "required_count": len(required), "demonstrated": demonstrated, "limited_evidence": limited,
+            "missing": missing, "unreviewed_count": len(required) - len(demonstrated) - len(limited) - len(missing),
+        })
+    return sorted(rows, key=lambda row: (
+        -(len(row["demonstrated"]) / max(row["required_count"], 1)),
+        -len(row["demonstrated"]), row["title"],
+    ))
 
 
 def create_job_description_assessment(

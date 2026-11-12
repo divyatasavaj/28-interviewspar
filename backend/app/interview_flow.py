@@ -12,6 +12,7 @@ from pathlib import Path
 from app.fluency import compute_fluency_score
 from app.groq_review import request_review
 from app.coding_practice import practice_exercises
+from app.practice_topics import EXERCISE_TOPICS, TOPICS, select_prompts
 
 BANK = json.loads(
     (Path(__file__).resolve().parents[1] / "data/interview_bank.json").read_text()
@@ -72,7 +73,8 @@ def set_question_depth(question, difficulty):
     question.update(difficulty=difficulty, base_prompt=base, prompt=f"{base} {guidance[difficulty]}")
 
 
-def make_questions(domain, persona, resume=None, experience_level="mid", variant=0, coding_practice=False):
+def make_questions(domain, persona, resume=None, experience_level="mid", variant=0,
+                   coding_practice=False, *, coding_only=False, focus_topic=None, history=None):
     """Use curated prompts and only facts actually extracted from the user's resume."""
     questions = []
 
@@ -89,14 +91,30 @@ def make_questions(domain, persona, resume=None, experience_level="mid", variant
             }
         )
 
-    if persona == "technical" and coding_practice:
-        for exercise in practice_exercises(domain, experience_level, variant):
+    recent, verified = history or (set(), {})
+    difficulty = EXPERIENCE_DIFFICULTY[experience_level]
+    if focus_topic:
+        prompts = TOPICS[focus_topic][3]
+        offset = variant % len(prompts)
+        for prompt in sorted(prompts[offset:] + prompts[:offset], key=lambda text: text in recent):
+            add("technical", prompt, skill_topic=focus_topic)
+            set_question_depth(questions[-1], difficulty)
+        return questions
+
+    if persona == "technical" and (coding_practice or coding_only):
+        exercises = practice_exercises(domain, experience_level, variant)
+        for exercise in sorted(exercises, key=lambda item: (
+            item["id"] in recent,
+            not (verified.get(EXERCISE_TOPICS[item["id"]], 100) < 70),
+        )):
             add(
                 "coding", exercise["description"], problem_id=exercise["id"],
                 title=exercise["title"], starter_code=exercise["starter"],
                 difficulty=exercise["difficulty"], samples=exercise["samples"],
-                hands_on=True,
+                hands_on=True, skill_topic=EXERCISE_TOPICS[exercise["id"]],
             )
+        if coding_only:
+            return questions
 
     for prompt in [
         "What role are you preparing for, and what is your current experience?",
@@ -105,9 +123,10 @@ def make_questions(domain, persona, resume=None, experience_level="mid", variant
         add("screening", prompt)
     bank = BANK["domains"]["HR" if persona == "hr" else domain]
     count = 2 if persona == "hr" else 5
-    prompts = [bank[(variant * count + i) % len(bank)] for i in range(count)]
-    for prompt in prompts[:2]:
-        add("calibration", prompt)
+    prompts = select_prompts(bank, domain if persona == "technical" else "HR",
+                             count, variant, recent, verified)
+    for prompt, skill in prompts[:2]:
+        add("calibration", prompt, skill_topic=skill)
     add(
         "hr",
         "Tell me about a project or responsibility you owned. What did you contribute?",
@@ -134,8 +153,8 @@ def make_questions(domain, persona, resume=None, experience_level="mid", variant
             "Describe a time you learned a new skill. How did you check your understanding?",
         )
     if persona == "technical":
-        for prompt in prompts[2:5]:
-            add("technical", prompt)
+        for prompt, skill in prompts[2:5]:
+            add("technical", prompt, skill_topic=skill)
         if not coding_practice and domain not in ("HR", "Product Management", "System Design"):
             problem = BANK["problems"][variant % len(BANK["problems"])]
             add(
@@ -160,7 +179,7 @@ def make_questions(domain, persona, resume=None, experience_level="mid", variant
     )
     for question in questions:
         if question["round"] in ("calibration", "technical", "behavioral"):
-            set_question_depth(question, EXPERIENCE_DIFFICULTY[experience_level])
+            set_question_depth(question, difficulty)
     return questions
 
 
@@ -319,6 +338,8 @@ def public_session(session):
         "experience_level": session.get("experience_level", "mid"),
         "response_mode": session.get("response_mode", "text"),
         "coding_practice": session.get("coding_practice", False),
+        "coding_only": session.get("coding_only", False),
+        "focus_topic": session.get("focus_topic"),
         "status": session["status"],
         "version": session["version"],
         "current_round": current["round"] if current else "completed",
@@ -385,6 +406,12 @@ def compile_report(session):
     return {
         "session_id": str(session["_id"]),
         "status": session["status"],
+        "domain": session["domain"],
+        "experience_level": session.get("experience_level", "mid"),
+        "interview_type": session["persona"],
+        "coding_only": session.get("coding_only", False),
+        "coding_practice": session.get("coding_practice", False),
+        "focus_topic": session.get("focus_topic"),
         "overall_score": round(sum(scored) / len(scored)) if scored else None,
         "score_label": "Answer structure indicator",
         "score_note": "A keyword and length heuristic, not verified understanding, spoken fluency, or a hiring score. It can miss valid wording or reward irrelevant keywords. Technical correctness is separate and shown only when evaluated; AI judgments can be wrong.",

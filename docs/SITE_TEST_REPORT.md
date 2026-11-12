@@ -5,6 +5,27 @@ Tests use synthetic accounts and resumes in a unique disposable database. Existi
 application records and browser profiles are not used. No dependencies were installed
 for this pass.
 
+## Targeted interview and resume practice — 12 November 2026
+
+The workspace now offers coding-only, technical, and HR entry points. Coding
+uses desktop panels and mobile tabs. The current draft and language survive a
+reload in the same tab. The interview lobby supports an optional camera preview
+and a microphone access check for spoken sessions.
+
+Role fit compares required evidence across the five published rubrics. Browser
+verification covers a resume upload, opening a role, launching focused practice
+from a gap, and using the report to retry that topic. Backend regressions cover
+fresh prompts, graded coding adaptation, one optional AI follow-up, and
+authenticated role comparison. A live Groq request returned a valid follow-up
+for a synthetic technical answer.
+
+All 169 backend, 48 frontend, and 3 ML tests passed. The build and lint passed
+with existing warnings. The targeted Chrome journey passed 28 checks, including
+the combined coding-to-speech handoff and mobile role comparison. The full
+regression passed 144 Chrome and 37 live API checks. Disposable databases were
+removed. Browser test grading used a local Judge0 response fixture. Live scoring
+requires `JUDGE0_API_URL`.
+
 ## Hands-on coding rounds — 12 November 2026
 
 The dashboard opens an opt-in coding round with two or three exercises drawn

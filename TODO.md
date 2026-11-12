@@ -1,5 +1,16 @@
 # InterviewSpar repair checklist — branch b3
 
+## Targeted interview and resume practice
+
+- [x] T47: Streamline dashboard, coding workspace, and feedback reports.
+- [x] T48: Add coding-only sessions, device checks, and draft recovery.
+- [x] T49: Select skill-focused questions from practice history and generate bounded AI follow-ups.
+- [x] T50: Compare role evidence and link resume gaps to focused practice.
+- [x] T51: Verify and publish the complete flow on b3.
+
+220 automated tests, 37 live API checks, and 172 Chrome checks passed. See
+[the verification report](docs/SITE_TEST_REPORT.md).
+
 ## Hands-on coding rounds
 
 - [x] T44: Add domain exercises, sample runs, isolated hidden grading, and optional AI code review.

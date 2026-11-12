@@ -1,8 +1,10 @@
+import {clearAllCodeDrafts} from '../utils/codeDraft.js';
+
 const API = "/api";
 const TOKEN_KEY = "interviewspar_token";
 export function getToken() { return localStorage.getItem(TOKEN_KEY); }
 export function setToken(token) { localStorage.setItem(TOKEN_KEY, token); }
-export function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+export function clearToken() { localStorage.removeItem(TOKEN_KEY); clearAllCodeDrafts(); }
 export function errorMessage(data, fallback = "Request failed") {
   const detail = data?.detail ?? data?.error;
   if (typeof detail === "string") return detail;
@@ -86,3 +88,4 @@ export async function getLatestMatch(mode, target_role_id) {
 }
 export const getMatchById = id => apiRequest(`/resume/analysis/match/${encodeURIComponent(id)}`);
 export const getLatestResumeAnalysis = () => apiRequest("/resume/analysis/latest");
+export const compareRoleEvidence = () => apiRequest("/resume/analysis/role-fit");

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from pymongo.database import Database
 
 from app.database import get_db
+from app.practice_topics import SKILL_TOPICS, public_topics
 from app.resume_intelligence.assessment_errors import AssessmentError
 from app.resume_intelligence.assessment_schemas import (
     AssessmentMode,
@@ -13,6 +14,7 @@ from app.resume_intelligence.assessment_schemas import (
     RoleAssessmentRequest,
 )
 from app.resume_intelligence.assessment_service import (
+    compare_role_evidence,
     create_job_description_assessment,
     create_role_assessment,
     get_assessment,
@@ -29,6 +31,14 @@ def _assessment_http_error(exc: AssessmentError) -> HTTPException:
         status_code=exc.status_code,
         detail={"code": exc.code, "message": exc.message},
     )
+
+
+@router.get("/role-fit")
+def role_fit(db=Depends(get_db), user_id: str = Depends(require_token)):
+    try:
+        return {"roles": compare_role_evidence(db, user_id), "topics": public_topics(), "skill_topics": SKILL_TOPICS}
+    except AssessmentError as exc:
+        raise _assessment_http_error(exc) from exc
 
 
 @router.post(

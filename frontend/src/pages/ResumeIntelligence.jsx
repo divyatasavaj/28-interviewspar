@@ -9,6 +9,7 @@ import {
   createJobDescriptionMatch,
   getLatestMatch,
   getMatchById,
+  compareRoleEvidence,
 } from "../api/auth"
 import DashboardNavbar from "../components/DashboardNavbar"
 
@@ -18,6 +19,14 @@ import {
   RECOMMENDATION_GROUP_CONFIG,
   mapRoleToCanonicalId,
 } from "../utils/resumeIntelligence"
+
+const roleDomains = {
+  "software-engineer-sde": "Software Engineering",
+  "frontend-developer": "Frontend",
+  "backend-developer": "Backend",
+  "data-analyst": "Data Science",
+  "machine-learning-engineer": "ML Engineering",
+}
 
 export default function ResumeIntelligence() {
   const navigate = useNavigate()
@@ -46,6 +55,8 @@ export default function ResumeIntelligence() {
   const [expandedSnippetId, setExpandedSnippetId] = useState(null)
   const [previousAssessment, setPreviousAssessment] = useState(null)
   const [showLimitations, setShowLimitations] = useState(false)
+  const [roleFit, setRoleFit] = useState(null)
+  const [roleFitError, setRoleFitError] = useState("")
 
   // Load user
   useEffect(() => {
@@ -66,8 +77,8 @@ export default function ResumeIntelligence() {
 
     setResumeState((prev) => ({ ...prev, loading: true }))
 
-    Promise.allSettled([getLatestResume(), getLatestResumeAnalysis(), getLatestMatch()])
-      .then(([resResult, analysisResult, matchResult]) => {
+    Promise.allSettled([getLatestResume(), getLatestResumeAnalysis(), getLatestMatch(), compareRoleEvidence()])
+      .then(([resResult, analysisResult, matchResult, fitResult]) => {
         const hasResume = resResult.status === "fulfilled" && !!resResult.value
         const resumeDoc = hasResume ? resResult.value : null
         let analysis = null
@@ -93,6 +104,8 @@ export default function ResumeIntelligence() {
           isOcrRequired: isOcr,
           error: resResult.status === "rejected" && resResult.reason?.status !== 404 ? resResult.reason.message : null,
         })
+        if (fitResult.status === "fulfilled") setRoleFit(fitResult.value)
+        else if (hasResume) setRoleFitError(fitResult.reason.message)
 
         if (matchResult.status === "rejected") setAssessmentError(matchResult.reason.message)
         if (matchResult.status === "fulfilled" && matchResult.value) {
@@ -119,13 +132,16 @@ export default function ResumeIntelligence() {
   }, [user])
 
   // Submit Role Assessment
-  async function handleAnalyzeRole() {
+  async function handleAnalyzeRole(roleId = selectedRoleId) {
     if (submitting || !resumeState.hasResume || resumeState.isOcrRequired) return
     setSubmitting(true)
     setAssessmentError(null)
+    setActiveMode("role")
+    setSelectedRoleId(roleId)
+    setActiveFilter("all")
 
     try {
-      const result = await createRoleMatch(selectedRoleId)
+      const result = await createRoleMatch(roleId)
       setAssessment(result)
       setPreviousAssessment(result)
     } catch (err) {
@@ -211,6 +227,13 @@ export default function ResumeIntelligence() {
     return finding.match_status === activeFilter
   })
 
+  function practiceLink(finding) {
+    const ids = [finding.canonical_skill_id, ...(finding.skill_ids || [])].filter(Boolean)
+    const topic = ids.map(id => roleFit?.skill_topics[id]).find(Boolean)
+    const domain = roleDomains[assessment?.target_role_id] || roleFit?.topics[topic]?.domain
+    return topic && domain ? `/interview/start?${new URLSearchParams({topic,domain})}` : null
+  }
+
   // Format date helper
   function formatIsoDate(iso) {
     if (!iso) return "Recent"
@@ -275,7 +298,7 @@ export default function ResumeIntelligence() {
           </div>
         </header>
 
-        <nav className="page-tabs" aria-label="Resume sections"><a href="#resume-status">Your resume</a><a href="#assessment-controls">Compare requirements</a>{assessment && <><a href="#assessment-summary">Overview</a><a href="#skill-evidence">Skill evidence</a><a href="#recommendations">Next steps</a></>}</nav>
+        <nav className="page-tabs" aria-label="Resume sections"><a href="#resume-status">Your resume</a>{roleFit && <a href="#role-fit">Role fit</a>}<a href="#assessment-controls">Compare requirements</a>{assessment && <><a href="#assessment-summary">Overview</a><a href="#skill-evidence">Skill evidence</a><a href="#recommendations">Next steps</a></>}</nav>
         {/* Area 2: Resume Status & Selection Banner */}
         <section className="mb-8" id="resume-status" aria-label="Resume Status">
           {resumeState.loading ? (
@@ -385,6 +408,25 @@ export default function ResumeIntelligence() {
           )}
         </section>
 
+        {roleFitError && <p className="mb-6 rounded-xl bg-amber-50 p-4 text-sm text-amber-900" role="status">{roleFitError}</p>}
+        {roleFit?.roles.length > 0 && <section id="role-fit" className="mb-8 rounded-3xl border border-gray-100 bg-white p-6 sm:p-8">
+          <h2 className="text-xl font-bold">Compare role fit</h2>
+          <p className="mt-2 text-sm text-gray-600">Compare the required skills demonstrated by your resume against the available role rubrics.</p>
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {roleFit.roles.map(role => <article key={role.role_id} className="flex flex-col gap-2 rounded-2xl border border-gray-200 bg-[#f8fbfd] p-4">
+              <h3 className="font-semibold">{role.title}</h3>
+              <p className="text-sm font-medium text-primary">{role.demonstrated.length} of {role.required_count} required skills demonstrated</p>
+              {role.demonstrated.length > 0 && <p className="text-xs text-gray-600">Demonstrated · {role.demonstrated.slice(0, 3).join(", ")}</p>}
+              <p className="text-xs text-gray-600">{role.limited_evidence.length} with limited evidence · {role.missing.length} missing from resume{role.unreviewed_count > 0 && ` · ${role.unreviewed_count} unreviewed`}</p>
+              <button type="button" className="mt-auto self-start text-sm font-semibold text-primary underline" disabled={submitting}
+                onClick={() => {
+                  void handleAnalyzeRole(role.role_id)
+                  document.getElementById("assessment-controls")?.scrollIntoView({block:"start"})
+                }}>Review {role.title}</button>
+            </article>)}
+          </div>
+        </section>}
+
         {/* Area 3: Assessment Mode Selection & Controls */}
         <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm mb-10" id="assessment-controls" aria-label="Assessment Controls">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-100 mb-6">
@@ -468,7 +510,7 @@ export default function ResumeIntelligence() {
                 </p>
                 <button
                   type="button"
-                  onClick={handleAnalyzeRole}
+                  onClick={() => handleAnalyzeRole()}
                   disabled={submitting || !resumeState.hasResume || resumeState.isOcrRequired}
                   className="bg-primary hover:bg-[#075985] text-white font-semibold text-xs px-6 py-3 rounded-full transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 hover:-translate-y-0.5"
                 >
@@ -745,6 +787,8 @@ export default function ResumeIntelligence() {
                   {filteredFindings.map((finding) => {
                     const statusConfig = FINDING_STATUS_CONFIG[finding.match_status] || FINDING_STATUS_CONFIG.not_evaluated
                     const isExpanded = expandedSnippetId === finding.requirement_id
+                    const isGap = ["mentioned_only", "weak_evidence", "not_evidenced"].includes(finding.match_status)
+                    const targetedPractice = isGap ? practiceLink(finding) : null
 
                     return (
                       <div
@@ -776,6 +820,8 @@ export default function ResumeIntelligence() {
                         <p className="text-xs text-gray-600 mt-2 leading-relaxed">
                           {finding.explanation}
                         </p>
+                        {finding.evidence?.snippet && <a className="mt-2 inline-block text-xs font-semibold text-primary underline"
+                          href={`#resume-excerpt-${finding.requirement_id}`}>See supporting resume excerpt</a>}
 
                         {/* Evidence & Snippet */}
                         {finding.evidence && (
@@ -789,7 +835,7 @@ export default function ResumeIntelligence() {
                             </div>
 
                             {finding.evidence.snippet && (
-                              <div className="mt-1 bg-white p-3 rounded-xl border border-gray-100 text-xs text-gray-700 font-mono">
+                              <div id={`resume-excerpt-${finding.requirement_id}`} className="mt-1 scroll-mt-28 bg-white p-3 rounded-xl border border-gray-100 text-xs text-gray-700 font-mono">
                                 <span className="text-gray-400 select-none">Excerpt: </span>
                                 {isExpanded ? (
                                   <span>{finding.evidence.snippet}</span>
@@ -820,6 +866,10 @@ export default function ResumeIntelligence() {
                             <span>{finding.suggested_next_action}</span>
                           </div>
                         )}
+                        {isGap && <div className="mt-3 flex flex-wrap gap-3">
+                          <Link className="text-xs font-semibold text-primary underline" to="/account?tab=resume">Improve resume evidence</Link>
+                          {targetedPractice && <Link className="text-xs font-semibold text-primary underline" to={targetedPractice}>Practice this gap</Link>}
+                        </div>}
                       </div>
                     )
                   })}

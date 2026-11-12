@@ -78,6 +78,49 @@ class Collection:
 
 
 class InterviewApiTests(unittest.TestCase):
+    def test_coding_only_completes_without_speech(self):
+        session = self.start(domain="Frontend", experience_level="junior", coding_only=True, response_mode="voice")
+        self.assertEqual(session["progress"]["total"], 2)
+        for _ in range(2):
+            self.assertTrue(session["current_question"]["hands_on"])
+            result, _ = self.submit(session, answer="", code="function solve(){ return []; }")
+            self.assertEqual(result.status_code, 200, result.text)
+            session = result.json()
+        self.assertEqual(session["status"], "completed")
+        report = self.client.get(f'/api/interview/{session["id"]}/feedback', headers=self.headers).json()
+        self.assertTrue(report["coding_only"])
+        self.assertEqual(report["answered"], 2)
+        self.assertIsNone(report["delivery_summary"])
+
+    def test_focused_practice_preserves_topic_and_uses_one_opted_in_followup(self):
+        session = self.start(domain="Backend", focus_topic="rest-apis", allow_ai=True)
+        self.assertEqual(session["progress"]["total"], 3)
+        self.assertEqual(session["current_question"]["skill_topic"], "rest-apis")
+        with patch.dict(os.environ, {"GROQ_API_KEY": "synthetic"}), patch(
+            "app.interview_flow.request_review", return_value={"correctness_score": 72}
+        ), patch("app.practice_topics.request_review", return_value={
+            "question": "How would you handle a retry after the database committed the original request?"
+        }) as followup:
+            session = self.submit(session)[0].json()
+            self.assertEqual(session["current_question"]["source"], "ai-follow-up")
+            self.assertEqual(session["progress"]["total"], 4)
+            session = self.submit(session)[0].json()
+            self.assertNotEqual(session["current_question"].get("source"), "ai-follow-up")
+            followup.assert_called_once()
+        self.assertEqual(session["answers"][0]["skill_topic"], "rest-apis")
+
+    def test_recent_graded_skill_can_prioritize_fresh_exercises(self):
+        session = self.start(domain="Backend", coding_only=True, response_mode="voice")
+        first = session["current_question"]
+        self.assertEqual(first["problem_id"], "backend-rate")
+        with patch("app.routes.interview_flow.evaluate_code", return_value={
+            "source": "isolated-code-tests", "correctness_score": 90, "communication_score": None,
+        }):
+            session = self.submit(session, answer="", code="function solve(){ return 0; }")[0].json()
+        self.assertEqual(session["current_question"]["difficulty"], "hard")
+        next_session = self.start(domain="Backend", coding_only=True, response_mode="voice")
+        self.assertNotEqual(next_session["current_question"]["problem_id"], first["problem_id"])
+
     def test_all_supported_domains_have_three_distinct_domain_exercises(self):
         for domain in CODING_DOMAINS:
             with self.subTest(domain=domain):

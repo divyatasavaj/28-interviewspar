@@ -91,6 +91,10 @@ Opting into `coding_practice` starts an eligible technical session with two doma
 exercises at intern/junior level or three at other levels. Each exercise has
 `hands_on: true`, a `problem_id`, language starters, and public `samples`.
 The remaining questions use the existing spoken answer contract.
+Set `coding_only: true` to finish after the coding exercises. Alternatively, set
+`focus_topic` to a key from `GET /api/interview/domains` → `practice_topics` to
+request three curated spoken prompts. Opted-in technical practice can add one
+AI follow-up. A provider failure keeps the curated plan.
 `POST /api/interview/{id}/voice` upgrades owned active older sessions
 idempotently, preserving saved answers and converting pending coding prompts.
 An actual upgrade increments the session revision; concurrent changes are checked.
@@ -121,6 +125,13 @@ code (50,000 characters) with an explanation, or an explicit skip. The request I
 A stale revision/question returns 409 and the client reloads session state.
 Concurrent requests may both call an external evaluator, but only one can advance
 the stored revision. There is no paid/billing guarantee tied to evaluation count.
+
+`GET /api/resume/analysis/role-fit` compares the authenticated user's latest
+structured resume against published role rubrics. It returns counts and names of
+demonstrated, limited, missing, and unreviewed required evidence. It also returns
+the mapping from recognized skills to supported practice topics. The comparison
+is based on resume evidence and creates no stored assessment. Individual role
+and job-description reviews still use the existing match endpoints.
 
 Reports expose `overall_score`, `score_label`, `score_note`, `round_scores`,
 `qa_pairs`, `strengths`, `weaknesses`, `suggested_improvements`, and answer/skip

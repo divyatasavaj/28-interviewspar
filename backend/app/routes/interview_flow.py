@@ -1,5 +1,6 @@
 """Owned, persistent interview API used by the current React application."""
 
+import os
 from typing import Literal
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException
@@ -20,6 +21,7 @@ from app.interview_flow import (
 from app.safe_execution import execution_endpoint, run_problem
 from app.coding_practice import CODING_DOMAINS, evaluate_code
 from app.delivery import CodingObservation, DeliveryObservation, coding_feedback, delivery_feedback
+from app.practice_topics import TOPICS, followup_prompt, practice_history, public_topics
 
 router = APIRouter(prefix="/interview", tags=["interview"])
 
@@ -35,6 +37,8 @@ class StartRequest(BaseModel):
     allow_ai: bool = False
     response_mode: Literal["text", "voice"] = "text"
     coding_practice: bool = False
+    coding_only: bool = False
+    focus_topic: str | None = Field(default=None, max_length=80)
 
 
 class AnswerRequest(BaseModel):
@@ -67,6 +71,7 @@ def domains():
     return {
         "domains": DOMAINS, "coding_domains": CODING_DOMAINS,
         "coding_runner_configured": bool(execution_endpoint()),
+        "practice_topics": public_topics(),
     }
 
 
@@ -80,19 +85,27 @@ def start(body: StartRequest, db=Depends(get_db), user=Depends(require_user)):
     if body.domain not in DOMAINS:
         raise HTTPException(400, "Unsupported domain")
     persona = "technical" if body.persona == "tech" else body.persona
-    if body.coding_practice and (persona != "technical" or body.domain not in CODING_DOMAINS):
+    coding = body.coding_practice or body.coding_only
+    if coding and (persona != "technical" or body.domain not in CODING_DOMAINS):
         raise HTTPException(400, "Hands-on coding is unavailable for this track and domain.")
-    resume = next(
+    if body.focus_topic and (
+        body.focus_topic not in TOPICS or persona != "technical" or coding
+        or body.domain in ("HR", "Product Management")
+    ):
+        raise HTTPException(400, "Choose a supported skill for a focused technical session.")
+    resume = None if body.coding_only or body.focus_topic else next(
         iter(db.resumes.find({"user_id": str(user["_id"])}).sort("_id", -1).limit(1)),
         None,
     )
-    previous = next(iter(db.interview_sessions.find({
+    recent_sessions = list(db.interview_sessions.find({
         "user_id": str(user["_id"]), "engine_version": 2,
         "domain": body.domain, "persona": persona,
-    }).sort("_id", -1).limit(1)), None)
+    }).sort("_id", -1).limit(5))
+    previous = recent_sessions[0] if recent_sessions else None
     variant = previous.get("question_variant", 0) + 1 if previous else 0
     questions = make_questions(
-        body.domain, persona, resume, body.experience_level, variant, body.coding_practice
+        body.domain, persona, resume, body.experience_level, variant, coding,
+        coding_only=body.coding_only, focus_topic=body.focus_topic, history=practice_history(recent_sessions),
     )
     session = {
         "user_id": str(user["_id"]),
@@ -105,7 +118,9 @@ def start(body: StartRequest, db=Depends(get_db), user=Depends(require_user)):
         "persona": persona,
         "mode": body.mode,
         "response_mode": body.response_mode,
-        "coding_practice": body.coding_practice,
+        "coding_practice": coding,
+        "coding_only": body.coding_only,
+        "focus_topic": body.focus_topic,
         "questions": [spoken_question(q) if body.response_mode == "voice" else q
                       for q in questions],
         "answers": [],
@@ -226,6 +241,7 @@ def answer(body: AnswerRequest, db=Depends(get_db), user=Depends(require_user)):
         "question": question["prompt"],
         "round": question["round"],
         "hands_on": hands_on,
+        "skill_topic": question.get("skill_topic"),
         "answer": body.answer.strip() if not body.skipped else "",
         "code": body.code if not body.skipped else "",
         "language": body.language,
@@ -252,9 +268,32 @@ def answer(body: AnswerRequest, db=Depends(get_db), user=Depends(require_user)):
     if session["index"] == len(session["questions"]):
         session.update(status="completed", completed_at=now())
     else:
+        remaining = session["questions"]
+        index = session["index"]
+        verified_score = evaluation["correctness_score"] if evaluation["source"] == "isolated-code-tests" else None
+        if hands_on and verified_score is not None and remaining[index].get("hands_on"):
+            options = [i for i in range(index, len(remaining)) if remaining[i].get("hands_on")]
+            difficulty_order = {"easy": 0, "medium": 1, "hard": 2}
+            choose = max if verified_score >= 80 else min
+            if verified_score >= 80 or verified_score < 60:
+                selected = choose(options, key=lambda i: difficulty_order[remaining[i]["difficulty"]])
+                remaining[index], remaining[selected] = remaining[selected], remaining[index]
+        if (
+            not body.skipped and question["round"] == "technical" and session["mode"] == "practice"
+            and session.get("allow_ai") and os.getenv("GROQ_API_KEY") and not session.get("followup_attempted")
+            and question.get("evaluation_kind") == "technical"
+        ):
+            session["followup_attempted"] = True
+            generated = followup_prompt(question["prompt"], body.answer.strip())
+            if generated and all(generated.casefold() != item["prompt"].casefold() for item in remaining):
+                remaining.insert(index, {
+                    "id": "technical-followup", "round": "technical", "type": "text",
+                    "prompt": generated, "evaluation_kind": "technical", "source": "ai-follow-up",
+                    "difficulty": question["difficulty"], "skill_topic": question.get("skill_topic"),
+                })
         next_q = session["questions"][session["index"]]
         estimate = session["ability"].get(next_q["round"])
-        if next_q["round"] == "technical" and estimate is not None:
+        if next_q["round"] == "technical" and next_q.get("source") != "ai-follow-up" and estimate is not None:
             if estimate >= 0.7:
                 set_question_depth(next_q, "hard")
             elif estimate < 0.4:

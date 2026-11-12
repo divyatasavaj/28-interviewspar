@@ -3,6 +3,7 @@ import {Link,useNavigate,useParams} from 'react-router-dom';
 import {apiRequest,answerInterview} from '../api/auth';
 import {useInterviewCall} from '../hooks/useInterviewCall';
 import CallRoom from '../components/interview/CallRoom';
+import {clearCodeDraft} from '../utils/codeDraft';
 
 export default function InterviewPage(){
   const {sessionId}=useParams(); const navigate=useNavigate();
@@ -12,11 +13,14 @@ export default function InterviewPage(){
   const call=useInterviewCall(question,()=>{requestId.current=null;});
   useEffect(()=>{
     let alive=true; setSession(null);
-    apiRequest(`/interview/${sessionId}/voice`,{method:'POST'}).then(s=>{if(alive)setSession(s);}).catch(e=>{if(alive)setError(e.message);});
+    apiRequest(`/interview/${sessionId}/voice`,{method:'POST'}).then(s=>{
+      if(s.status==='completed')clearCodeDraft(sessionId);
+      if(alive)setSession(s);
+    }).catch(e=>{if(alive)setError(e.message);});
     return()=>{alive=false;};
   },[sessionId]);
   useEffect(()=>{started.current=Date.now();requestId.current=null;},[sessionId,question?.id]);
-  function accept(next){setSession(next);requestId.current=null;if(next.status==='completed')navigate(`/interview/${sessionId}/report`,{replace:true});}
+  function accept(next){clearCodeDraft(sessionId);setSession(next);requestId.current=null;if(next.status==='completed')navigate(`/interview/${sessionId}/report`,{replace:true});}
   async function submit(skipped=false, solution=null){
     if(gate.current)return; gate.current=true; setBusy(true); setError('');
     try{
@@ -39,7 +43,7 @@ export default function InterviewPage(){
   if(!session)return <main className="call-loading"><Link to="/dashboard">← Dashboard</Link><p role="status">{error || 'Preparing your interview call…'}</p></main>;
   if(!question)return <main className="call-loading"><Link to={`/interview/${sessionId}/report`}>View completed interview report →</Link></main>;
   const last=session.answers?.at(-1);
-  return <CallRoom call={call} question={question} sessionId={sessionId} hasCoding={session.coding_practice} busy={busy} error={error}
+  return <CallRoom call={call} question={question} sessionId={sessionId} hasCoding={session.coding_practice} codingOnly={session.coding_only} busy={busy} error={error}
     progress={session.progress} onSubmit={()=>submit()} onSkip={()=>submit(true)} onFinish={finish}
     onCodeChange={()=>{requestId.current=null;}} onCodeSubmit={solution=>submit(false,solution)}
     feedback={session.mode==='practice' && last && !last.skipped ? last.evaluation : null}/>;

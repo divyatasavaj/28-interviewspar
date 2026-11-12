@@ -146,7 +146,7 @@ async function checkWorkspaceOrganization() {
 }
 async function checkCodingRound() {
   await click('#practice a', 'Practice coding');
-  await waitFor('document.querySelector("#coding-practice")?.checked', 'coding setup');
+  await waitFor('document.querySelector("#interview-track")?.value==="coding" && document.querySelectorAll("#interview-domain option").length>4', 'coding-only setup');
   await select('#interview-domain', 'Frontend');
   await select('#interview-experience', 'junior');
   await click('#interview-save-consent');
@@ -155,7 +155,10 @@ async function checkCodingRound() {
   await click('button', 'Start interview');
   await waitFor(hasText('Class list builder'), 'first frontend exercise');
   await evaluate(installCallMedia());
-  await click('input[aria-label="Speech recognition consent"]');
+  await click('button', 'Preview camera');
+  await waitFor('document.querySelector("video").srcObject?.active', 'preflight camera');
+  check('Coding-only lobby previews camera without a microphone check', await evaluate('!!document.querySelector(".call-stage--preview") && !document.body.textContent.includes("Check microphone")'));
+  await click('input[aria-label="Coding observations consent"]');
   await click('button', 'Join interview');
   await waitFor('document.querySelector(".call-room--coding textarea")', 'coding editor');
   await waitFor('document.querySelector("video").srcObject?.active && document.querySelector("video").videoWidth>0', 'live coding camera');
@@ -163,6 +166,13 @@ async function checkCodingRound() {
   await fill('#solution-code', 'function solve(classes) { return []; }');
   await select('[aria-label="Code language"]', 'python');
   await fill('#solution-code', 'def solve(classes): return []');
+  await command('Page.reload');
+  await waitFor('!window.__callTest && document.querySelector(".call-join")', 'reopened coding exercise');
+  await evaluate(installCallMedia());
+  await click('input[aria-label="Coding observations consent"]');
+  await click('button', 'Join interview');
+  await waitFor('document.querySelector("#solution-code")?.value==="def solve(classes): return []"', 'restored coding draft');
+  check('Reload restores the code and selected language', await evaluate('document.querySelector(".coding-language select").value==="python"'));
   await select('[aria-label="Code language"]', 'javascript');
   check('Editor retains each language draft', await evaluate('document.querySelector("#solution-code").value==="function solve(classes) { return []; }"'));
   await click('button', 'Run samples');
@@ -173,6 +183,9 @@ async function checkCodingRound() {
   await screenshot('coding-desktop');
   await viewport(390,844);
   await layout('mobile coding editor');
+  await click('.coding-tabs button', 'Problem');
+  check('Mobile workspace switches between problem, editor, and tests', await evaluate('document.querySelector(".coding-editor").dataset.panel==="problem"'));
+  await click('.coding-tabs button', 'Tests');
   await screenshot('coding-mobile');
   await viewport(1440);
   await click('.call-observations summary');
@@ -182,17 +195,76 @@ async function checkCodingRound() {
   await waitFor(hasText('Search suggestions'), 'next frontend exercise');
   check('Submitting moves to the next domain exercise with the same camera', await evaluate('window.__callTest.starts===0 && document.querySelector("video").srcObject?.active'));
   await click('button', 'Skip exercise');
-  await waitFor('window.__callTest.starts===1 && document.querySelector(".call-avatar-listening")', 'spoken round after coding');
-  check('Speech starts after coding and the editor leaves the call', await evaluate('!document.querySelector("textarea") && document.querySelector("video").srcObject?.active'));
-  await click('button', 'End interview');
-  await waitFor(hasText('Your interview feedback'), 'coding report');
+  await waitFor(hasText('Your interview feedback'), 'coding-only report');
+  check('Coding-only finishes directly and clears the saved draft', await evaluate(`location.pathname.endsWith('/report') && window.__callTest.starts===0 && ${hasText('Coding test results')} && !Object.keys(sessionStorage).some(key=>key.startsWith('interviewspar-code-draft:'))`));
   check('Report overview links to the submitted exercise', await evaluate('document.querySelector("#report-overview a")?.hash==="#answer-1"'));
   await click('#answer-1 summary');
   check('Report retains code, grading, and coding observations', await evaluate(`${hasText('JavaScript solution')} && ${hasText('Face present in camera samples')} && ${hasText(mock ? 'Hidden tests 1/3' : 'Code execution is not configured')}`));
   if (liveReview) check('Opted-in coding report includes live Groq review', await evaluate('!!document.querySelector(".coding-report strong")'));
+  check('Practice this again links to coding-only setup', await evaluate('Array.from(document.querySelectorAll("#report-overview a")).some(link=>new URL(link.href).searchParams.get("track")==="coding")'));
   await screenshot('coding-report');
   await click('button', 'Delete this interview');
   await waitFor('location.pathname==="/dashboard"', 'coding report deletion');
+}
+async function checkRolePractice() {
+  await goto('/account?tab=resume',hasText('Resume Upload & Parser'));
+  const document = await command('DOM.getDocument');
+  const input = await command('DOM.querySelector',{nodeId:document.root.nodeId,selector:'input[type="file"]'});
+  await command('DOM.setFileInputFiles',{nodeId:input.nodeId,files:[resolve(fixture)]});
+  await click('input[type="checkbox"]');
+  await click('button','Parse synthetic.pdf');
+  await waitFor(hasText('Extracted Background Profile'),'role-fit resume');
+  await goto('/resume-intelligence',hasText('Compare role fit'));
+  check('Role fit compares demonstrated and missing requirements for each available role',
+    await evaluate('document.querySelectorAll("#role-fit article").length===5'));
+  await viewport(390,844);
+  await layout('mobile role comparison');
+  await screenshot('role-fit-mobile');
+  await viewport(1440);
+  await click('#role-fit button','Review Backend Developer');
+  await waitFor('!!document.querySelector("#skill-evidence a[href*=topic]")','resume gap link');
+  await layout('desktop role evidence');
+  await click('#skill-evidence a','Practice this gap');
+  await waitFor('document.querySelector("#practice-topic")?.value', 'prefilled practice skill');
+  const topic = await evaluate('document.querySelector("#practice-topic").value');
+  check('Resume gap opens a preselected practice topic', Boolean(topic));
+  await click('#interview-save-consent');
+  await click('button','Start interview');
+  await waitFor(hasText('Question 1 of 3'),'focused practice call');
+  await evaluate(installCallMedia());
+  await click('button','Check microphone');
+  await waitFor(hasText('Microphone access confirmed'),'microphone check');
+  check('Spoken preflight releases its microphone stream', await evaluate('window.__callTest.streams.every(stream=>stream.getTracks().every(track=>track.readyState==="ended"))'));
+  await click('input[aria-label="Speech recognition consent"]');
+  await click('button','Join interview');
+  await waitFor('document.querySelector(".call-avatar-listening")','focused spoken question');
+  await evaluate("window.__callTest.emit('I would explain the trade-off and give one example of its result.')");
+  await click('button','Review transcript');
+  await click('button','Send spoken answer');
+  await waitFor(hasText('Question 2 of 3'),'focused practice advancement');
+  await click('button','End interview');
+  await waitFor(hasText('Your interview feedback'),'focused practice report');
+  check('Focused practice report links back to the same topic', await evaluate(`Array.from(document.querySelectorAll('#report-overview a')).some(link=>new URL(link.href).searchParams.get('topic')===${JSON.stringify(topic)})`));
+}
+async function checkCombinedPractice() {
+  await goto('/interview/start?coding=1','document.querySelector("#coding-practice")?.checked');
+  await select('#interview-domain','Frontend');
+  await select('#interview-experience','junior');
+  await click('#interview-save-consent');
+  await click('button','Start interview');
+  await waitFor(hasText('Question 1 of 14'),'combined interview lobby');
+  await evaluate(installCallMedia());
+  await click('input[aria-label="Speech recognition consent"]');
+  await click('button','Join interview');
+  await waitFor('document.querySelector("video").srcObject?.active','combined camera');
+  await click('button','Skip exercise');
+  await waitFor(hasText('Question 2 of 14'),'combined second exercise');
+  await click('button','Skip exercise');
+  await waitFor('window.__callTest.starts===1 && document.querySelector(".call-avatar-listening")','combined speech handoff');
+  check('Combined interview still starts speech after coding with camera connected',
+    await evaluate('!document.querySelector("textarea") && !!document.querySelector("video").srcObject?.active'));
+  await click('button','End interview');
+  await waitFor(hasText('Your interview feedback'),'combined report');
 }
 async function layout(label) {
   const dimensions = await evaluate('({page:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth})');
@@ -307,6 +379,8 @@ try {
   check('Signup validation and successful registration', true);
   if (process.env.CODING_ONLY === '1') {
     await checkCodingRound();
+    await checkRolePractice();
+    await checkCombinedPractice();
   } else if (process.env.CALL_ONLY === '1') {
     await checkWorkspaceOrganization();
     await checkInterviewCall({goto,click,fill,select,waitFor,evaluate,check,command,screenshot,savePdf,viewport,layout,hasText});

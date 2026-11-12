@@ -23,7 +23,7 @@ export default function DashboardNavbar({name}) {
   return <nav ref={root} className="workspace-nav fixed top-0 left-0 right-0 z-50" aria-label="Workspace">
     <div className="workspace-nav-inner"><Brand to="/dashboard"/>
       <div className="workspace-links">{mainLinks.map(link)}</div>
-      <div className="workspace-actions"><Link to="/interview-type" className="spar-button"><UiIcon name="mic"/>New interview</Link>
+      <div className="workspace-actions">{location.pathname !== '/dashboard' && <Link to="/interview-type" className="spar-button"><UiIcon name="mic"/>New interview</Link>}
         <div className="workspace-account"><button ref={accountButton} className="account-trigger" aria-label="Account menu" aria-expanded={profileOpen} aria-controls="workspace-account-menu" onClick={()=>setProfileOpen(v=>!v)}><span>{name?.charAt(0).toUpperCase() || 'U'}</span>Account<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5"/></svg></button>
           {profileOpen && <div id="workspace-account-menu" className="workspace-dropdown"><p className="workspace-menu-title">{name || 'Your account'}</p>{accountLinks.map(link)}<button className="signout-control" onClick={signOut}>Logout</button></div>}
         </div>

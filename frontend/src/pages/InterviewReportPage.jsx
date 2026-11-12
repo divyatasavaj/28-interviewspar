@@ -4,6 +4,7 @@ import { apiRequest, getInterviewFeedback } from '../api/auth';
 import Brand from '../components/Brand';
 import UiIcon from '../components/UiIcon';
 import InterviewAnalytics from '../components/InterviewAnalytics';
+import {clearCodeDraft} from '../utils/codeDraft';
 
 function roundLabel(round) {
   if (round === 'final') return 'Reflection';
@@ -15,7 +16,10 @@ function CodingResult({ evaluation }) {
   const result = evaluation.code_result;
   const observation = evaluation.coding_observation;
   return <div className="coding-report">
-    {result?.status === 'evaluated' && <p>Sample tests {result.sample_passed}/{result.sample_total} · Hidden tests {result.hidden_passed}/{result.hidden_total}</p>}
+    {result?.status === 'evaluated' && <>
+      <p>Sample tests {result.sample_passed}/{result.sample_total} · Hidden tests {result.hidden_passed}/{result.hidden_total}</p>
+      {result.passed < result.total && <p>Failed tests · {result.sample_total - result.sample_passed} sample, {result.hidden_total - result.hidden_passed} hidden</p>}
+    </>}
     {evaluation.ai_review && <p><strong>AI code review</strong> · {evaluation.ai_review}</p>}
     {evaluation.ai_status === 'unavailable' && <p>AI code review is unavailable.</p>}
     {observation && <p className="report-answer-detail">
@@ -110,6 +114,7 @@ export default function InterviewReportPage() {
     setError('');
     try {
       await apiRequest(`/interview/${sessionId}`, { method: 'DELETE' });
+      clearCodeDraft(sessionId);
       navigate('/dashboard');
     } catch (failure) {
       setError(failure.message);
@@ -118,13 +123,26 @@ export default function InterviewReportPage() {
     }
   }
 
-  const scored = Number.isFinite(report?.overall_score);
   const spokenPracticeAnswer = report?.qa_pairs.reduce((lowest, row) => {
     if (row.skipped || !Number.isFinite(row.evaluation?.communication_score)) return lowest;
     return !lowest || row.evaluation.communication_score < lowest.evaluation.communication_score ? row : lowest;
   }, null);
-  const codingPracticeAnswer = report?.qa_pairs.find(row => row.hands_on && !row.skipped);
-  const practiceAnswer = spokenPracticeAnswer || codingPracticeAnswer;
+  const codingAnswers = report?.qa_pairs.filter(row => row.hands_on && !row.skipped) || [];
+  const codingPracticeAnswer = [...codingAnswers].sort((a,b) =>
+    (a.evaluation.correctness_score ?? 101) - (b.evaluation.correctness_score ?? 101))[0];
+  const practiceAnswer = report?.coding_only ? codingPracticeAnswer : spokenPracticeAnswer || codingPracticeAnswer;
+  const tested = codingAnswers.filter(row => row.evaluation.code_result?.status === 'evaluated');
+  const passedTests = tested.reduce((sum,row) => sum + row.evaluation.code_result.passed, 0);
+  const totalTests = tested.reduce((sum,row) => sum + row.evaluation.code_result.total, 0);
+  const score = report?.coding_only ? (totalTests ? Math.round(100 * passedTests / totalTests) : null) : report?.overall_score;
+  const scored = Number.isFinite(score);
+  const strengths = report?.strengths?.[0] || (passedTests > 0 ? `You passed ${passedTests} of ${totalTests} coding tests.` : null);
+  const retry = new URLSearchParams();
+  if (report?.domain) retry.set('domain', report.domain);
+  if (report?.experience_level) retry.set('level', report.experience_level);
+  if (practiceAnswer?.hands_on || report?.coding_only) retry.set('track','coding');
+  else if (report?.interview_type === 'hr') retry.set('persona','hr');
+  else if (practiceAnswer?.skill_topic || report?.focus_topic) retry.set('topic', practiceAnswer?.skill_topic || report.focus_topic);
   const practiceIndex = report?.qa_pairs.indexOf(practiceAnswer) + 1;
   const practiceId = `answer-${practiceIndex}`;
 
@@ -157,6 +175,7 @@ export default function InterviewReportPage() {
       <div id="report-overview" className="report-grid">
         <section className="report-next">
           <h2>What to practice next</h2>
+          {strengths && <p className="mb-3 text-sm text-gray-700"><strong>What went well</strong> · {strengths}</p>}
           {practiceAnswer ? <>
             <p className="mb-2 text-xs font-semibold text-primary">Question {practiceIndex} · {roundLabel(practiceAnswer.round)}</p>
             <p className="text-sm leading-relaxed text-gray-700">{practiceAnswer.evaluation.ai_review || practiceAnswer.evaluation.feedback}</p>
@@ -164,16 +183,19 @@ export default function InterviewReportPage() {
               onClick={() => { const answer = document.getElementById(practiceId); if (answer) answer.open = true; }}>
               Review question {practiceIndex}
             </a>
+            <Link className="ml-4 mt-3 inline-block text-sm font-semibold text-primary underline print:hidden" to={`/interview/start?${retry}`}>Practice this again</Link>
           </> : <p className="text-sm leading-relaxed text-gray-700">Submit an answer in your next interview to get feedback here.</p>}
         </section>
         <section className="report-score">
-          <div className="report-score-ring" style={{ '--score': scored ? report.overall_score : 0 }} aria-hidden="true">
-            <div><strong>{scored ? report.overall_score : '—'}</strong><small>{scored ? 'out of 100' : 'Not scored'}</small></div>
+          <div className="report-score-ring" style={{ '--score': scored ? score : 0 }} aria-hidden="true">
+            <div><strong>{scored ? score : '—'}</strong><small>{scored ? 'out of 100' : 'Not scored'}</small></div>
           </div>
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold">{report.score_label}</h2>
-            <p className="sr-only print:not-sr-only print:font-semibold">{scored ? `${report.overall_score}/100` : 'Not scored'}</p>
-            <p className="mt-2 text-xs leading-relaxed text-gray-600">{report.score_note}</p>
+            <h2 className="text-lg font-semibold">{report.coding_only ? 'Coding test results' : report.score_label}</h2>
+            <p className="sr-only print:not-sr-only print:font-semibold">{scored ? `${score}/100` : 'Not scored'}</p>
+            <p className="mt-2 text-xs leading-relaxed text-gray-600">{report.coding_only
+              ? (totalTests ? `${passedTests} of ${totalTests} tests passed across ${tested.length} graded exercises.` : 'Test results appear when an exercise can be graded.')
+              : report.score_note}</p>
           </div>
         </section>
       </div>

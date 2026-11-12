@@ -40,6 +40,7 @@ from app.routes.resume_assessment import (
     create_role_match,
     get_latest_match,
     get_match_by_id,
+    role_fit,
     router,
 )
 from assessment_helpers import FakeDatabase, make_analysis, synthetic_resume_document
@@ -54,6 +55,25 @@ JOB_DESCRIPTION = (
 
 
 class AssessmentApiTests(unittest.TestCase):
+    def test_role_fit_compares_required_evidence_without_saving_assessments(self) -> None:
+        db = self._db()
+        result = role_fit(db, USER_ID)
+        self.assertEqual(len(result["roles"]), 5)
+        self.assertEqual(result["skill_topics"]["python"], "python")
+        ratios = []
+        for role in result["roles"]:
+            required = role["required_count"]
+            self.assertGreater(required, 0)
+            self.assertEqual(required, sum(len(role[field]) for field in (
+                "demonstrated", "limited_evidence", "missing",
+            )) + role["unreviewed_count"])
+            ratios.append(len(role["demonstrated"]) / required)
+        self.assertEqual(ratios, sorted(ratios, reverse=True))
+        self.assertEqual(db.resume_assessments.documents, [])
+        with self.assertRaises(HTTPException) as error:
+            role_fit(db, OTHER_USER_ID)
+        self.assertEqual(error.exception.status_code, 404)
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.catalog = load_catalog()

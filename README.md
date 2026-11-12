@@ -46,17 +46,21 @@ when the virtual environment is activated; Node dependencies are not required fo
 1. Sign up, sign in, and edit your profile. Password changes and logout revoke old tokens.
 2. Optionally upload a text PDF or DOCX with storage consent. Resume Intelligence
    shows extracted evidence, role findings, job-description coverage, and recommendations.
-3. Choose a domain, experience level, HR/technical track, and practice/assessment
-   mode. **Practice coding** opens setup with hands-on exercises selected. The
-   session starts with two domain exercises for student/junior levels or three
-   for other levels, then continues into the spoken interview.
+   Compare the required skills evidenced across available roles and open **Practice
+   this gap** to preselect a supported practice topic.
+3. Choose Coding, Technical, or HR practice. **Practice coding** starts a
+   coding-only session with two domain exercises for student/junior levels or three
+   for other levels. Technical setup can add coding before spoken questions or
+   run a short session on one skill. Preview the camera and check microphone
+   access for spoken sessions before joining.
    Saving the interview requires consent. External AI feedback is optional.
 4. Complete your selected rounds in one call. Join with speech consent. For each
    spoken prompt, hear the question and answer aloud. Select **Review
    transcript** to finish recording. Check the read-only captions, then send the
    answer or record again. Progress and observations persist.
-5. Resume interviews or open reports from the dashboard. Reports surface feedback
-   tied to a saved answer and let you expand individual transcripts. Print a
+5. Resume interviews or open reports from the dashboard. Reports surface a strength
+   and one priority when supported by the answers. **Practice this again** opens
+   setup with the relevant topic or coding track. Print a
    compact PDF, or opt in to the full transcripts and delivery details before
    printing. You can delete an interview from its report.
 
@@ -66,6 +70,13 @@ tests using isolated Judge0. Set `JUDGE0_API_URL` for execution and, if required
 `JUDGE0_API_KEY`. With execution unavailable, the app saves submitted code and
 leaves correctness unscored. Optional Groq code review gives feedback on edge
 cases, complexity, and improvements. Test results determine correctness.
+The editor restores code and language after a reload in the same browser tab.
+Drafts clear on submission, completion, or sign-out.
+
+Question selection prefers unseen prompts across recent sessions in the same
+domain and track. It revisits weaker skills when isolated test results support
+that choice and adjusts the order of remaining coding exercises using graded
+results. Spoken practice with AI consent can add one contextual follow-up.
 
 The microphone pauses while candidates code. The consented camera stays connected
 and samples face presence locally. The report shows camera and tab visibility

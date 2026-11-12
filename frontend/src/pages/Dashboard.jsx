@@ -6,6 +6,7 @@ import DashboardNavbar from "../components/DashboardNavbar"
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" })
 
 function interviewName(session) {
+  if (session.coding_only) return `${session.domain} coding practice`
   return session.interview_type === "hr" ? "HR + behavioral" : session.domain
 }
 
@@ -69,14 +70,18 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold tracking-tight">Welcome, {user.name.split(" ")[0]}</h1>
           <p className="mt-2 text-sm text-gray-600">Practice an interview and review your feedback.</p>
           <div className="mt-5 flex flex-wrap gap-3">
-            {active && <Link className="spar-button" to={`/interview/${active.id}`}>Resume interview</Link>}
-            <Link className={active ? "spar-button secondary" : "spar-button"} to="/interview/start">Start interview</Link>
-            <Link className="spar-button secondary" to="/interview/start?coding=1">Practice coding</Link>
-            {latestReport && <Link className="spar-button secondary" to={`/interview/${latestReport.id}/report`}>View latest report</Link>}
+            {active ? <Link className="spar-button" to={`/interview/${active.id}`}>Resume interview</Link>
+              : <Link className="spar-button" to="/interview/start">Start practice</Link>}
+            {latestReport && <Link className="self-center text-sm font-semibold text-primary underline" to={`/interview/${latestReport.id}/report`}>View latest report</Link>}
           </div>
           {active && <p className="mt-3 text-sm text-gray-600">
             {interviewName(active)} · Question {active.progress.current} of {active.progress.total}
           </p>}
+          <div id="practice-options" className="practice-options mt-5" aria-label="Practice options">
+            <Link to="/interview/start?track=coding"><strong>Practice coding</strong><span>Two or three exercises</span></Link>
+            <Link to="/interview/start"><strong>Technical practice</strong><span>Spoken questions or a combined interview</span></Link>
+            <Link to="/interview/start?persona=hr"><strong>HR practice</strong><span>Behavioral interview questions</span></Link>
+          </div>
         </section>
 
         <section id="recent-interviews" className="dashboard-history rounded-2xl border border-gray-200 bg-white p-5 sm:p-7">
