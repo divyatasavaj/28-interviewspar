@@ -5,6 +5,17 @@ Tests use synthetic accounts and resumes in a unique disposable database. Existi
 application records and browser profiles are not used. No dependencies were installed
 for this pass.
 
+## Theme and practice refinements — 12 November 2026
+
+The targeted Chrome journey passed 31 checks, including theme persistence,
+expected and returned sample values, retained coding skills, direct navigation
+to required resume gaps, and both cancellation and confirmation of deletion.
+The browser grading check used a local Judge0 response fixture.
+
+All 172 backend, 48 frontend, and 3 ML tests passed. The frontend build and lint
+passed with existing warnings. The execution tests verify that compiler
+diagnostics are bounded and returned for public samples only.
+
 ## Targeted interview and resume practice — 12 November 2026
 
 The workspace now offers coding-only, technical, and HR entry points. Coding

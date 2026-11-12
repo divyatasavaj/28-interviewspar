@@ -12,6 +12,23 @@ from app.safe_execution import execute_cases
 
 
 class ExecutionTests(unittest.TestCase):
+    def test_runner_diagnostics_are_opt_in_and_bounded(self):
+        payload = {
+            "status": {"id": 6, "description": "Compilation Error"},
+            "compile_output": base64.b64encode(b"Syntax error " + b"x" * 1500).decode(),
+        }
+        with patch.dict(os.environ, {"JUDGE0_API_URL": "https://judge.example.test"}), patch(
+            "app.safe_execution.urlopen",
+            side_effect=lambda *args, **kwargs: io.BytesIO(json.dumps(payload).encode()),
+        ):
+            args = ("invalid", "python", [{"args": [], "expected": None}])
+            public = execute_cases(*args, include_diagnostics=True)["results"][0]
+            private = execute_cases(*args)["results"][0]
+        self.assertTrue(public["diagnostic"].startswith("Syntax error"))
+        self.assertEqual(len(public["diagnostic"]), 1200)
+        self.assertFalse(public["has_return_value"])
+        self.assertNotIn("diagnostic", private)
+
     def test_nonfinite_and_deep_outputs_cannot_break_the_api_response(self):
         for output in (
             "NaN",

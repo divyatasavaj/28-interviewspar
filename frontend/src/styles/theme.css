@@ -35,6 +35,20 @@
 .theme-preference select { padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); }
 
 @media screen {
+  [data-theme="dark"] :is(.site-home, .auth-form-area) { color:var(--ink); background:var(--surface); }
+  [data-theme="dark"] :is(.auth-story, .hero-sky, .home-strip, .feature-tile:nth-child(n), .window-question) {
+    color:var(--ink); background:var(--wash); border-color:var(--line);
+  }
+  [data-theme="dark"] :is(.practice-window, .home-cta, .hero-note, .auth-note, .window-hint, .window-tabs) {
+    color:var(--ink); background:var(--panel); border-color:var(--line); box-shadow:none;
+  }
+  [data-theme="dark"] :is(.hero-title, .hero-note strong, .window-tabs button[aria-pressed=true]) { color:var(--ink); }
+  [data-theme="dark"] :is(.hero-intro, .hero-promises, .home-strip span, .home-features-header p, .feature-tile p,
+    .home-cta p, .auth-story-copy > p, .window-title, .window-tabs button, .window-footer) { color:var(--muted); }
+  [data-theme="dark"] :is(.hero-title em, .feature-tile a, .window-footer a, .auth-story h2 span) { color:var(--theme-link); }
+  [data-theme="dark"] :is(.hero-title em::after, .window-tabs button[aria-pressed=true],
+    .workspace-links a[aria-current], .workspace-links a:hover, .page-tabs a:hover) { background:var(--wash); }
+  [data-theme="dark"] .auth-form-wrap input { color:var(--ink); background:var(--panel); border-color:var(--line); }
   [data-theme="dark"] :is(.workspace-page, .public-page, .report-page, .auth-page, .dashboard-page) { color:var(--ink); }
   [data-theme="dark"] :is(.workspace-nav, .workspace-dropdown, .workspace-mobile-menu, .dashboard-history,
     .dashboard-resume-tools, .practice-options a, .report-qa, .page-tabs,
@@ -50,6 +64,7 @@
   [data-theme="dark"] :is(.text-primary, .device-check button, .workspace-links a[aria-current]) { color:var(--theme-link); }
   [data-theme="dark"] :is(.spar-brand, .account-trigger) { color:var(--ink); }
   [data-theme="dark"] :is(.bg-white,[class*="bg-white/"],[class*="bg-[#f8fbfd]"]) { background-color:var(--panel); }
+  [data-theme="dark"] .bg-gray-900.text-white { background-color:#126fa4; border-color:var(--line); }
   [data-theme="dark"] :is([class*="bg-[#f8f5ef]"],[class*="bg-[#fcfaf6]"]) { background-color:var(--surface); }
   [data-theme="dark"] :is(.call-join select,.report-table td) { color:var(--ink); background:var(--surface); border-color:var(--line); }
   [data-theme="dark"] .spar-button.secondary { color:var(--ink); background:var(--panel); border-color:var(--line); box-shadow:none; }

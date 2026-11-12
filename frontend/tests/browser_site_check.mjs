@@ -179,6 +179,7 @@ async function checkCodingRound() {
   const mock = process.env.MOCK_CODE_RUNNER === '1';
   await waitFor(hasText(mock ? '1 of 2 sample tests passed' : 'Code execution is not configured'), 'sample results');
   check('Visible sample run has a clear result', true);
+  if (mock) check('Wrong sample output shows expected and returned values', await evaluate(`document.querySelector(".coding-output-comparison")?.textContent.includes("Expected") && document.querySelector(".coding-output-comparison")?.textContent.includes("Returned")`));
   await layout('desktop coding editor');
   await screenshot('coding-desktop');
   await viewport(390,844);
@@ -201,7 +202,7 @@ async function checkCodingRound() {
   await click('#answer-1 summary');
   check('Report retains code, grading, and coding observations', await evaluate(`${hasText('JavaScript solution')} && ${hasText('Face present in camera samples')} && ${hasText(mock ? 'Hidden tests 1/3' : 'Code execution is not configured')}`));
   if (liveReview) check('Opted-in coding report includes live Groq review', await evaluate('!!document.querySelector(".coding-report strong")'));
-  check('Practice this again links to coding-only setup', await evaluate('Array.from(document.querySelectorAll("#report-overview a")).some(link=>new URL(link.href).searchParams.get("track")==="coding")'));
+  check('Practice this again retains the coding skill', await evaluate('Array.from(document.querySelectorAll("#report-overview a")).some(link=>{const params=new URL(link.href).searchParams;return params.get("track")==="coding" && params.get("skill")==="javascript"})'));
   await screenshot('coding-report');
   await click('button','Delete this interview');
   await click('dialog button','Cancel');
@@ -211,6 +212,12 @@ async function checkCodingRound() {
   await waitFor('location.pathname==="/dashboard"', 'coding report deletion');
 }
 async function checkRolePractice() {
+  await goto('/account?tab=preferences', 'document.querySelector(".theme-preference select")');
+  await select('.theme-preference select','dark');
+  await waitFor('document.documentElement.dataset.theme==="dark"','dark theme');
+  await command('Page.reload');
+  await waitFor('document.querySelector(".theme-preference select")?.value==="dark"','restored theme');
+  check('Theme preference survives reload',await evaluate('document.documentElement.dataset.theme==="dark"'));
   await goto('/account?tab=resume',hasText('Resume Upload & Parser'));
   const document = await command('DOM.getDocument');
   const input = await command('DOM.querySelector',{nodeId:document.root.nodeId,selector:'input[type="file"]'});
@@ -226,7 +233,8 @@ async function checkRolePractice() {
   await screenshot('role-fit-mobile');
   await viewport(1440);
   await click('#role-fit button','Review Backend Developer');
-  await waitFor('!!document.querySelector("#skill-evidence a[href*=topic]")','resume gap link');
+  await waitFor('document.activeElement?.id==="skill-evidence" && !!document.querySelector("#skill-evidence a[href*=topic]")','resume gap link');
+  check('Review role opens the required gaps directly', await evaluate('document.activeElement?.id==="skill-evidence" && document.querySelector("#skill-evidence").textContent.includes("Required gaps to address first")'));
   await layout('desktop role evidence');
   await click('#skill-evidence a','Practice this gap');
   await waitFor('document.querySelector("#practice-topic")?.value', 'prefilled practice skill');
