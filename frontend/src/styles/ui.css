@@ -614,3 +614,8 @@ input:not([type=checkbox]):not([type=radio]), select, textarea { max-width: 100%
 .coding-output-comparison dt { font-weight:650; }
 .coding-output-comparison code, .coding-diagnostic { white-space:pre-wrap; overflow-wrap:anywhere; }
 .coding-diagnostic { margin-top:6px; max-height:160px; overflow:auto; }
+
+.report-delete-dialog { inset:0; margin:auto; width:min(440px, calc(100% - 32px)); padding:24px; border:1px solid var(--line); border-radius:16px; background:var(--panel); color:var(--ink); }
+.report-delete-dialog::backdrop { background:#081725a0; }
+.report-delete-dialog .report-delete-confirm { background:#9b2838; box-shadow:none; }
+.report-delete-dialog .report-delete-confirm:hover:not(:disabled) { background:#7e2030; }

@@ -71,6 +71,7 @@ export default function InterviewReportPage() {
   const [printFull, setPrintFull] = useState(false);
   const navigate = useNavigate();
   const page = useRef(null);
+  const deleteDialog = useRef(null);
 
   useEffect(() => {
     let opened = null;
@@ -118,6 +119,7 @@ export default function InterviewReportPage() {
       navigate('/dashboard');
     } catch (failure) {
       setError(failure.message);
+      deleteDialog.current?.close();
     } finally {
       setDeleting(false);
     }
@@ -224,10 +226,22 @@ export default function InterviewReportPage() {
       </section>
       <footer className="flex flex-wrap items-center justify-between gap-5 border-t border-gray-200 pt-7 print:hidden">
         <Link to="/interview/start" className="spar-button">Practice again<UiIcon name="arrow"/></Link>
-        <button type="button" disabled={deleting} onClick={remove} className="text-xs text-red-700 underline">
-          {deleting ? 'Deleting…' : 'Delete this interview and its answers'}
+        <button type="button" disabled={deleting} onClick={() => deleteDialog.current?.showModal()} className="text-xs text-red-700 underline">
+          Delete this interview and its answers
         </button>
       </footer>
+      <dialog ref={deleteDialog} className="report-delete-dialog print:hidden" aria-labelledby="delete-report-title"
+        aria-describedby="delete-report-description" onCancel={event => { if (deleting) event.preventDefault(); }}>
+        <h2 id="delete-report-title" className="text-lg font-bold">Delete this interview?</h2>
+        <p id="delete-report-description" className="mt-2 text-sm">
+          {report.domain || 'Interview'} · {report.coding_only ? 'Coding practice' : report.interview_type === 'hr' ? 'HR practice' : 'Technical practice'}.
+          This permanently deletes the interview, its answers, and its feedback.
+        </p>
+        <div className="mt-5 flex flex-wrap justify-end gap-3">
+          <button autoFocus type="button" disabled={deleting} className="spar-button secondary" onClick={() => deleteDialog.current?.close()}>Cancel</button>
+          <button type="button" disabled={deleting} className="spar-button report-delete-confirm" onClick={remove}>{deleting ? 'Deleting…' : 'Permanently delete'}</button>
+        </div>
+      </dialog>
     </>}
   </main>;
 }

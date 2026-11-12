@@ -113,7 +113,7 @@ export async function checkInterviewCall({goto,click,waitFor,evaluate,check,comm
   await evaluate('window.dispatchEvent(new Event("afterprint"))');
   check('Full print restores the previously open measurement detail',await evaluate('document.querySelectorAll(".measurement-details[open]").length===1 && !document.querySelector(".report-qa[open]")'));
   await savePdf('voice-report-full');
-  await click('button','Delete this interview');await waitFor('location.pathname==="/dashboard"','deletion');
+  await click('button','Delete this interview'); await click('dialog button','Permanently delete');await waitFor('location.pathname==="/dashboard"','deletion');
   await start();await join(true);await waitFor(hasText('Microphone unavailable'),'permission denial');
   check('Denied microphone cannot submit a typed or empty answer',await evaluate(`!document.querySelector('textarea') && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Send spoken answer').disabled`));
   check('Permission error explains how to recover',await evaluate(hasText('Allow microphone access')));
@@ -123,5 +123,5 @@ export async function checkInterviewCall({goto,click,waitFor,evaluate,check,comm
   check('Microphone can be retried without leaving the interview',true);
   await evaluate('window.__callTest.restore()');await click('button','End interview');await waitFor(hasText('Your interview feedback'),'empty report');
   check('Failed microphone does not fabricate delivery measurements',await evaluate(`!${hasText('Speaking, confidence & attention cues')}`));
-  await click('button','Delete this interview');await waitFor('location.pathname==="/dashboard"','failed call deletion');
+  await click('button','Delete this interview'); await click('dialog button','Permanently delete');await waitFor('location.pathname==="/dashboard"','failed call deletion');
 }

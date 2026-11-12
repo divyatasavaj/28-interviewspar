@@ -203,7 +203,11 @@ async function checkCodingRound() {
   if (liveReview) check('Opted-in coding report includes live Groq review', await evaluate('!!document.querySelector(".coding-report strong")'));
   check('Practice this again links to coding-only setup', await evaluate('Array.from(document.querySelectorAll("#report-overview a")).some(link=>new URL(link.href).searchParams.get("track")==="coding")'));
   await screenshot('coding-report');
-  await click('button', 'Delete this interview');
+  await click('button','Delete this interview');
+  await click('dialog button','Cancel');
+  check('Cancelling deletion keeps the saved interview', await evaluate('location.pathname.endsWith("/report") && !document.querySelector("dialog[open]")'));
+  await click('button','Delete this interview');
+  await click('dialog button','Permanently delete');
   await waitFor('location.pathname==="/dashboard"', 'coding report deletion');
 }
 async function checkRolePractice() {
@@ -483,7 +487,7 @@ try {
     await click('button','View Report');
     await waitFor(hasText('Your interview feedback'),'saved history report');
     check(`${persona} saved report opens from account history`,await evaluate('location.pathname==="/interview-complete"'));
-    await click('button','Delete this interview');
+    await click('button','Delete this interview'); await click('dialog button','Permanently delete');
     await waitFor('location.pathname==="/dashboard"','interview deletion');
   }
   for (const path of ['/dashboard','/account?tab=profile','/account?tab=resume','/account?tab=reports','/account?tab=preferences','/interview-type','/interview/start']) {
@@ -500,7 +504,7 @@ try {
   await click('button','End interview');
   await waitFor(hasText('Your interview feedback'),'early-completion report');
   check('Skipping and early completion keep skipped answers unscored',await evaluate(`${hasText('Not scored')} && ${hasText('1 skipped')} && document.querySelector('.report-qa summary')?.textContent.includes('Skipped')`));
-  await click('button','Delete this interview');
+  await click('button','Delete this interview'); await click('dialog button','Permanently delete');
   await waitFor('location.pathname==="/dashboard"','early-session deletion');
   await goto('/account?tab=resume',hasText('Extracted Background Profile'));
   await click('button','Delete saved resumes');
