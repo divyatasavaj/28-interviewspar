@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./styles/ui.css";
+@import "./styles/theme.css";
 
 @theme {
   --color-primary: #126fa4;
@@ -12,7 +13,7 @@
   --color-gray-900: #193449;
   --color-gray-600: #526477;
   --color-gray-500: #617286;
-  --color-gray-400: #6d7d8e;
+  --color-gray-400: #526477;
   --color-gray-100: #e7edf1;
   --color-gray-50: #f5f8fa;
   --color-sky-600: #0975ad;

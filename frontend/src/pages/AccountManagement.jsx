@@ -1,3 +1,4 @@
+import ThemePreference from "../components/ThemePreference"
 import { useState, useEffect } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import {
@@ -789,7 +790,7 @@ export default function AccountManagement() {
         {view==='profile' && <ProfileView user={user} onUserUpdate={setUser} completedCount={completedCount}/>}
         {view==='resume' && <ResumeView/>}
         {view==='reports' && <ReportsView/>}
-        {view==='preferences' && <PreferencesView/>}
+        {view==='preferences' && <><ThemePreference/><PreferencesView/></>}
       </div>
     </main>
   </div>;

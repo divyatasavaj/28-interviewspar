@@ -1,5 +1,5 @@
 /* Sky blue, warm beige and navy. Shared by the supported React application. */
-:root { color: #193449; background: #f8f5ef; font-synthesis: none; }
+:root { color:var(--ink); background:var(--surface); font-synthesis:none; }
 body { margin: 0; min-width: 320px; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button:not(:disabled), summary { cursor: pointer; }
@@ -20,8 +20,8 @@ input:not([type=checkbox]):not([type=radio]), select, textarea { max-width: 100%
 .spar-button { display: inline-flex; justify-content: center; align-items: center; gap: 10px; padding: 13px 21px; min-height: 46px; border: 1px solid transparent; border-radius: 13px; color: white; background: #126fa4; font-size: 14px; font-weight: 650; box-shadow: 0 5px 0 #0d547c; transition: transform .2s, box-shadow .2s, background .2s; }
 .spar-button:hover:not(:disabled) { transform: translateY(-2px); background: #0c6090; box-shadow: 0 7px 0 #0d547c; }
 .spar-button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #0d547c; }
-.spar-button.secondary { color: #193449; background: white; border-color: #d5e0e7; box-shadow: 0 3px 0 #e1e8eb; }
-.spar-button.secondary:hover:not(:disabled) { background: #f3faff; box-shadow: 0 5px 0 #e1e8eb; }
+.spar-button.secondary { color:var(--ink); background:var(--panel); border-color:var(--line); box-shadow: 0 3px 0 #e1e8eb; }
+.spar-button.secondary:hover:not(:disabled) { background:var(--wash); box-shadow: 0 5px 0 #e1e8eb; }
 .spar-button:disabled { opacity: .45; box-shadow: none; }
 .public-nav, .workspace-nav { background: #fffdf9ed; border-color: #e4e9e9; }
 .public-nav > div:first-child { gap: 18px; }

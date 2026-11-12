@@ -1,0 +1,60 @@
+:root {
+  color-scheme:light;
+  --surface:#f8f5ef;
+  --panel:#fffdf9;
+  --wash:#eaf5fd;
+  --line:#d5e0e7;
+  --ink:#193449;
+  --muted:#526477;
+  --theme-link:#126fa4;
+}
+
+:root[data-theme="dark"] {
+  color-scheme:dark;
+  --surface:#102434;
+  --panel:#183346;
+  --wash:#23455c;
+  --line:#456176;
+  --ink:#e7f3fb;
+  --muted:#bccddd;
+  --theme-link:#9dd8fa;
+  --color-gray-950:#eef7fc;
+  --color-gray-900:#e7f3fb;
+  --color-gray-700:#c8d9e6;
+  --color-gray-600:#bccddd;
+  --color-gray-500:#b3c6d6;
+  --color-gray-400:#aebfce;
+  --color-gray-100:#345366;
+  --color-gray-50:#203d51;
+  --color-white:#fff;
+}
+
+.theme-preference { margin-bottom:18px; padding:20px; border:1px solid var(--line); border-radius:16px; background:var(--panel); }
+.theme-preference h2 { margin-bottom:10px; font-weight:700; font-size:18px; }
+.theme-preference label { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; color:var(--muted); }
+.theme-preference select { padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); }
+
+@media screen {
+  [data-theme="dark"] :is(.workspace-page, .public-page, .report-page, .auth-page, .dashboard-page) { color:var(--ink); }
+  [data-theme="dark"] :is(.workspace-nav, .workspace-dropdown, .workspace-mobile-menu, .dashboard-history,
+    .dashboard-resume-tools, .practice-options a, .report-qa, .page-tabs,
+    .call-join, .auth-form, .public-nav, .public-mobile-menu) {
+    color:var(--ink); background:var(--panel); border-color:var(--line);
+  }
+  [data-theme="dark"] :is(.dashboard-welcome, .setup-aside, .report-next, .report-score,
+    .delivery-feedback, .report-answer-feedback, .report-table th) {
+    color:var(--ink); background:var(--wash); border-color:var(--line);
+  }
+  [data-theme="dark"] :is(.page-tabs a, .workspace-links a, .account-trigger, .call-join p, .call-join small,
+    .device-check p, .practice-options span, .section-kicker) { color:var(--muted); }
+  [data-theme="dark"] :is(.text-primary, .device-check button, .workspace-links a[aria-current]) { color:var(--theme-link); }
+  [data-theme="dark"] :is(.spar-brand, .account-trigger) { color:var(--ink); }
+  [data-theme="dark"] :is(.bg-white,[class*="bg-white/"],[class*="bg-[#f8fbfd]"]) { background-color:var(--panel); }
+  [data-theme="dark"] :is([class*="bg-[#f8f5ef]"],[class*="bg-[#fcfaf6]"]) { background-color:var(--surface); }
+  [data-theme="dark"] :is(.call-join select,.report-table td) { color:var(--ink); background:var(--surface); border-color:var(--line); }
+  [data-theme="dark"] .spar-button.secondary { color:var(--ink); background:var(--panel); border-color:var(--line); box-shadow:none; }
+}
+@media print {
+  :root[data-theme="dark"] { color-scheme:light; --ink:#193449; --panel:#fff; --surface:#fff; --line:#d5e0e7; }
+  :root[data-theme="dark"] .report-page { --color-gray-900:#193449; --color-gray-700:#35495b; --color-gray-600:#526477; }
+}
