@@ -27,7 +27,7 @@ def practice_exercises(domain, level, variant):
 
 
 def run_samples(problem_id, code, language):
-    return execute_cases(code, language, EXERCISES[problem_id]["samples"])
+    return execute_cases(code, language, EXERCISES[problem_id]["samples"], include_diagnostics=True)
 
 
 def grade_code(problem_id, code, language):

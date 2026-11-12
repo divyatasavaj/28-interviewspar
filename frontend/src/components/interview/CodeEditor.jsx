@@ -8,7 +8,14 @@ function SampleResults({ output, samples }) {
   return <div role="status">
     <p>{output.passed} of {output.total} sample tests passed.</p>
     {samples.length > 0 && <ul>{output.results.map((result, index) => (
-      <li key={index}>Sample {index + 1} · {result.passed ? 'Passed' : result.status === 'Accepted' ? 'Wrong return value' : result.status}</li>
+      <li key={index} className="coding-sample-result">
+        <strong>Sample {index + 1} · {result.passed ? 'Passed' : result.has_return_value ? 'Wrong return value' : result.status === 'Accepted' ? 'No JSON return value' : result.status}</strong>
+        {!result.passed && <dl className="coding-output-comparison">
+          <div><dt>Expected</dt><dd><code>{JSON.stringify(samples[index]?.expected)}</code></dd></div>
+          <div><dt>Returned</dt><dd><code>{result.has_return_value ? JSON.stringify(result.actual).slice(0,1200) : 'No result'}</code></dd></div>
+        </dl>}
+        {result.diagnostic && <pre className="coding-diagnostic">{result.diagnostic}</pre>}
+      </li>
     ))}</ul>}
   </div>;
 }

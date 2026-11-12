@@ -64,7 +64,7 @@ def execution_endpoint():
     return endpoint if endpoint.startswith(("https://", "http://")) else ""
 
 
-def execute_cases(code, language, cases, function_name="solve"):
+def execute_cases(code, language, cases, function_name="solve", *, include_diagnostics=False):
     endpoint = execution_endpoint()
     unavailable = {
         "status": "unavailable",
@@ -168,13 +168,22 @@ def execute_cases(code, language, cases, function_name="solve"):
         if case.get("unordered_pair") and isinstance(actual, list) and len(actual) == 2:
             matches = matches or same_json_value(actual[::-1], case["expected"])
         success = status == 3 and valid_output and matches
-        results.append(
-            {
+        result = {
                 "passed": success,
                 "actual": actual,
                 "status": str(data["status"].get("description", "Unknown"))[:200],
-            }
-        )
+        }
+        if include_diagnostics:
+            result["has_return_value"] = valid_output
+            encoded = data.get("compile_output") or data.get("stderr")
+            if status != 3 and isinstance(encoded, str):
+                try:
+                    result["diagnostic"] = base64.b64decode(encoded, validate=True).decode(
+                        "utf8", errors="replace"
+                    ).strip()[:1200]
+                except ValueError:
+                    pass
+        results.append(result)
     return {
         "status": "evaluated",
         "passed": sum(r["passed"] for r in results),

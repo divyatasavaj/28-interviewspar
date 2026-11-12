@@ -149,7 +149,7 @@ class InterviewApiTests(unittest.TestCase):
                        "camera": {"samples": 10, "face_samples": 8, "centered_samples": 4, "multiple_samples": 0},
                        "focus": {"observed_ms": 20000, "hidden_ms": 1000, "hidden_count": 1}}
 
-        def runner(code, language, cases):
+        def runner(code, language, cases, **options):
             results = [{"passed": i < 2, "actual": "private-result"} for i, _ in enumerate(cases)]
             return {"status": "evaluated", "passed": 2, "total": len(results), "results": results}
 

@@ -607,3 +607,10 @@ input:not([type=checkbox]):not([type=radio]), select, textarea { max-width: 100%
 @media (max-width:600px) {
   .practice-options { grid-template-columns:1fr; }
 }
+
+.coding-sample-result { margin-top:8px; }
+.coding-output-comparison { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:6px; }
+.coding-output-comparison > div { padding:8px; border-radius:6px; background:#102738; }
+.coding-output-comparison dt { font-weight:650; }
+.coding-output-comparison code, .coding-diagnostic { white-space:pre-wrap; overflow-wrap:anywhere; }
+.coding-diagnostic { margin-top:6px; max-height:160px; overflow:auto; }
