@@ -215,9 +215,11 @@ async function checkRolePractice() {
   await goto('/account?tab=preferences', 'document.querySelector(".theme-preference select")');
   await select('.theme-preference select','dark');
   await waitFor('document.documentElement.dataset.theme==="dark"','dark theme');
+  await evaluate('window.__beforeReload = true');
   await command('Page.reload');
-  await waitFor('document.querySelector(".theme-preference select")?.value==="dark"','restored theme');
-  check('Theme preference survives reload',await evaluate('document.documentElement.dataset.theme==="dark"'));
+  await waitFor(`!window.__beforeReload && document.documentElement.dataset.theme === "dark" &&
+    document.querySelector(".theme-preference select")?.value === "dark"`, 'restored theme');
+  check('Theme preference survives reload',true);
   await goto('/account?tab=resume',hasText('Resume Upload & Parser'));
   const document = await command('DOM.getDocument');
   const input = await command('DOM.querySelector',{nodeId:document.root.nodeId,selector:'input[type="file"]'});
