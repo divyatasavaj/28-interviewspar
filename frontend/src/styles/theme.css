@@ -24,6 +24,7 @@
   --color-gray-600:#bccddd;
   --color-gray-500:#b3c6d6;
   --color-gray-400:#aebfce;
+  --color-gray-200:#456176;
   --color-gray-100:#345366;
   --color-gray-50:#203d51;
   --color-white:#fff;
@@ -59,7 +60,7 @@
     .delivery-feedback, .report-answer-feedback, .report-table th) {
     color:var(--ink); background:var(--wash); border-color:var(--line);
   }
-  [data-theme="dark"] :is(.page-tabs a, .workspace-links a, .account-trigger, .call-join p, .call-join small,
+  [data-theme="dark"] :is(.page-tabs a, .workspace-links a, .account-trigger, .workspace-menu-toggle, .call-join p, .call-join small,
     .device-check p, .practice-options span, .section-kicker) { color:var(--muted); }
   [data-theme="dark"] :is(.text-primary, .device-check button, .workspace-links a[aria-current]) { color:var(--theme-link); }
   [data-theme="dark"] :is(.spar-brand, .account-trigger) { color:var(--ink); }
@@ -68,6 +69,7 @@
   [data-theme="dark"] :is([class*="bg-[#f8f5ef]"],[class*="bg-[#fcfaf6]"]) { background-color:var(--surface); }
   [data-theme="dark"] :is(.call-join select,.report-table td) { color:var(--ink); background:var(--surface); border-color:var(--line); }
   [data-theme="dark"] .spar-button.secondary { color:var(--ink); background:var(--panel); border-color:var(--line); box-shadow:none; }
+  [data-theme="dark"] .report-page footer .text-red-700 { color:#ffa7b1; }
 }
 @media print {
   :root[data-theme="dark"] { color-scheme:light; --ink:#193449; --panel:#fff; --surface:#fff; --line:#d5e0e7; }

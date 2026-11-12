@@ -10,7 +10,8 @@ for this pass.
 The targeted Chrome journey passed 31 checks, including theme persistence,
 expected and returned sample values, retained coding skills, direct navigation
 to required resume gaps, and both cancellation and confirmation of deletion.
-The browser grading check used a local Judge0 response fixture.
+The browser grading check used a local Judge0 response fixture. The full
+regression also passed 144 Chrome and 37 live API checks.
 
 All 172 backend, 48 frontend, and 3 ML tests passed. The frontend build and lint
 passed with existing warnings. The execution tests verify that compiler
