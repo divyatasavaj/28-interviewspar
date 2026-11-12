@@ -89,6 +89,8 @@ DOMAIN_TOPICS = {
     "System Design": "system-design", "Security": "application-security",
 }
 EXERCISE_TOPICS = {
+    "backend-retries": "rest-apis", "backend-cache-keys": "system-design",
+    "frontend-page-count": "accessibility", "data-model-errors": "machine-learning",
     "frontend-classes": "javascript", "frontend-search": "javascript", "frontend-page": "accessibility",
     "backend-rate": "rest-apis", "backend-cache": "system-design", "data-confusion": "machine-learning",
     "data-window": "python", "data-missing": "python", "qa-ranges": "unit-testing",
@@ -163,3 +165,18 @@ def followup_prompt(question, answer):
     except Exception:
         pass
     return None
+
+EXTRA_PROMPTS = {
+    "rest-apis": ("How would you paginate an API when records can be added between requests?", "Which errors should an API client retry, and how would you limit retries?", "How would you introduce a new required field without breaking existing clients?"),
+    "sql": ("How would you find duplicate email addresses without returning every user row?", "How would you compare two possible indexes for a query that filters and sorts?", "When would you use a transaction rather than two independent writes?"),
+    "javascript": ("How would you limit the number of fetch requests running at once?", "What state would you keep when implementing a throttled scroll handler?", "How would you diagnose a memory leak caused by event listeners?"),
+    "react": ("How would you preserve a draft while changing tabs in an application?", "How would you decide which component owns shared form state?", "What would you test when a list item can be edited and deleted optimistically?"),
+    "accessibility": ("How would you let a screen reader announce a validation failure?", "How would you test a menu that opens on a touch device and with a keyboard?", "How would you communicate an error state when users cannot distinguish colors?"),
+    "data-structures-algorithms": ("How would you detect a cycle in a linked list?", "How would you find overlapping intervals efficiently?", "When would you use a heap instead of sorting every incoming item?"),
+    "python": ("How would you aggregate totals from a generator without consuming it twice?", "How would you validate mixed input types before transforming a dataset?", "How would you profile a slow transformation before changing its implementation?"),
+    "machine-learning": ("How would you detect target leakage in a training pipeline?", "How would you choose and validate a classification threshold?", "How would you investigate performance differences across data slices?"),
+    "system-design": ("How would you handle a burst of requests for one expired cache key?", "What would you measure before splitting a service into smaller components?", "How would you stop retries from amplifying a downstream outage?"),
+    "unit-testing": ("Which boundary cases would you test for a pagination function?", "How would you test retry behavior without waiting for real timers?", "How would you make a test suite easier to diagnose when failures occur only in CI?"),
+    "ci-cd": ("How would you test a rollback procedure before relying on it?", "How would you use deployment health signals to decide whether to continue a rollout?", "Which pipeline failures would block a release, and how would you make them visible?"),
+    "application-security": ("How would you test that permission changes take effect for existing sessions?", "How would you prevent tenant data from leaking through a cache?", "How would you handle an unexpected file type in an upload endpoint?"),
+}

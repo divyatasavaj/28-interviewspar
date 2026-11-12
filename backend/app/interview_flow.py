@@ -11,8 +11,8 @@ from pathlib import Path
 
 from app.fluency import compute_fluency_score
 from app.groq_review import request_review
-from app.coding_practice import practice_exercises
-from app.practice_topics import EXERCISE_TOPICS, TOPICS, select_prompts
+from app.coding_practice import EXERCISES, practice_exercises
+from app.practice_topics import EXERCISE_TOPICS, EXTRA_PROMPTS, TOPICS, select_prompts
 
 BANK = json.loads(
     (Path(__file__).resolve().parents[1] / "data/interview_bank.json").read_text()
@@ -74,7 +74,7 @@ def set_question_depth(question, difficulty):
 
 
 def make_questions(domain, persona, resume=None, experience_level="mid", variant=0,
-                   coding_practice=False, *, coding_only=False, focus_topic=None, history=None):
+                   coding_practice=False, *, coding_only=False, focus_topic=None, coding_topic=None, history=None):
     """Use curated prompts and only facts actually extracted from the user's resume."""
     questions = []
 
@@ -94,19 +94,23 @@ def make_questions(domain, persona, resume=None, experience_level="mid", variant
     recent, verified = history or (set(), {})
     difficulty = EXPERIENCE_DIFFICULTY[experience_level]
     if focus_topic:
-        prompts = TOPICS[focus_topic][3]
-        offset = variant % len(prompts)
-        for prompt in sorted(prompts[offset:] + prompts[:offset], key=lambda text: text in recent):
+        prompts = TOPICS[focus_topic][3] + EXTRA_PROMPTS[focus_topic]
+        offset = (variant * 3) % len(prompts)
+        for prompt in sorted(prompts[offset:] + prompts[:offset], key=lambda text: text in recent)[:3]:
             add("technical", prompt, skill_topic=focus_topic)
             set_question_depth(questions[-1], difficulty)
         return questions
 
     if persona == "technical" and (coding_practice or coding_only):
-        exercises = practice_exercises(domain, experience_level, variant)
+        exercises = practice_exercises(domain, experience_level, variant) if not coding_topic else [
+            item for item in EXERCISES.values()
+            if domain in item["domains"] and EXERCISE_TOPICS[item["id"]] == coding_topic
+        ]
+        limit = 2 if experience_level in ("intern", "junior") else 3
         for exercise in sorted(exercises, key=lambda item: (
             item["id"] in recent,
             not (verified.get(EXERCISE_TOPICS[item["id"]], 100) < 70),
-        )):
+        ))[:limit]:
             add(
                 "coding", exercise["description"], problem_id=exercise["id"],
                 title=exercise["title"], starter_code=exercise["starter"],

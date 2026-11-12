@@ -78,6 +78,26 @@ class Collection:
 
 
 class InterviewApiTests(unittest.TestCase):
+    def test_skill_retry_prioritizes_fresh_coding_exercise(self):
+        mixed = self.start(domain="Backend", coding_only=True, response_mode="voice")
+        self.assertEqual(mixed["current_question"]["problem_id"], "backend-rate")
+        response, _ = self.submit(mixed, answer="", code="function solve(){ return 0; }")
+        self.assertEqual(response.status_code, 200)
+        retry = self.start(domain="Backend", coding_only=True, coding_topic="rest-apis", response_mode="voice")
+        self.assertEqual(retry["current_question"]["problem_id"], "backend-retries")
+        self.assertEqual(retry["current_question"]["skill_topic"], "rest-apis")
+
+    def test_focused_spoken_retry_uses_a_fresh_set(self):
+        session = self.start(domain="Backend", focus_topic="rest-apis")
+        first = set()
+        for _ in range(3):
+            first.add(session["current_question"]["prompt"])
+            session = self.submit(session)[0].json()
+        retry = self.start(domain="Backend", focus_topic="rest-apis")
+        for _ in range(3):
+            self.assertNotIn(retry["current_question"]["prompt"], first)
+            retry = self.submit(retry)[0].json()
+
     def test_coding_only_completes_without_speech(self):
         session = self.start(domain="Frontend", experience_level="junior", coding_only=True, response_mode="voice")
         self.assertEqual(session["progress"]["total"], 2)

@@ -19,9 +19,9 @@ from app.interview_flow import (
     set_question_depth,
 )
 from app.safe_execution import execution_endpoint, run_problem
-from app.coding_practice import CODING_DOMAINS, evaluate_code
+from app.coding_practice import CODING_DOMAINS, EXERCISES, evaluate_code
 from app.delivery import CodingObservation, DeliveryObservation, coding_feedback, delivery_feedback
-from app.practice_topics import TOPICS, followup_prompt, practice_history, public_topics
+from app.practice_topics import EXERCISE_TOPICS, TOPICS, followup_prompt, practice_history, public_topics
 
 router = APIRouter(prefix="/interview", tags=["interview"])
 
@@ -39,6 +39,7 @@ class StartRequest(BaseModel):
     coding_practice: bool = False
     coding_only: bool = False
     focus_topic: str | None = Field(default=None, max_length=80)
+    coding_topic: str | None = Field(default=None, max_length=80)
 
 
 class AnswerRequest(BaseModel):
@@ -72,6 +73,10 @@ def domains():
         "domains": DOMAINS, "coding_domains": CODING_DOMAINS,
         "coding_runner_configured": bool(execution_endpoint()),
         "practice_topics": public_topics(),
+        "coding_topics": {
+            domain: sorted({EXERCISE_TOPICS[item["id"]] for item in EXERCISES.values() if domain in item["domains"]})
+            for domain in CODING_DOMAINS
+        },
     }
 
 
@@ -88,6 +93,8 @@ def start(body: StartRequest, db=Depends(get_db), user=Depends(require_user)):
     coding = body.coding_practice or body.coding_only
     if coding and (persona != "technical" or body.domain not in CODING_DOMAINS):
         raise HTTPException(400, "Hands-on coding is unavailable for this track and domain.")
+    if body.coding_topic and (not body.coding_only or body.coding_topic not in domains()["coding_topics"].get(body.domain, [])):
+        raise HTTPException(400, "Choose a coding skill available in this domain.")
     if body.focus_topic and (
         body.focus_topic not in TOPICS or persona != "technical" or coding
         or body.domain in ("HR", "Product Management")
@@ -105,7 +112,8 @@ def start(body: StartRequest, db=Depends(get_db), user=Depends(require_user)):
     variant = previous.get("question_variant", 0) + 1 if previous else 0
     questions = make_questions(
         body.domain, persona, resume, body.experience_level, variant, coding,
-        coding_only=body.coding_only, focus_topic=body.focus_topic, history=practice_history(recent_sessions),
+        coding_only=body.coding_only, focus_topic=body.focus_topic, coding_topic=body.coding_topic,
+        history=practice_history(recent_sessions),
     )
     session = {
         "user_id": str(user["_id"]),

@@ -318,5 +318,302 @@
       {"args": [[]], "expected": []},
       {"args": [["p", "pw", "pwd"]], "expected": ["*", "**", "***"]}
     ]
+  },
+  {
+    "id": "backend-retries",
+    "focused_only": true,
+    "title": "Count unique requests",
+    "domains": [
+      "Backend",
+      "DevOps",
+      "System Design"
+    ],
+    "difficulty": "medium",
+    "description": "Given a list of request ID strings, return how many distinct IDs occur. Compare IDs case-sensitively.",
+    "starter": {
+      "javascript": "function solve(ids) {\n  // Your solution\n}",
+      "python": "def solve(ids):\n    pass"
+    },
+    "samples": [
+      {
+        "args": [
+          [
+            "a",
+            "a",
+            "b"
+          ]
+        ],
+        "expected": 2
+      },
+      {
+        "args": [
+          []
+        ],
+        "expected": 0
+      }
+    ],
+    "hidden": [
+      {
+        "args": [
+          [
+            "A",
+            "a"
+          ]
+        ],
+        "expected": 2
+      },
+      {
+        "args": [
+          [
+            "x",
+            "x",
+            "x"
+          ]
+        ],
+        "expected": 1
+      },
+      {
+        "args": [
+          [
+            "",
+            "x",
+            ""
+          ]
+        ],
+        "expected": 2
+      }
+    ]
+  },
+  {
+    "id": "backend-cache-keys",
+    "focused_only": true,
+    "title": "Cache keys in use",
+    "domains": [
+      "Backend",
+      "DevOps",
+      "System Design"
+    ],
+    "difficulty": "medium",
+    "description": "Process [key, enabled] events in order. Return the number of keys whose most recent event has enabled set to true.",
+    "starter": {
+      "javascript": "function solve(events) {\n  // Your solution\n}",
+      "python": "def solve(events):\n    pass"
+    },
+    "samples": [
+      {
+        "args": [
+          [
+            [
+              "x",
+              true
+            ],
+            [
+              "y",
+              true
+            ],
+            [
+              "x",
+              false
+            ]
+          ]
+        ],
+        "expected": 1
+      },
+      {
+        "args": [
+          []
+        ],
+        "expected": 0
+      }
+    ],
+    "hidden": [
+      {
+        "args": [
+          [
+            [
+              "a",
+              false
+            ],
+            [
+              "a",
+              true
+            ]
+          ]
+        ],
+        "expected": 1
+      },
+      {
+        "args": [
+          [
+            [
+              "x",
+              true
+            ],
+            [
+              "x",
+              true
+            ]
+          ]
+        ],
+        "expected": 1
+      },
+      {
+        "args": [
+          [
+            [
+              "x",
+              false
+            ],
+            [
+              "y",
+              false
+            ]
+          ]
+        ],
+        "expected": 0
+      }
+    ]
+  },
+  {
+    "id": "frontend-page-count",
+    "focused_only": true,
+    "title": "Count visible pages",
+    "domains": [
+      "Frontend",
+      "Mobile"
+    ],
+    "difficulty": "easy",
+    "description": "Return the number of pages needed for total items when each page holds size items. Total is nonnegative and size is positive.",
+    "starter": {
+      "javascript": "function solve(total, size) {\n  // Your solution\n}",
+      "python": "def solve(total, size):\n    pass"
+    },
+    "samples": [
+      {
+        "args": [
+          21,
+          10
+        ],
+        "expected": 3
+      },
+      {
+        "args": [
+          0,
+          10
+        ],
+        "expected": 0
+      }
+    ],
+    "hidden": [
+      {
+        "args": [
+          20,
+          10
+        ],
+        "expected": 2
+      },
+      {
+        "args": [
+          1,
+          10
+        ],
+        "expected": 1
+      },
+      {
+        "args": [
+          25,
+          1
+        ],
+        "expected": 25
+      }
+    ]
+  },
+  {
+    "id": "data-model-errors",
+    "focused_only": true,
+    "title": "Find incorrect predictions",
+    "domains": [
+      "Data Science",
+      "ML Engineering"
+    ],
+    "difficulty": "easy",
+    "description": "Given equal-length arrays of actual and predicted labels, return the zero-based indices whose labels differ, in ascending order.",
+    "starter": {
+      "javascript": "function solve(actual, predicted) {\n  // Your solution\n}",
+      "python": "def solve(actual, predicted):\n    pass"
+    },
+    "samples": [
+      {
+        "args": [
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            0
+          ]
+        ],
+        "expected": [
+          1,
+          2
+        ]
+      },
+      {
+        "args": [
+          [],
+          []
+        ],
+        "expected": []
+      }
+    ],
+    "hidden": [
+      {
+        "args": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "expected": []
+      },
+      {
+        "args": [
+          [
+            0
+          ],
+          [
+            1
+          ]
+        ],
+        "expected": [
+          0
+        ]
+      },
+      {
+        "args": [
+          [
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "expected": [
+          0,
+          2
+        ]
+      }
+    ]
   }
 ]

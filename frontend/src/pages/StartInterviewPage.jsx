@@ -17,6 +17,8 @@ export default function StartInterviewPage() {
   const [params] = useSearchParams();
   const requestedDomain = params.get('domain');
   const requestedTopic = params.get('topic');
+  const requestedCodingTopic = params.get('skill');
+  const [codingTopics, setCodingTopics] = useState({});
   const requestedLevel = params.get('level');
   const [topics, setTopics] = useState({});
   const [domains, setDomains] = useState([]);
@@ -24,7 +26,7 @@ export default function StartInterviewPage() {
   const [codingRunnerConfigured, setCodingRunnerConfigured] = useState(false);
   const [settings, setSettings] = useState({name:'', domain:'Software Engineering', experience_level:'mid',
     persona:params.get('persona') === 'hr' ? 'hr' : 'technical',mode:'practice',save_consent:false,allow_ai:false,
-    coding_practice:params.get('coding') === '1',coding_only:params.get('track') === 'coding',focus_topic:''});
+    coding_practice:params.get('coding') === '1',coding_only:params.get('track') === 'coding',focus_topic:'',coding_topic:''});
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState('');
   useEffect(() => {
@@ -40,17 +42,23 @@ export default function StartInterviewPage() {
         setSettings(s=>({...s,name:user.name,domain:domain || s.domain,focus_topic:topic,
           experience_level:Object.hasOwn(experienceLevels,level) ? level : s.experience_level}));
         setTopics(practiceTopics);
+        setCodingTopics(data.coding_topics || {});
+        if (domain && data.coding_topics?.[domain]?.includes(requestedCodingTopic)) {
+          setSettings(s=>({...s,coding_topic:requestedCodingTopic}));
+        }
         setDomains(data.domains);
         setCodingDomains(data.coding_domains || []);
         setCodingRunnerConfigured(data.coding_runner_configured);
       }
     }).catch(e=>{if(alive)setError(e.message);});
     return ()=>{alive=false;};
-  },[params,requestedDomain,requestedTopic,requestedLevel]);
+  },[params,requestedDomain,requestedTopic,requestedLevel,requestedCodingTopic]);
   const update=(key,value)=>setSettings(s=>({...s,[key]:value}));
   const canCode = settings.persona === 'technical' && codingDomains.includes(settings.domain);
   const hasCoding = canCode && (settings.coding_only || (settings.coding_practice && !settings.focus_topic));
   const canFocus = settings.persona === 'technical' && !hasCoding && !['HR','Product Management'].includes(settings.domain);
+  const eligibleCodingTopics = codingTopics[settings.domain] || [];
+  const codingTopic = settings.coding_only && eligibleCodingTopics.includes(settings.coding_topic) ? settings.coding_topic : '';
   const domainChoices = settings.coding_only ? codingDomains : domains;
   function selectTrack(value) {
     setSettings(current=>({...current,persona:value === 'hr' ? 'hr' : 'technical',coding_only:value === 'coding',
@@ -58,7 +66,7 @@ export default function StartInterviewPage() {
   }
   async function submit(event) {
     event.preventDefault(); setBusy(true); setError('');
-    try { const session=await startInterview({...settings,coding_practice:hasCoding,focus_topic:canFocus ? settings.focus_topic || null : null,response_mode:'voice'}); navigate(`/interview/${session.id}`); }
+    try { const session=await startInterview({...settings,coding_practice:hasCoding,coding_topic:codingTopic || null,focus_topic:canFocus ? settings.focus_topic || null : null,response_mode:'voice'}); navigate(`/interview/${session.id}`); }
     catch(e){setError(e.message);} finally{setBusy(false);}
   }
   const field='mt-2 w-full rounded-xl border border-gray-200 bg-white p-3 text-gray-900';
@@ -84,7 +92,13 @@ export default function StartInterviewPage() {
           <option value="">Full technical interview</option>
           {Object.entries(topics).map(([key,topic])=><option key={key} value={key}>{topic.label} · short session</option>)}
         </select></label>}
-        {settings.coding_only && <p className="mt-4 text-sm text-gray-600">Solve {['intern','junior'].includes(settings.experience_level) ? 'two' : 'three'} exercises, then go straight to your report.</p>}
+        {settings.coding_only && <label className="mt-4 block text-sm font-medium">Coding focus
+          <select className={field} value={codingTopic} onChange={event=>update('coding_topic',event.target.value)}>
+            <option value="">Mixed skills</option>
+            {eligibleCodingTopics.map(id=><option value={id} key={id}>{topics[id]?.label || id}</option>)}
+          </select>
+        </label>}
+        {settings.coding_only && !codingTopic && <p className="mt-4 text-sm text-gray-600">Solve {['intern','junior'].includes(settings.experience_level) ? 'two' : 'three'} exercises, then go straight to your report.</p>}
         {canCode && !settings.coding_only && !settings.focus_topic && <label className="mt-5 flex items-start gap-3 text-xs leading-relaxed text-gray-600">
           <input id="coding-practice" className="mt-1 size-4 shrink-0" type="checkbox" checked={hasCoding} onChange={e=>update('coding_practice',e.target.checked)}/>
           <span><strong className="mb-1 block text-sm text-gray-900">Start with a hands-on coding round</strong>

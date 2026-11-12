@@ -16,7 +16,7 @@ CODING_DOMAINS = sorted({domain for item in EXERCISES.values() for domain in ite
 
 
 def practice_exercises(domain, level, variant):
-    domain_items = [item for item in EXERCISES.values() if domain in item["domains"]]
+    domain_items = [item for item in EXERCISES.values() if domain in item["domains"] and not item.get("focused_only")]
     if not domain_items:
         return []
     if level in ("intern", "junior"):

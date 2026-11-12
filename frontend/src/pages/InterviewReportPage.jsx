@@ -140,7 +140,10 @@ export default function InterviewReportPage() {
   const retry = new URLSearchParams();
   if (report?.domain) retry.set('domain', report.domain);
   if (report?.experience_level) retry.set('level', report.experience_level);
-  if (practiceAnswer?.hands_on || report?.coding_only) retry.set('track','coding');
+  if (practiceAnswer?.hands_on || report?.coding_only) {
+    retry.set('track','coding');
+    if (practiceAnswer?.skill_topic) retry.set('skill',practiceAnswer.skill_topic);
+  }
   else if (report?.interview_type === 'hr') retry.set('persona','hr');
   else if (practiceAnswer?.skill_topic || report?.focus_topic) retry.set('topic', practiceAnswer?.skill_topic || report.focus_topic);
   const practiceIndex = report?.qa_pairs.indexOf(practiceAnswer) + 1;
