@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { apiRequest } from '../../api/auth';
 import { readCodeDraft, writeCodeDraft } from '../../utils/codeDraft';
+
+const SyntaxEditor = lazy(() => import('./SyntaxEditor'));
 
 function SampleResults({ output, samples }) {
   if (!output) return null;
@@ -14,7 +16,7 @@ function SampleResults({ output, samples }) {
           <div><dt>Expected</dt><dd><code>{JSON.stringify(samples[index]?.expected)}</code></dd></div>
           <div><dt>Returned</dt><dd><code>{result.has_return_value ? JSON.stringify(result.actual).slice(0,1200) : 'No result'}</code></dd></div>
         </dl>}
-        {result.diagnostic && <pre className="coding-diagnostic">{result.diagnostic}</pre>}
+        {result.diagnostic && <details className="coding-diagnostic" open><summary>Compiler / runtime details</summary><pre>{result.diagnostic}</pre></details>}
       </li>
     ))}</ul>}
   </div>;
@@ -89,8 +91,10 @@ export default function CodeEditor({ question, sessionId, onChange, onSubmit, on
       </label>
       <label htmlFor="solution-code">Your code</label>
       {restored && <span className="coding-draft-note">Draft restored from this tab</span>}
-      <textarea id="solution-code" aria-label="Your code" maxLength={12000} spellCheck={false}
-        autoCapitalize="off" autoComplete="off" disabled={locked} value={code} onChange={event => change(event.target.value)}/>
+      <Suspense fallback={<p role="status">Loading code editor…</p>}>
+        <SyntaxEditor key={language} value={code} language={language} disabled={locked} onChange={change}/>
+      </Suspense>
+      <p id="editor-help" className="editor-help">Tab to indent · Escape, then Tab to leave the editor · {code.length.toLocaleString()}/12,000 characters</p>
     </div>
     <section className="coding-results" aria-label="Sample results">
       <h2>Sample results</h2>
