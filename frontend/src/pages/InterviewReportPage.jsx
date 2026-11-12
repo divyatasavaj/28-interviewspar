@@ -4,6 +4,9 @@ import { apiRequest, getInterviewFeedback } from '../api/auth';
 import Brand from '../components/Brand';
 import UiIcon from '../components/UiIcon';
 import InterviewAnalytics from '../components/InterviewAnalytics';
+import usePreparation from '../hooks/usePreparation';
+import LoadingCards from '../components/LoadingCards';
+import { questionPracticeLink } from '../utils/practice';
 import {clearCodeDraft} from '../utils/codeDraft';
 
 function roundLabel(round) {
@@ -30,7 +33,7 @@ function CodingResult({ evaluation }) {
   </div>;
 }
 
-function AnswerReview({ row, index }) {
+function AnswerReview({ row, index, report, preparation }) {
   const evaluation = row.evaluation;
   return <details id={`answer-${index + 1}`} className="report-qa">
     <summary>
@@ -38,6 +41,15 @@ function AnswerReview({ row, index }) {
       <span><span className="block text-xs capitalize text-gray-600">{roundLabel(row.round)}{row.skipped && ' · Skipped'}</span>{row.question}</span>
     </summary>
     <div className="report-qa-body">
+      <div className="answer-actions print:hidden">
+        <button className="spar-button secondary" aria-pressed={Boolean(preparation.data?.bookmarks.some(item => item.session_id === report.session_id && item.question_id === row.question_id))}
+          disabled={!preparation.data || preparation.pending.includes(report.session_id + ':' + row.question_id)}
+          onClick={() => preparation.bookmark({session_id:report.session_id, question_id:row.question_id},
+            !preparation.data.bookmarks.some(item => item.session_id === report.session_id && item.question_id === row.question_id))}>
+          {preparation.data?.bookmarks.some(item => item.session_id === report.session_id && item.question_id === row.question_id) ? 'Saved question' : 'Save question'}
+        </button>
+        <Link className="text-action" to={questionPracticeLink(report,row,true)}>Retry this question</Link>
+      </div>
       {row.skipped ? <p className="text-sm text-gray-600">You skipped this question.</p> : <>
         {!row.hands_on && <div className="report-answer-text report-transcript">
           <span>Your answer</span>
@@ -62,6 +74,8 @@ function AnswerReview({ row, index }) {
 }
 
 export default function InterviewReportPage() {
+  const preparation = usePreparation();
+  const [revision, setRevision] = useState(0);
   const params = useParams();
   const [query] = useSearchParams();
   const sessionId = params.sessionId || query.get('session_id');
@@ -108,7 +122,16 @@ export default function InterviewReportPage() {
       if (alive) setError(failure.message);
     });
     return () => { alive = false; };
-  }, [sessionId]);
+  }, [sessionId, revision]);
+
+  useEffect(() => {
+    if (!report || !/^#answer-\d+$/.test(window.location.hash)) return;
+    const answer = document.getElementById(window.location.hash.slice(1));
+    if (answer) {
+      answer.open = true;
+      answer.scrollIntoView({block:'start'});
+    }
+  }, [report]);
 
   async function remove() {
     setDeleting(true);
@@ -154,7 +177,7 @@ export default function InterviewReportPage() {
   return <main ref={page} className={`report-page mx-auto min-h-screen max-w-6xl px-5 py-8 text-gray-900 page-enter sm:px-8 sm:py-10 ${printFull ? 'report-print-full' : ''}`}>
     <nav className="flex items-center justify-between gap-4 print:hidden"><Brand to="/dashboard"/><Link to="/dashboard" className="text-sm text-primary">← Dashboard</Link></nav>
     {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-700">{error}</p>}
-    {!report ? <p role="status">{error ? 'Report unavailable.' : 'Loading report…'}</p> : <>
+    {!report ? error ? <button className="spar-button secondary" onClick={() => setRevision(value => value + 1)}>Retry report</button> : <LoadingCards label="Loading report"/> : <>
       <header className="report-heading flex flex-wrap items-start justify-between gap-5">
         <div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Your interview feedback</h1>
@@ -205,7 +228,13 @@ export default function InterviewReportPage() {
         </section>
       </div>
 
-      {report.delivery_summary && <div id="report-delivery"><InterviewAnalytics delivery={report.delivery_summary} summary/></div>}
+      <section className="report-takeaways preparation-card" aria-label="Feedback summary">
+        <div><h2>Strengths</h2>{report.strengths.length ? <ul>{report.strengths.slice(0,3).map(item => <li key={item}>{item}</li>)}</ul>
+          : <p>{passedTests ? `Passed ${passedTests} coding tests across the graded exercises.` : 'Complete more evaluated answers to identify strengths.'}</p>}</div>
+        <div><h2>Areas to improve</h2>{report.weaknesses.length ? <ul>{report.weaknesses.slice(0,3).map(item => <li key={item}>{item}</li>)}</ul>
+          : <p>{totalTests > passedTests ? `Review the ${totalTests - passedTests} failed coding tests and their feedback below.` : 'Review the question feedback for details from this session.'}</p>}</div>
+      </section>
+      {report.delivery_summary && <details className="report-delivery-details" open><summary>Speaking and presence details</summary><div id="report-delivery"><InterviewAnalytics delivery={report.delivery_summary} summary/></div></details>}
       <section id="report-rounds" className="report-rounds rounded-2xl border border-gray-200 bg-white p-5 sm:p-7">
         <h2 className="mb-4 text-xl font-bold">Round by round</h2>
         <div className="overflow-x-auto"><table className="report-table">
@@ -221,8 +250,11 @@ export default function InterviewReportPage() {
 
       <section id="report-answers">
         <h2 className="mb-4 text-xl font-bold">Question-by-question review</h2>
+        <Link className="text-action print:hidden" to="/preparation#saved-questions">Open saved questions →</Link>
+        {preparation.status && <p role="status" className="save-confirmation print:hidden">{preparation.status}</p>}
+        {preparation.error && <p role="alert" className="inline-error">{preparation.error} <button onClick={preparation.reload}>Retry bookmarks</button></p>}
         {report.qa_pairs.length === 0 && <p className="text-sm text-gray-600">No answers were submitted in this session.</p>}
-        {report.qa_pairs.map((row, index) => <AnswerReview key={row.question_id} row={row} index={index}/>)}
+        {report.qa_pairs.map((row, index) => <AnswerReview key={row.question_id} row={row} index={index} report={report} preparation={preparation}/>)}
       </section>
       <footer className="flex flex-wrap items-center justify-between gap-5 border-t border-gray-200 pt-7 print:hidden">
         <Link to="/interview/start" className="spar-button">Practice again<UiIcon name="arrow"/></Link>

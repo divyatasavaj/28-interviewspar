@@ -187,3 +187,16 @@ is retained as the initial repair record.
 
 Commands, coverage, evidence and service limitations are recorded in
 [the site test report](docs/SITE_TEST_REPORT.md).
+
+## Practice experience improvements
+
+- [x] Upgrade the coding editor and compiler feedback.
+- [x] Add dashboard progress and a recommended next session.
+- [x] Summarize report strengths and areas to improve.
+- [x] Save questions and retry a selected question.
+- [x] Save progress on resume preparation checklists.
+- [x] Create a preparation plan from role and interview date.
+- [x] Refine typography, loading/retry states, and mobile controls.
+- [x] Verify the complete flow and commit to b3.
+
+Verified with 178 backend tests, 49 frontend tests, 148 standard browser checks, and 39 preparation/coding browser checks. Production build passed. Coding tests used a simulated runner and synthetic camera input. Dependency audit reported zero vulnerabilities.

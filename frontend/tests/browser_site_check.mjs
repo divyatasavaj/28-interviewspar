@@ -73,7 +73,7 @@ async function click(selector, text = null) {
 }
 async function fill(selector, value) {
   await waitFor(`!!document.querySelector(${JSON.stringify(selector)})`, selector);
-  await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});e.focus();e.select();})()`);
+  await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});e.focus();if(e.isContentEditable){const range=document.createRange();range.selectNodeContents(e);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);}else{e.select();}})()`);
   await command('Input.insertText', { text: value });
 }
 async function select(selector, value) {
@@ -144,7 +144,30 @@ async function checkWorkspaceOrganization() {
   await goto('/interview/start');await layout('mobile interview setup');await screenshot('setup-mobile');
   await viewport(1440);await screenshot('setup-desktop');
 }
+async function checkPreparationPlan() {
+  await goto('/preparation', 'document.querySelector(".plan-form input")');
+  await fill('.plan-form input[placeholder]', 'Backend developer');
+  await select('.plan-form select', 'Backend');
+  const date = await evaluate(`(()=>{const d=new Date();d.setDate(d.getDate()+14);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')})()`);
+  await evaluate(`(()=>{const input=document.querySelector('input[type="date"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(date)});input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  await click('button','Save preparation plan');
+  await waitFor('document.querySelector(".plan-schedule li")','saved preparation schedule');
+  await click('.plan-schedule input[type="checkbox"]');
+  await waitFor(hasText('Checklist progress saved.'),'saved plan progress');
+  await evaluate('window.__beforeReload=true');
+  await command('Page.reload');
+  await waitFor('!window.__beforeReload && document.querySelector(".plan-schedule input")?.checked','restored plan completion');
+  check('Preparation role, dates, and completed sessions survive reload', await evaluate(hasText('Backend developer')));
+  await viewport(390,844); await layout('mobile preparation'); await screenshot('preparation-mobile');
+  await viewport(1440); await screenshot('preparation-desktop');
+  await goto('/dashboard',hasText('Practice tracks'));
+}
 async function checkCodingRound() {
+  await waitFor('!!document.querySelector(".progress-overview") && !document.querySelector(".dashboard-page .loading-cards")', 'loaded dashboard progress');
+  await command('Runtime.evaluate', {
+    expression: 'Promise.all(document.getAnimations().filter(a => Number.isFinite(a.effect.getComputedTiming().endTime)).map(a => a.finished.catch(() => {})))',
+    awaitPromise: true, timeout: 10000,
+  });
   await click('#practice-options a', 'Practice coding');
   await waitFor('document.querySelector("#interview-track")?.value==="coding" && document.querySelectorAll("#interview-domain option").length>4', 'coding-only setup');
   await select('#interview-domain', 'Frontend');
@@ -160,9 +183,10 @@ async function checkCodingRound() {
   check('Coding-only lobby previews camera without a microphone check', await evaluate('!!document.querySelector(".call-stage--preview") && !document.body.textContent.includes("Check microphone")'));
   await click('input[aria-label="Coding observations consent"]');
   await click('button', 'Join interview');
-  await waitFor('document.querySelector(".call-room--coding textarea")', 'coding editor');
+  await waitFor('document.querySelector(".call-room--coding .cm-content")', 'coding editor');
   await waitFor('document.querySelector("video").srcObject?.active && document.querySelector("video").videoWidth>0', 'live coding camera');
   check('Coding starts with camera and no microphone', await evaluate('window.__callTest.starts===0 && !!document.querySelector("video").srcObject?.active'));
+  check('Code editor has line numbers and syntax highlighting',await evaluate('!!document.querySelector(".cm-lineNumbers") && !!document.querySelector(".cm-line span")'));
   await fill('#solution-code', 'function solve(classes) { return []; }');
   await select('[aria-label="Code language"]', 'python');
   await fill('#solution-code', 'def solve(classes): return []');
@@ -171,10 +195,10 @@ async function checkCodingRound() {
   await evaluate(installCallMedia());
   await click('input[aria-label="Coding observations consent"]');
   await click('button', 'Join interview');
-  await waitFor('document.querySelector("#solution-code")?.value==="def solve(classes): return []"', 'restored coding draft');
+  await waitFor('document.querySelector("#solution-code")?.textContent==="def solve(classes): return []"', 'restored coding draft');
   check('Reload restores the code and selected language', await evaluate('document.querySelector(".coding-language select").value==="python"'));
   await select('[aria-label="Code language"]', 'javascript');
-  check('Editor retains each language draft', await evaluate('document.querySelector("#solution-code").value==="function solve(classes) { return []; }"'));
+  check('Editor retains each language draft', await evaluate('document.querySelector("#solution-code").textContent==="function solve(classes) { return []; }"'));
   await click('button', 'Run samples');
   const mock = process.env.MOCK_CODE_RUNNER === '1';
   await waitFor(hasText(mock ? '1 of 2 sample tests passed' : 'Code execution is not configured'), 'sample results');
@@ -204,6 +228,23 @@ async function checkCodingRound() {
   if (liveReview) check('Opted-in coding report includes live Groq review', await evaluate('!!document.querySelector(".coding-report strong")'));
   check('Practice this again retains the coding skill', await evaluate('Array.from(document.querySelectorAll("#report-overview a")).some(link=>{const params=new URL(link.href).searchParams;return params.get("track")==="coding" && params.get("skill")==="javascript"})'));
   await screenshot('coding-report');
+  const originalReportPath = await evaluate('location.pathname');
+  await click('#answer-1 button','Save question');
+  await waitFor(hasText('Question saved.'),'bookmark saved');
+  await goto('/preparation', 'document.querySelector(".bookmark-list li")');
+  check('Saved question appears in preparation',await evaluate(hasText('Class list builder')) || await evaluate('document.querySelectorAll(".bookmark-list li").length===1'));
+  await click('.bookmark-list a','Review answer');
+  await waitFor('document.querySelector("#answer-1")?.open','bookmarked answer expanded');
+  check('Bookmark opens its answer and feedback',true);
+  await click('#answer-1 a','Retry this question');
+  await waitFor(hasText('single saved question'),'exact question setup');
+  await click('#interview-save-consent');
+  await click('button','Start interview');
+  await waitFor(hasText('Question 1 of 1'),'single question retry');
+  check('Saved coding question opens a one-question retry',await evaluate(hasText('Class list builder')));
+  await click('button','End interview');
+  await waitFor(hasText('Your interview feedback'),'retry report');
+  await goto(originalReportPath,hasText('Your interview feedback'));
   await click('button','Delete this interview');
   await click('dialog button','Cancel');
   check('Cancelling deletion keeps the saved interview', await evaluate('location.pathname.endsWith("/report") && !document.querySelector("dialog[open]")'));
@@ -238,6 +279,13 @@ async function checkRolePractice() {
   await waitFor('document.activeElement?.id==="skill-evidence" && !!document.querySelector("#skill-evidence a[href*=topic]")','resume gap link');
   check('Review role opens the required gaps directly', await evaluate('document.activeElement?.id==="skill-evidence" && document.querySelector("#skill-evidence").textContent.includes("Required gaps to address first")'));
   await layout('desktop role evidence');
+  await click('.resume-checklist input');
+  await waitFor(hasText('Checklist progress saved.'),'resume checklist saved');
+  await goto('/dashboard',hasText('Practice tracks'));
+  await goto('/resume-intelligence', 'document.querySelector(".resume-checklist input:not(:disabled)")');
+  check('Resume checklist persists across navigation', await evaluate('document.querySelector(".resume-checklist input").checked'));
+  await screenshot('resume-checklist');
+
   await click('#skill-evidence a','Practice this gap');
   await waitFor('document.querySelector("#practice-topic")?.value', 'prefilled practice skill');
   const topic = await evaluate('document.querySelector("#practice-topic").value');
@@ -407,6 +455,7 @@ try {
   await waitFor('location.pathname==="/dashboard" && document.querySelector("h1")','signed-in dashboard');
   check('Signup validation and successful registration', true);
   if (process.env.CODING_ONLY === '1') {
+    await checkPreparationPlan();
     await checkCodingRound();
     await checkRolePractice();
     await checkCombinedPractice();

@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { getMe, listSessions, getLatestResumeAnalysis, getLatestMatch } from "../api/auth"
+import { getMe, listSessions, getLatestResumeAnalysis, getLatestMatch, getInterviewFeedback } from "../api/auth"
 import DashboardNavbar from "../components/DashboardNavbar"
 import UiIcon from "../components/UiIcon"
+
+import LoadingCards from "../components/LoadingCards"
+import { recommendedAnswer, questionPracticeLink } from "../utils/practice"
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" })
 
@@ -19,6 +22,9 @@ function interviewName(session) {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const [revision, setRevision] = useState(0)
+  const [latestFeedback, setLatestFeedback] = useState(null)
+  const [feedbackError, setFeedbackError] = useState("")
   const [user, setUser] = useState(null)
   const [sessions, setSessions] = useState([])
   const [resume, setResume] = useState(null)
@@ -30,12 +36,26 @@ export default function Dashboard() {
 
   useEffect(() => {
     const controller = new AbortController()
+    setLoading(true)
+    setAccountError("")
+    setHistoryError("")
+    setResumeError("")
+    setFeedbackError("")
+    setLatestFeedback(null)
     getMe().then(async account => {
       if (controller.signal.aborted) return
       setUser(account)
       await Promise.allSettled([
         listSessions().then(data => {
-          if (!controller.signal.aborted) setSessions(data)
+          if (!controller.signal.aborted) {
+            setSessions(data)
+            const latest = data.find(session => session.status === "completed")
+            if (latest) return getInterviewFeedback(latest.id).then(report => {
+              if (!controller.signal.aborted) setLatestFeedback(report)
+            }).catch(error => {
+              if (!controller.signal.aborted) setFeedbackError(error.message)
+            })
+          }
         }).catch(error => {
           if (!controller.signal.aborted) setHistoryError(error.message)
         }),
@@ -57,16 +77,18 @@ export default function Dashboard() {
       else setAccountError(error.message)
     })
     return () => controller.abort()
-  }, [navigate])
+  }, [navigate, revision])
 
   if (!user) return <main className="workspace-page">
-    <p role={accountError ? "alert" : "status"}>{accountError || "Loading account…"}</p>
+    {accountError ? <p role="alert">{accountError} <button className="text-action" onClick={() => setRevision(value => value + 1)}>Retry</button></p>
+      : <LoadingCards label="Loading your workspace"/>}
   </main>
 
   const active = sessions.find(session => session.status === "active")
   const completed = sessions.filter(session => session.status === "completed")
   const latestReport = completed[0]
   const hasResume = Boolean(resume || user.resume_status === "present")
+  const nextAnswer = recommendedAnswer(latestFeedback)
   const coverage = match?.assessment_mode === "job_description" && Number.isFinite(match.score)
 
   return (
@@ -76,6 +98,13 @@ export default function Dashboard() {
         <header className="dashboard-heading">
           <h1>Welcome, {user.name.split(" ")[0]}</h1>
         </header>
+
+        {loading ? <LoadingCards label="Loading practice progress"/> : !historyError && <section className="progress-overview" aria-label="Practice progress">
+          <div><strong>{completed.length}</strong><span>Completed sessions</span></div>
+          <div><strong>{completed.reduce((sum, session) => sum + (session.answered_count || 0), 0)}</strong><span>Answers practiced</span></div>
+          <div><Link className="text-action" to="/preparation">Open preparation plan →</Link><span>Schedule practice and revisit saved questions</span></div>
+          <p>Based on your latest {sessions.length} saved sessions.</p>
+        </section>}
 
         <div className="dashboard-overview">
           <section id="practice" className="dashboard-welcome" aria-labelledby="next-practice-title">
@@ -94,7 +123,7 @@ export default function Dashboard() {
           <section id="resume-tools" className="dashboard-resume-tools" aria-labelledby="dashboard-resume-title">
             <span className="tile-icon"><UiIcon name="file" /></span>
             <h2 id="dashboard-resume-title">Resume Intelligence</h2>
-            {resumeError && <p className="text-red-700" role="alert">{resumeError}</p>}
+            {resumeError && <p className="text-red-700" role="alert">{resumeError} <button onClick={() => setRevision(value => value + 1)}>Retry</button></p>}
             <p>{hasResume ? "Compare your skills and projects with a role or job description."
               : "Upload a PDF or DOCX to review your skills and projects."}</p>
             {hasResume && match && <p className="dashboard-match">
@@ -110,6 +139,17 @@ export default function Dashboard() {
             </div>
           </section>
         </div>
+
+        {latestFeedback && nextAnswer && <section className="next-practice preparation-card" aria-labelledby="recommended-title">
+          <h2 id="recommended-title">Recommended next practice</h2>
+          <p>{nextAnswer.evaluation.feedback}</p>
+          <div className="section-actions">
+            <Link className="text-action" to={questionPracticeLink(latestFeedback,nextAnswer)}>Practice {nextAnswer.skill_topic?.replaceAll('-', ' ') || latestFeedback.domain}</Link>
+            <Link className="text-action" to={`/interview/${latestFeedback.session_id}/report`}>Review the feedback</Link>
+          </div>
+          <small>Based on your latest report’s {nextAnswer.hands_on ? 'coding feedback' : Number.isFinite(nextAnswer.evaluation.correctness_score) ? 'technical evaluation' : 'answer structure feedback'}.</small>
+        </section>}
+        {feedbackError && <p role="alert">Couldn’t load the practice recommendation. <button className="text-action" onClick={() => setRevision(value => value + 1)}>Retry</button></p>}
 
         <section id="practice-options" className="dashboard-tracks" aria-labelledby="practice-options-title">
           <h2 id="practice-options-title">Practice tracks</h2>
@@ -129,7 +169,7 @@ export default function Dashboard() {
             <h2 id="recent-interviews-title">Recent interviews</h2>
             <Link className="text-action" to="/account?tab=reports">All interviews <UiIcon name="arrow" /></Link>
           </div>
-          {historyError && <p className="mt-4 text-sm text-red-700" role="alert">{historyError}</p>}
+          {historyError && <p className="mt-4 text-sm text-red-700" role="alert">{historyError} <button onClick={() => setRevision(value => value + 1)}>Retry</button></p>}
           {loading && !historyError && <p className="mt-4 text-sm text-gray-600" role="status">Loading interviews…</p>}
           {!loading && !historyError && sessions.length === 0 && <p className="history-empty"><UiIcon name="chart" /> Your interviews and reports will appear here.</p>}
           <ul className="mt-2 divide-y divide-gray-100">
@@ -142,7 +182,9 @@ export default function Dashboard() {
                   <p className="mt-1 text-xs text-gray-600">
                     {Number.isFinite(date.getTime()) && `${dateFormat.format(date)} · `}
                     {inProgress ? `Question ${session.progress.current} of ${session.progress.total}` : "Completed"}
-                    {!inProgress && Number.isFinite(session.overall_score) && ` · Text structure ${session.overall_score}/100`}
+                    {!inProgress && (session.coding_only
+                      ? Number.isFinite(session.coding_score) ? ` · Coding tests ${session.coding_score}/100` : ' · Coding tests ungraded'
+                      : Number.isFinite(session.overall_score) && ` · Text structure ${session.overall_score}/100`)}
                   </p>
                 </div>
                 <Link className="spar-button secondary" to={`/interview/${session.id}${inProgress ? "" : "/report"}`}>
