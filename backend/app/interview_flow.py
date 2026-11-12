@@ -16,6 +16,23 @@ BANK = json.loads(
 )
 DOMAINS = list(BANK["domains"])
 PROBLEMS = {p["id"]: p for p in BANK["problems"]}
+EXPERIENCE_DIFFICULTY = {
+    "intern": "easy",
+    "junior": "easy",
+    "mid": "medium",
+    "senior": "hard",
+    "lead": "hard",
+}
+TECHNICAL_FOLLOW_UP = {
+    "easy": "Start with the core idea and one simple example.",
+    "medium": "Explain how you would apply it in a realistic situation.",
+    "hard": "Explain a trade-off, a failure mode, and how you would check your decision.",
+}
+BEHAVIORAL_FOLLOW_UP = {
+    "easy": "You can use an example from coursework, volunteering, or a personal project.",
+    "medium": "Explain your own decision and what happened as a result.",
+    "hard": "Explain the competing priorities, who you involved, and how you measured the outcome.",
+}
 ROUND_LABELS = {
     "screening": "Screening",
     "calibration": "Calibration",
@@ -43,7 +60,17 @@ def evaluation_kind(round_name, domain, persona):
     return "behavioral"
 
 
-def make_questions(domain, persona, resume=None):
+def set_question_depth(question, difficulty):
+    """Apply depth to a bank prompt; older saved prompts can also be advanced."""
+    guidance = (
+        TECHNICAL_FOLLOW_UP if question["evaluation_kind"] == "technical"
+        else BEHAVIORAL_FOLLOW_UP
+    )
+    base = question.get("base_prompt", question["prompt"])
+    question.update(difficulty=difficulty, base_prompt=base, prompt=f"{base} {guidance[difficulty]}")
+
+
+def make_questions(domain, persona, resume=None, experience_level="mid", variant=0):
     """Use curated prompts and only facts actually extracted from the user's resume."""
     questions = []
 
@@ -65,8 +92,10 @@ def make_questions(domain, persona, resume=None):
         "Which skill would you most like to improve in this interview?",
     ]:
         add("screening", prompt)
-    prompts = BANK["domains"][domain]
-    for prompt in (BANK["domains"]["HR"] if persona == "hr" else prompts)[:2]:
+    bank = BANK["domains"]["HR" if persona == "hr" else domain]
+    count = 2 if persona == "hr" else 5
+    prompts = [bank[(variant * count + i) % len(bank)] for i in range(count)]
+    for prompt in prompts[:2]:
         add("calibration", prompt)
     add(
         "hr",
@@ -97,13 +126,14 @@ def make_questions(domain, persona, resume=None):
         for prompt in prompts[2:5]:
             add("technical", prompt)
         if domain not in ("HR", "Product Management", "System Design"):
-            problem = PROBLEMS["two-sum"]
+            problem = BANK["problems"][variant % len(BANK["problems"])]
             add(
                 "coding",
                 problem["description"],
                 problem_id=problem["id"],
                 title=problem["title"],
                 starter_code=problem["starter"],
+                difficulty=EXPERIENCE_DIFFICULTY[experience_level],
             )
     add(
         "behavioral",
@@ -117,6 +147,9 @@ def make_questions(domain, persona, resume=None):
         "final",
         "What would you improve in your answers after this interview, and what will you practice next?",
     )
+    for question in questions:
+        if question["round"] in ("calibration", "technical", "behavioral"):
+            set_question_depth(question, EXPERIENCE_DIFFICULTY[experience_level])
     return questions
 
 
@@ -124,8 +157,14 @@ def spoken_question(question):
     """A voice interview asks for reasoning, never executable code."""
     if question.get("type") != "coding":
         return dict(question)
+    difficulty = question["difficulty"]
+    guidance = {
+        "easy": "Use a small example and explain what your approach does at each step.",
+        "medium": "Walk through an example and discuss time complexity and edge cases.",
+        "hard": "Compare two approaches, justify the time and space costs, and discuss edge cases.",
+    }
     return {**question, "type": "spoken", "evaluation_kind": "technical",
-            "prompt": question["prompt"] + " Explain your algorithm aloud, walk through an example, and discuss time complexity and edge cases. You do not need to write code."}
+            "prompt": f'{question["prompt"]} Explain your algorithm aloud. {guidance[difficulty]}'}
 
 
 def evaluate_answer(question, answer, latency_ms=0, allow_ai=False, code_result=None):
@@ -274,6 +313,8 @@ def public_session(session):
         if session["status"] == "active" and index < len(questions)
         else None
     )
+    if current:
+        current = {key: value for key, value in current.items() if key != "base_prompt"}
     return {
         "id": str(session["_id"]),
         "session_id": str(session["_id"]),
@@ -282,6 +323,7 @@ def public_session(session):
         "domain": session["domain"],
         "interview_type": session["persona"],
         "mode": session["mode"],
+        "experience_level": session.get("experience_level", "mid"),
         "response_mode": session.get("response_mode", "text"),
         "status": session["status"],
         "version": session["version"],

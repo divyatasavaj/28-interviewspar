@@ -51,8 +51,8 @@ export default function CallRoom({call,questionPrompt,busy,error,progress,onSubm
     </section>
       <div className="call-question-caption"><span>Interviewer</span><h1 key={questionPrompt}>{questionPrompt}</h1></div>
     <footer className="call-footer">
-      {(error || webcam.error || fullscreenError) && <p role="alert" className="call-error">{error || webcam.error || fullscreenError}</p>}
-      {call.enabled ? <VoicePanel call={call} disabled={busy} onSubmit={onSubmit} onSkip={onSkip}/> : <p className="call-offline-note">Speech-only interview · Automatic delivery feedback · Local camera preview</p>}
+      {(!call.enabled && error || webcam.error || fullscreenError) && <p role="alert" className="call-error">{(!call.enabled && error) || webcam.error || fullscreenError}</p>}
+      {call.enabled ? <VoicePanel call={call} disabled={busy} submitError={error} onSubmit={onSubmit} onSkip={onSkip}/> : <p className="call-offline-note">Speech-only interview · Automatic delivery feedback · Local camera preview</p>}
       {call.enabled && <div className="call-footer-meta">
         <details name="call-information" className="call-observations"><summary>Live observations</summary><div className="delivery-live-stats"><span>Recognized words <strong>{signals.word_count}</strong></span><span>Transcript fillers <strong>{call.voiceText?signals.filler_count:'—'}</strong></span><span>Observed audio <strong>{call.audio?`${(call.audio.observed_ms/1000).toFixed(1)}s`:'—'}</strong></span><span>Pauses ≥0.5s <strong>{call.audio?call.audio.pause_count:'—'}</strong></span></div><p>Confidence cues describe delivery steadiness. Attention cues describe camera presence and tab visibility. These are practice estimates.</p></details>
         {feedback && <details name="call-information" className="call-previous-feedback"><summary>Previous answer feedback</summary><p>{feedback.feedback}</p></details>}

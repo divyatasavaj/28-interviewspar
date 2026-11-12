@@ -7,25 +7,24 @@ supported; the page already fills the viewport without browser fullscreen permis
 
 ## Candidate journey
 
-1. Choose the interview focus, feedback timing, and storage consent in setup.
+1. Choose the interview focus, experience level, feedback timing, and storage consent.
 2. In the call lobby choose the recognition locale and question voice, accept speech
    consent, and select **Join interview**. The camera connects by default; it may be
    disabled. Microphone speech recognition is required to answer.
-3. The interviewer reads the question, then opens the microphone. Recognized words
-   appear as read-only captions. **Pause microphone** waits for final words;
-   **Continue speaking** appends more speech. **Record again** replaces the entire
-   current answer and its delivery observations. Nothing can be typed into an answer.
-4. **Send spoken answer** waits for final recognized words, saves the transcript and
-   observations, and starts the next question automatically. Technical algorithm
-   questions request a spoken explanation, example, complexity, and edge cases.
+3. The interviewer reads the question, then opens the microphone. Select **Review
+   transcript** to stop recording and collect the final words. **Continue speaking**
+   appends more speech. **Record again** replaces the answer and its observations.
+4. Once the captions are ready, **Send spoken answer** saves the transcript and
+   observations and starts the next question. Technical algorithm exercises ask
+   for a spoken solution at the selected experience level.
 5. **End interview** opens the saved report. It does not submit an unsent answer.
    **Disconnect devices** stops camera/microphone and returns to the lobby.
 
 Practice feedback is available in a compact **Previous answer feedback** control.
 Assessment feedback appears only in the report. Device access requires joining again
-after reload. Unsupported browsers or denied microphone permissions show a retry
-message and block answer submission; there is no typed fallback. Skip/early finish
-remain available. Each recording stops after ten minutes.
+after reload. If microphone permission is denied, allow it in the browser’s site
+settings, then select **Start microphone** in the call. Skip and early finish are
+also available. Each recording stops after ten minutes.
 
 ## Automatic observations
 

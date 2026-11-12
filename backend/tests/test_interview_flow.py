@@ -77,6 +77,30 @@ class Collection:
 
 
 class InterviewApiTests(unittest.TestCase):
+    def test_experience_and_rotation_change_new_voice_sessions(self):
+        def reach_round(session, name):
+            while session["current_round"] != name:
+                response, _ = self.submit(session, skipped=True)
+                self.assertEqual(response.status_code, 200, response.text)
+                session = response.json()
+            return session
+
+        first = self.start(experience_level="intern", response_mode="voice")
+        second = self.start(experience_level="senior", response_mode="voice")
+        first = reach_round(first, "technical")
+        second = reach_round(second, "technical")
+        easy, hard = first["current_question"], second["current_question"]
+        self.assertEqual((easy["difficulty"], hard["difficulty"]), ("easy", "hard"))
+        self.assertIn("simple example", easy["prompt"])
+        self.assertIn("trade-off", hard["prompt"])
+        self.assertNotEqual(easy["prompt"].split("?")[0], hard["prompt"].split("?")[0])
+        first_problem = reach_round(first, "coding")["current_question"]
+        second_problem = reach_round(second, "coding")["current_question"]
+        self.assertNotEqual(first_problem["problem_id"], second_problem["problem_id"])
+        self.assertIn("Compare two approaches", second_problem["prompt"])
+        saved = self.client.get(f'/api/interview/{first["id"]}', headers=self.headers)
+        self.assertEqual(saved.json()["current_question"], first_problem)
+
     def test_delivery_observations_persist_with_owned_answer_and_report(self):
         from test_delivery import observed
         session = self.start()

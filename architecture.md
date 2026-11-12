@@ -66,15 +66,16 @@ not in a process-local session manager.
 | Calibration | Two domain questions; HR track uses HR calibration |
 | HR | Ownership question plus a question from an actual parsed project/skill, or a generic learning question |
 | Technical | Three domain prompts for technical track; observed round ability adjusts prompt depth |
-| Coding | One curated Two Sum problem for eligible technical domains; excluded for HR, Product Management, and System Design |
+| Coding | One rotating algorithm exercise for eligible technical domains. The voice call asks for a verbal solution. HR, Product Management, and System Design exclude this round. |
 | Behavioral | Team disagreement and learning from a mistake |
 | Reflection | What to improve and practice next |
 
 Technical interviews usually contain 13 questions; HR interviews contain 9.
 Ability uses an exponential update, not a validated psychometric scale. Technical
-ability requires evaluated correctness; behavioral practice uses text structure cues. The experience field is stored as context; it does
-not currently select an experience-specific question bank. The bank is finite,
-so repeated interviews can repeat questions.
+ability requires evaluated correctness. The selected experience level sets the
+initial depth of calibration, technical, behavioral, and spoken algorithm prompts.
+New sessions rotate through the curated bank using the latest saved interview in
+the same domain and track. The bank is finite, so prompts recur over time.
 
 Evaluation separates communication evidence (word count, examples, reasoning,
 outcomes, filler observations) from technical correctness. Groq may assess
@@ -231,8 +232,7 @@ resume/verification outputs; ML feature/zero/unit/provenance bugs; unsupported
 camera inference and frame upload; legacy ownership/privacy gaps; fake payment,
 contact, and download success claims; issuer-unrestricted certificate minting.
 
-Still limited: finite question coverage and one coding problem in the default
-flow; no experience-specific bank; rule-based communication feedback; externally
+Still limited: finite question coverage, rule-based communication feedback, externally
 judged correctness needs validation; provisional market rubrics; no OCR; synthetic
 ML training; unsupported legacy UI lint warnings; no real-time interview rooms or
 production billing; no certificate issuance path or fairness-certified anti-cheat.

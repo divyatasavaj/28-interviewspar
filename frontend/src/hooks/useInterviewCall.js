@@ -50,13 +50,17 @@ export function useInterviewCall(question, onTranscript) {
   const listen = useCallback(async () => {
     if (!active.current || ['listening','preparing','finalizing'].includes(phase.current)) return;
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Recognition) { setError('Speech recognition is unavailable. Use Chrome or Edge, then rejoin the call.'); changePhase('review'); return; }
+    if (!Recognition) { setError('Speech recognition is unavailable in this browser. Open this interview in Chrome or Edge to continue.'); changePhase('review'); return; }
     const ticket = ++generation.current;
     stopAnySpeech(); setError(''); setInterim(''); changePhase('preparing');
     const capture = createAudioMeter(value => {
       if (generation.current === ticket) setAudio(audioTotal([...records.current,value]));
     }, () => {
-      if (generation.current === ticket) { setError('Microphone disconnected. Review your transcript then rejoin the call.'); void stopListening(); }
+      if (generation.current === ticket) {
+        incomplete.current = true;
+        setError('Microphone disconnected. Reconnect it, then start the microphone again or send the transcript you have.');
+        void stopListening();
+      }
     });
     meter.current = capture;
     try {
@@ -77,16 +81,20 @@ export function useInterviewCall(question, onTranscript) {
           // A recognition failure may omit spoken words even when the meter worked.
           incomplete.current = true;
           microphone.current?.abort(); microphone.current = null;
-          setError(code === 'no-speech' ? 'No speech recognized. Check your microphone, then try again.' : code === 'finalization-timeout' ? 'Final speech could not be confirmed. Check the transcript before submitting.' : 'Speech recognition stopped. Check microphone/network access, then retry.');
+          setError(code === 'no-speech' ? 'No speech recognized. Check your microphone, then start it again.'
+            : code === 'finalization-timeout' ? 'Final speech could not be confirmed. Check the transcript or record again.'
+              : 'Speech recognition stopped. Check your microphone and internet connection, then try recording again.');
           finishMeter(); changePhase('review');
         },
         onEnd:() => { if (generation.current === ticket) { microphone.current = null; finishMeter(); changePhase('review'); } },
       });
       microphone.current = recognition; recognition.start();
-    } catch {
+    } catch (error) {
       if (generation.current === ticket) {
         microphone.current?.abort(); microphone.current = null; finishMeter(); changePhase('review');
-        setError('Microphone unavailable. Check browser permission then rejoin the call.');
+        setError(error.name === 'NotAllowedError'
+          ? 'Microphone unavailable. Allow microphone access in your browser’s site settings, then start the microphone again.'
+          : 'Microphone unavailable. Connect a microphone and check system access, then start it again.');
       }
     }
   }, [changePhase, finishMeter, stopListening]);
@@ -103,7 +111,7 @@ export function useInterviewCall(question, onTranscript) {
     if (result.status === 'ended' && autoListen && active.current) await listen();
     else {
       changePhase('review');
-      if (result.status === 'unavailable') setError('Question audio is unavailable. Read the question and select Continue speaking.');
+      if (result.status === 'unavailable') setError('Question audio is unavailable. Read the question and start the microphone when you’re ready.');
     }
   }, [changePhase, listen, stopListening]);
   const join = useCallback(() => { active.current = true; setEnabled(true); void speak(true); }, [speak]);

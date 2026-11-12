@@ -130,18 +130,18 @@ async function checkWorkspaceOrganization() {
   await command('DOM.setFileInputFiles',{nodeId:input.nodeId,files:[resolve(fixture)]});
   await click('input[type="checkbox"]');await click('button','Parse synthetic.pdf');
   await waitFor(hasText('Extracted Background Profile'),'organization resume');
-  await goto('/dashboard',hasText('Resume matching'));
-  await click('a[href="#resume-tools"]');
-  await waitFor('document.querySelector("#role-select")','expanded role tools');
-  await click('button','Review role evidence');
-  await waitFor(hasText('Provisional Evidence review:'),'dashboard role result');
-  check('Expanded dashboard role form remains usable',true);
+  await goto('/dashboard',hasText('Open Resume Intelligence'));
+  check('Dashboard shows one resume matching entry point',await evaluate(`!document.querySelector('#resume-tools input, #resume-tools select, #resume-tools textarea')`));
+  await layout('mobile dashboard resume summary');await screenshot('dashboard-resume-mobile');
+  await click('#resume-tools a','Open Resume Intelligence');
+  await waitFor(hasText('What are you preparing for?'),'dedicated role tools');
+  await click('button','Analyze');
+  await waitFor(hasText('Score Unavailable'),'role result');
   await click('button','Job description');
-  await fill('#jd-textarea','Required: Python, SQL, React and REST API development. Build dashboards and backend services with clear tests and documentation.');
-  await click('button','Analyze Match Coverage');
-  await waitFor(hasText('Textual Coverage Score:'),'dashboard JD result');
-  check('Expanded dashboard job-description form remains usable',true);
-  await layout('mobile expanded resume tools');await screenshot('dashboard-matching-mobile');
+  await fill('#jd-input-box','Required: Python, SQL, React and REST API development. Build dashboards and backend services with clear tests and documentation.');
+  await click('button[type="submit"]');
+  await waitFor(hasText('Requirement Coverage'),'JD result');
+  check('Dashboard entry reaches both dedicated matching modes',true);
   await goto('/interview/start');await layout('mobile interview setup');await screenshot('setup-mobile');
   await viewport(1440);await screenshot('setup-desktop');
 }
@@ -260,7 +260,7 @@ try {
     await checkWorkspaceOrganization();
     await checkInterviewCall({goto,click,fill,select,waitFor,evaluate,check,command,screenshot,savePdf,viewport,layout,hasText});
   } else {
-  check('Dashboard puts practice before resume tools and retains matching controls',await evaluate(`document.querySelector('#practice').compareDocumentPosition(document.querySelector('#resume-tools')) & Node.DOCUMENT_POSITION_FOLLOWING`));
+  check('Dashboard puts practice before resume matching',await evaluate(`document.querySelector('#practice').compareDocumentPosition(document.querySelector('#resume-tools')) & Node.DOCUMENT_POSITION_FOLLOWING`));
   await layout('desktop dashboard'); await screenshot('dashboard-desktop');
   await viewport(768,1024); await layout('tablet dashboard'); await screenshot('dashboard-tablet'); await viewport(1440);
   await goto('/account',hasText('Profile Details'));
@@ -280,7 +280,13 @@ try {
   await click('input[type="checkbox"]'); await click('button','Parse synthetic.pdf');
   await waitFor(hasText('Extracted Background Profile'),'parsed resume');
   check('PDF file upload renders extracted skills',await evaluate(hasText('Python')));
-  await goto('/resume-intelligence',hasText('What are you preparing for?'));
+  await viewport(390,844);
+  await goto('/dashboard',hasText('Open Resume Intelligence'));
+  check('Dashboard links to dedicated resume matching without duplicating its inputs',await evaluate(`!document.querySelector('#resume-tools input, #resume-tools select, #resume-tools textarea')`));
+  await layout('mobile dashboard with a saved resume');
+  await click('#resume-tools a','Open Resume Intelligence');
+  await waitFor(hasText('What are you preparing for?'),'resume matching from the dashboard');
+  await viewport(1440);
   await click('button','Analyze');
   await waitFor(hasText('Score Unavailable'),'provisional role result');
   check('Provisional role assessment renders unavailable score',true);
@@ -304,14 +310,23 @@ try {
   await checkInterviewCall({goto,click,fill,select,waitFor,evaluate,check,command,screenshot,savePdf,viewport,layout,hasText});
   for (const [persona,count] of [['hr',9],['technical',13]]) {
     await goto(`/interview/start?persona=${persona}`,hasText('Start interview'));
-    await waitFor('document.querySelectorAll("select option").length>4','interview domains');
-    check(`${persona} start link selects the intended track`,await evaluate(`document.querySelectorAll('select')[1].value===${JSON.stringify(persona)}`));
+    await waitFor('document.querySelectorAll("#interview-domain option").length>4','interview domains');
+    check(`${persona} start link selects the intended track`,await evaluate(`document.querySelector('#interview-track').value===${JSON.stringify(persona)}`));
     if(persona==='hr') await select('#interview-feedback-mode','assessment');
+    if(persona==='technical') await select('#interview-experience','senior');
     await click('input[type="checkbox"]'); await click('button','Start interview');
     await waitFor('document.querySelector("progress")','first interview question');
+    const sessionPath = await evaluate('location.pathname');
+    await goto('/dashboard',hasText('Resume interview'));
+    await click('#practice a','Resume interview');
+    await waitFor(`location.pathname===${JSON.stringify(sessionPath)} && document.querySelector("progress")`,'resume from dashboard');
+    check(`${persona} dashboard resumes the saved session`,true);
     for(let i=0;i<count;i++) {
       assert.equal(await evaluate('document.querySelectorAll("h1").length'), 1, `${persona} question ${i+1} must replace the previous prompt`);
       const question = await evaluate('document.querySelector("h1").innerText');
+      if(persona==='technical' && i===2) {
+        check('Senior experience selection reaches the spoken question',question.includes('a trade-off, a failure mode'));
+      }
       if(i===0) {
         await viewport(390,844); await layout(`mobile ${persona} interview`); await screenshot(`${persona}-interview-mobile`); await viewport(1440);
         await evaluate('window.__beforeReload = true');
@@ -325,6 +340,7 @@ try {
       await waitFor('document.querySelector(".call-avatar-listening")','spoken question turn');
       if(question.includes('Explain your algorithm aloud'))check('Technical problem is answered aloud without a code editor',await evaluate('!document.querySelector("textarea")'));
       await evaluate(`window.__callTest.emit('For example I built an inventory dashboard because the team needed visibility. The result reduced manual checking, and I learned to document the tests.');`);
+      await click('button','Review transcript');
       await click('button','Send spoken answer');
       await waitFor(`location.pathname.endsWith('/report') || (document.querySelector('h1')?.innerText!==${JSON.stringify(question)} && !${hasText('Saving answer')})`,'next interview question');
     }
@@ -334,6 +350,10 @@ try {
     const pdf = await command('Page.printToPDF',{printBackground:true});
     await writeFile(join(artifacts,`${persona}-report.pdf`),Buffer.from(pdf.data,'base64'));
     check(`${persona} report produces a PDF`,Buffer.from(pdf.data,'base64').subarray(0,5).toString()==='%PDF-');
+    await goto('/dashboard',hasText('View latest report'));
+    await click('#practice a','View latest report');
+    await waitFor(`location.pathname===${JSON.stringify(sessionPath + '/report')} && ${hasText('Your interview feedback')}`,'latest report from dashboard');
+    check(`${persona} dashboard opens the completed report`,true);
     await goto('/account?tab=reports',hasText('View Report'));
     await click('button','View Report');
     await waitFor(hasText('Your interview feedback'),'saved history report');
@@ -354,7 +374,7 @@ try {
   await waitFor(hasText('Question 2 of'),'skipped question');
   await click('button','End interview');
   await waitFor(hasText('Your interview feedback'),'early-completion report');
-  check('Skipping and early completion keep skipped answers unscored',await evaluate(`${hasText('Not scored')} && ${hasText('skipped 1')}`));
+  check('Skipping and early completion keep skipped answers unscored',await evaluate(`${hasText('Not scored')} && ${hasText('1 skipped')} && document.querySelector('.report-qa summary')?.textContent.includes('Skipped')`));
   await click('button','Delete this interview');
   await waitFor('location.pathname==="/dashboard"','early-session deletion');
   await goto('/account?tab=resume',hasText('Extracted Background Profile'));

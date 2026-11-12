@@ -71,7 +71,7 @@ Start request example (optional fields shown):
 {
   "name": "Practice Candidate",
   "domain": "Software Engineering",
-  "experience": "student",
+  "experience_level": "intern",
   "persona": "technical",
   "mode": "practice",
   "save_consent": true,
@@ -81,6 +81,10 @@ Start request example (optional fields shown):
 ```
 
 Personas: `hr`, `technical` (`tech` alias accepted). Modes: `practice`, `assessment`.
+Experience levels are `intern`, `junior`, `mid` (default), `senior`, and `lead`.
+The selected level sets prompt depth. New interviews rotate domain prompts and
+algorithm exercises using the latest saved interview in the same domain and
+track. The existing free-text `experience` field is still accepted as context.
 React uses `response_mode: "voice"`; omitted response mode defaults to `text` for
 legacy API compatibility. Voice questions request spoken algorithm explanations
 instead of code. `POST /api/interview/{id}/voice` upgrades owned active older sessions

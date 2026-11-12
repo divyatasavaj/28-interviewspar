@@ -34,8 +34,9 @@ configuration remains a legacy compatibility file; Vite uses Tailwind 4 tokens.
 - **Authentication:** split story/form layout on desktop and a compact form on
   phones. Keep explicit field labels, validation, autocomplete, pending states,
   and error announcements connected to the existing API.
-- **Dashboard:** place practice and recent history before expandable resume matching.
-  Keep all role/JD matching controls and evidence in the expandable section.
+- **Dashboard:** surface start, resume, and latest report actions above recent
+  history. The resume summary links to the dedicated page for role and
+  job-description matching.
 - **Account:** use the shared workspace navigation and persistent section links for
   profile, resume, reports, and voice preferences. Keep identity compact.
 - **Resume intelligence:** evidence, role/JD controls, findings, recommendations,
@@ -43,15 +44,16 @@ configuration remains a legacy compatibility file; Vite uses Tailwind 4 tokens.
   remain unavailable; missing evidence is not a zero score.
 - **Interview setup:** retain domain, experience, track, mode, and consent controls.
   Group interview details separately from feedback/privacy. Explain the spoken call.
-- **Interview room:** preserve the full-screen, speech-only flow. Separate participant
+- **Interview room:** preserve the full-screen, speech-only flow. Show playback,
+  microphone, and transcript review status by the captions and controls. Require
+  transcript review before sending. Separate participant
   tiles, the current question, read-only captions, and grouped controls. Keep microphone,
   re-record, repeat, skip, send, camera, disconnect, fullscreen, and finish available.
   Live observations and previous feedback use distinct, mutually exclusive disclosures.
-- **Reports:** display the score with its qualification, round details, saved
-  answers, and feedback. Print layouts keep the score as text, omit action
-  buttons, and preserve the question review and evidence limitations. Group speech
-  metrics separately from camera/attention metrics. Detailed definitions expand on
-  demand and automatically open for printing, restoring their earlier state afterward.
+- **Reports:** surface feedback from a specific answer, show the score with its
+  qualification, and let users expand individual transcripts. Compact printing
+  includes questions, feedback, and summary observations. Full printing adds
+  transcripts and delivery details. Printing restores the previous disclosure state.
 
 ## Motion and accessibility
 

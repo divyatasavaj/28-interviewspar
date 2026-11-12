@@ -1,5 +1,18 @@
 # InterviewSpar repair checklist — branch b3
 
+## Interview practice improvements
+
+- [x] T39: Clarify playback, microphone recovery, transcript review, and submission in the call.
+- [x] T40: Surface answer-specific feedback and make review and print layouts more compact.
+- [x] T41: Select prompt depth by experience and rotate domain questions and algorithm exercises.
+- [x] T42: Surface interview actions on the dashboard and link resume matching to its dedicated page.
+- [x] T43a: Verify the full journey with automated tests, live MongoDB, desktop/mobile Chrome, and PDF text extraction.
+- [x] T43b: Publish the checked changes on b3.
+
+Verification passed for 212 automated tests, 37 live API checks, and 144 Chrome
+checks. Build and lint passed with existing warnings. See [the site test
+report](docs/SITE_TEST_REPORT.md).
+
 ## Page organization and navigation
 
 - [x] T36: Standardize navigation, page widths, headings, cards, forms, and action hierarchy across public and workspace pages.
@@ -106,7 +119,7 @@ outputs are excluded from commits.
 - [ ] Compile/test the Solidity contract and validate issuer authorization on a local chain before any Sepolia deployment. Only JS syntax was checked; no wallet transaction occurred.
 - [ ] Gather consented independent candidate data, review annotations, and validate/calibrate ML signals. Current bootstrap data cannot support hiring decisions.
 - [ ] Acquire permitted market evidence and manually review role rubric weights before claiming validated role scores. Current seed aggregate scores remain unavailable.
-- [ ] Extend question variety, experience-aware selection, coding challenges, and validated correctness rubrics; current default coding flow uses Two Sum.
+- [ ] Expand the curated question bank and validate correctness rubrics against independently scored answers.
 - [ ] Implement account erasure, password reset/email verification/MFA as product requirements; define retention of old interview facts and backups.
 - [ ] Decide whether to remove or rebuild the retained legacy UI/API modules. Live rooms, production billing, marketplace booking, automated anti-cheat, and certificate issuance remain outside the supported app.
 - [ ] Add OCR only with an explicit implementation/validation plan; scanned resumes are currently rejected with guidance.

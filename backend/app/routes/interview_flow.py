@@ -15,6 +15,7 @@ from app.interview_flow import (
     now,
     evaluation_kind,
     spoken_question,
+    set_question_depth,
 )
 from app.safe_execution import run_problem
 from app.delivery import DeliveryObservation, delivery_feedback
@@ -26,6 +27,7 @@ class StartRequest(BaseModel):
     name: str = Field(default="", max_length=120)
     domain: str = "Software Engineering"
     experience: str = Field(default="", max_length=200)
+    experience_level: Literal["intern", "junior", "mid", "senior", "lead"] = "mid"
     persona: Literal["hr", "tech", "technical"] = "technical"
     mode: Literal["practice", "assessment"] = "practice"
     save_consent: bool = False
@@ -76,17 +78,25 @@ def start(body: StartRequest, db=Depends(get_db), user=Depends(require_user)):
         None,
     )
     persona = "technical" if body.persona == "tech" else body.persona
+    previous = next(iter(db.interview_sessions.find({
+        "user_id": str(user["_id"]), "engine_version": 2,
+        "domain": body.domain, "persona": persona,
+    }).sort("_id", -1).limit(1)), None)
+    variant = previous.get("question_variant", 0) + 1 if previous else 0
+    questions = make_questions(body.domain, persona, resume, body.experience_level, variant)
     session = {
         "user_id": str(user["_id"]),
         "engine_version": 2,
         "name": body.name.strip() or user["name"],
         "domain": body.domain,
         "experience": body.experience,
+        "experience_level": body.experience_level,
+        "question_variant": variant,
         "persona": persona,
         "mode": body.mode,
         "response_mode": body.response_mode,
         "questions": [spoken_question(q) if body.response_mode == "voice" else q
-                      for q in make_questions(body.domain, persona, resume)],
+                      for q in questions],
         "answers": [],
         "index": 0,
         "version": 0,
@@ -223,20 +233,12 @@ def answer(body: AnswerRequest, db=Depends(get_db), user=Depends(require_user)):
         session.update(status="completed", completed_at=now())
     else:
         next_q = session["questions"][session["index"]]
-        estimate = session["ability"].get(next_q["round"], 0.5)
-        next_q["difficulty"] = (
-            "hard" if estimate >= 0.7 else "easy" if estimate < 0.4 else "medium"
-        )
-        if next_q["round"] == "technical":
-            next_q["prompt"] += (
-                " Discuss a trade-off and failure mode."
-                if estimate >= 0.7
-                else (
-                    " Start with the core idea and one example."
-                    if estimate < 0.4
-                    else ""
-                )
-            )
+        estimate = session["ability"].get(next_q["round"])
+        if next_q["round"] == "technical" and estimate is not None:
+            if estimate >= 0.7:
+                set_question_depth(next_q, "hard")
+            elif estimate < 0.4:
+                set_question_depth(next_q, "easy")
     patch = {k: v for k, v in session.items() if k != "_id"}
     updated = db.interview_sessions.update_one(
         {"_id": session["_id"], "version": body.version, "status": "active"},

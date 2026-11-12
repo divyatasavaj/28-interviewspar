@@ -5,6 +5,35 @@ Tests use synthetic accounts and resumes in a unique disposable database. Existi
 application records and browser profiles are not used. No dependencies were installed
 for this pass.
 
+## Interview practice improvements — 12 November 2026
+
+The call now shows playback, recording, and review states next to the captions.
+The browser journey checks that a denied microphone can be restarted in place,
+the final words are present before sending, and stale recognition events cannot
+reach the next question. New backend regression coverage checks experience-based
+prompt depth, rotation across successive sessions, and persistence of a selected
+algorithm exercise when reopening a session.
+
+All 161 backend, 48 frontend, and 3 ML tests passed. The build and lint passed
+with the existing face-model size warning and 19 lint warnings. Live MongoDB
+checks passed for ownership, persistence across API restart, concurrent answer
+updates, matching, and deletion. The initial headless Chrome run disconnected
+after leaving fullscreen. Its disposable database was removed before the headful
+rerun with the repository's browser test runner.
+
+The final headful run passed 37 live API and 144 Chrome checks. Chrome verified
+desktop and mobile layouts, resume upload and both matching modes reached from
+the dashboard, the Senior experience selection in the spoken question, complete
+HR and technical interviews, dashboard resume and report links, skip and early
+finish, deletion, and account access. There were no uncaught browser exceptions
+or unexpected HTTP 5xx responses. Disposable database cleanup was confirmed.
+
+Text extraction confirmed a three-page compact HR report and a four-page compact
+technical report, with the question review and score qualification present.
+The full spoken report includes the final transcript and measurement definitions.
+Speech input in these checks is synthetic. Physical microphone recognition,
+external AI evaluation, and configured Judge0 remain outside this verification.
+
 ## Page organization verification — 4 November 2026
 
 Public pages and signed-in pages now use consistent widths, headings, spacing,

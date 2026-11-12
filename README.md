@@ -46,14 +46,19 @@ when the virtual environment is activated; Node dependencies are not required fo
 1. Sign up, sign in, and edit your profile. Password changes and logout revoke old tokens.
 2. Optionally upload a text PDF or DOCX with storage consent. Resume Intelligence
    shows extracted evidence, role findings, job-description coverage, and recommendations.
-3. Choose a domain, HR/technical track, and practice/assessment mode. Consent to
-   storing the interview is required; external AI feedback is separately optional.
+3. Choose a domain, experience level, HR/technical track, and practice/assessment
+   mode. Experience sets the starting depth. Repeat sessions in the same domain
+   and track rotate through the curated questions and eligible algorithm exercises.
+   Saving the interview requires consent. External AI feedback is optional.
 4. Complete screening, calibration, HR, technical/coding where applicable,
    behavioral questions, and reflection in one full-screen call with no round list.
-   Join with speech consent, hear each question, and answer aloud. Captions are read-only;
-   re-record if needed, then send the spoken answer. Progress and observations persist.
-5. Review a report, print/save it as PDF, resume active interviews, or delete a session.
-   Resume deletion also removes saved resume assessments.
+   Join with speech consent, hear each question, and answer aloud. Select **Review
+   transcript** to finish recording. Check the read-only captions, then send the
+   answer or record again. Progress and observations persist.
+5. Resume interviews or open reports from the dashboard. Reports surface feedback
+   tied to a saved answer and let you expand individual transcripts. Print a
+   compact PDF, or opt in to the full transcripts and delivery details before
+   printing. You can delete an interview from its report.
 
 Without Groq, the interview still runs using curated prompts and an explicitly
 labeled keyword/length structure indicator. The call asks for spoken technical reasoning,

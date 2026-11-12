@@ -4,18 +4,29 @@ import { apiRequest, getMe, startInterview } from '../api/auth';
 import DashboardNavbar from '../components/DashboardNavbar';
 import UiIcon from '../components/UiIcon';
 
+const experienceLevels = {
+  intern: 'Student / new graduate',
+  junior: 'Junior',
+  mid: 'Mid-level',
+  senior: 'Senior',
+  lead: 'Staff / lead',
+};
+
 export default function StartInterviewPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [domains, setDomains] = useState([]);
-  const [settings, setSettings] = useState({name:'', domain:'Software Engineering', experience:'',
+  const [settings, setSettings] = useState({name:'', domain:'Software Engineering', experience_level:'mid',
     persona:params.get('persona') === 'hr' ? 'hr' : 'technical',mode:'practice',save_consent:false,allow_ai:false});
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState('');
   useEffect(() => {
     let alive=true;
     Promise.all([getMe(),apiRequest('/interview/domains')]).then(([user,data]) => {
-      if(alive) { setSettings(s=>({...s,name:user.name})); setDomains(data.domains); }
+      if(alive) {
+        setSettings(s=>({...s,name:user.name,experience_level:Object.hasOwn(experienceLevels,user.experience_level) ? user.experience_level : s.experience_level}));
+        setDomains(data.domains);
+      }
     }).catch(e=>{if(alive)setError(e.message);});
     return ()=>{alive=false;};
   },[]);
@@ -38,9 +49,11 @@ export default function StartInterviewPage() {
         <fieldset className="form-section"><legend>Interview details</legend><p className="form-help">Choose the role and experience you want to practice.</p><div className="form-field-grid">
         {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-red-700">{error}</p>}
         <label className="block text-sm font-medium">Your name<input className={field} autoComplete="name" required maxLength={120} value={settings.name} onChange={e=>update('name',e.target.value)}/></label>
-        <label className="block text-sm font-medium">Target domain<select className={field} value={settings.domain} onChange={e=>update('domain',e.target.value)}>{domains.map(d=><option key={d}>{d}</option>)}</select></label>
-        <label className="block text-sm font-medium">Experience<input className={field} maxLength={200} placeholder="For example: student, or 2 years in frontend development" value={settings.experience} onChange={e=>update('experience',e.target.value)}/></label>
-        <label className="block text-sm font-medium">Interview track<select className={field} value={settings.persona} onChange={e=>update('persona',e.target.value)}><option value="technical">Technical + behavioral</option><option value="hr">HR + behavioral</option></select></label>
+        <label className="block text-sm font-medium">Target domain<select id="interview-domain" className={field} value={settings.domain} onChange={e=>update('domain',e.target.value)}>{domains.map(d=><option key={d}>{d}</option>)}</select></label>
+        <label className="block text-sm font-medium">Experience level<select id="interview-experience" className={field} value={settings.experience_level} onChange={e=>update('experience_level',e.target.value)}>
+          {Object.entries(experienceLevels).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+        </select></label>
+        <label className="block text-sm font-medium">Interview track<select id="interview-track" className={field} value={settings.persona} onChange={e=>update('persona',e.target.value)}><option value="technical">Technical + behavioral</option><option value="hr">HR + behavioral</option></select></label>
         </div></fieldset><fieldset className="form-section"><legend>Feedback & privacy</legend><label className="block text-sm font-medium">When would you like feedback?<select id="interview-feedback-mode" className={field} value={settings.mode} onChange={e=>update('mode',e.target.value)}><option value="practice">During practice — after each answer</option><option value="assessment">In the final report — when I finish</option></select></label>
         <div className="border-t border-gray-100 pt-5 space-y-4">
           <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600"><input className="mt-1 size-4 shrink-0" type="checkbox" required checked={settings.save_consent} onChange={e=>update('save_consent',e.target.checked)}/><span><strong className="block text-sm text-gray-900 mb-1">Save my interview for review</strong>I consent to saving my spoken answers and delivery observations in my history. I can delete this interview from its report.</span></label>

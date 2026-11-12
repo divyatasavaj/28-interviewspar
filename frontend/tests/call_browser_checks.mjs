@@ -1,7 +1,7 @@
 // Real UI/media integration with synthetic devices and a deterministic speech-service stub.
 // Speech-service transcription/voice quality are deliberately not claimed by this test.
 export const installCallMedia = (denied=false) => `(() => {
-    const state = window.__callTest = {streams:[],questions:[],starts:0,stopTail:true};
+    const state = window.__callTest = {streams:[],questions:[],starts:0,stopTail:true,denied:${denied}};
     const originalRecognition=window.SpeechRecognition, originalWebkit=window.webkitSpeechRecognition;
     const originalSpeak=speechSynthesis.speak, originalCancel=speechSynthesis.cancel;
     const originalMedia=navigator.mediaDevices.getUserMedia;
@@ -11,7 +11,7 @@ export const installCallMedia = (denied=false) => `(() => {
       return originalFetch.call(this,resource,options);
     };
     navigator.mediaDevices.getUserMedia=async function(constraints) {
-      if (${denied}) throw new DOMException('Synthetic permission denial','NotAllowedError');
+      if (state.denied) throw new DOMException('Synthetic permission denial','NotAllowedError');
       let stream;
       if (constraints.audio) {
         const context=new AudioContext(); await context.resume();
@@ -43,7 +43,7 @@ export const installCallMedia = (denied=false) => `(() => {
 export async function checkInterviewCall({goto,click,waitFor,evaluate,check,command,screenshot,savePdf,viewport,layout,hasText}) {
   const start=async()=>{
     await goto('/interview/start?persona=hr',hasText('Start interview'));
-    await waitFor('document.querySelectorAll("select option").length>4','domains');
+    await waitFor('document.querySelectorAll("#interview-domain option").length>4','domains');
     await click('input[type="checkbox"]');await click('button','Start interview');
     await waitFor('document.querySelector("progress")','call lobby');
   };
@@ -66,7 +66,7 @@ export async function checkInterviewCall({goto,click,waitFor,evaluate,check,comm
   await waitFor(`document.querySelector('.camera-toolbar').textContent.includes('detected')`,'bundled face detector',45000);
   check('Joining connects the local camera and bundled face detector',true);
   await evaluate(`window.__callTest.emit('Replace this first attempt.');window.__callTest.stopTail=false;`);
-  await click('button','Pause microphone');await waitFor(`document.querySelector('.call-avatar-review')`,'review');
+  await click('button','Review transcript');await waitFor(`document.querySelector('.call-avatar-review')`,'review');
   await click('button','Record again');await waitFor('window.__callTest.starts===2','new attempt');
   check('Recording again clears the discarded transcript',await evaluate(`!document.querySelector('.call-transcript').textContent.includes('Replace this')`));
   await evaluate(`window.__callTest.stopTail=true; window.__callTest.emit('Um I built a reliable cache because our team needed faster responses and clear monitoring of each request across the service.');window.__callTest.late=window.__callTest.current.onresult;`);
@@ -75,6 +75,9 @@ export async function checkInterviewCall({goto,click,waitFor,evaluate,check,comm
   check('Desktop call fills the viewport',await evaluate(`Math.abs(document.querySelector('.call-room').getBoundingClientRect().height-innerHeight)<2`));
   await viewport(390,844);await layout('mobile video call');await screenshot('voice-call-mobile');await viewport(1440);
   check('Camera stays active through recording and viewport changes',await evaluate(`document.querySelector('video').srcObject?.getVideoTracks()[0].readyState==='live'`));
+  check('Sending is disabled until the recording is reviewed',await evaluate(`document.querySelector('.call-submit').disabled`));
+  await click('button','Review transcript');
+  await waitFor(`document.querySelector('.call-turn[data-phase="review"]') && ${hasText('The result improved reliability.')}`,'final transcript review');
   await click('button','Send spoken answer');
   await waitFor('window.__callTest.starts===3 && document.querySelector(".call-avatar-listening")','next question');
   check('Spoken answer saves final words and advances automatically',await evaluate(`window.__callTest.submitted.transcript.includes('The result improved reliability.') && !window.__callTest.submitted.transcript.includes('Replace this')`));
@@ -96,17 +99,27 @@ export async function checkInterviewCall({goto,click,waitFor,evaluate,check,comm
   await screenshot('voice-report-desktop');await viewport(390,844);await layout('mobile voice report');await screenshot('voice-report-mobile');await viewport(1440);
   await evaluate('window.__beforeReload=true');await command('Page.reload');await waitFor(`!window.__beforeReload && ${hasText('Speaking, confidence & attention cues')}`,'report reload');
   check('Automatic delivery report survives reload',true);
+  check('Full transcripts start collapsed',await evaluate('!!document.querySelector(".report-qa:not([open])")'));
+  await click('a','Review question 1');
+  check('Report coaching link opens the referenced transcript',await evaluate('document.querySelector("#answer-1").open'));
+  await click('#answer-1 summary');
+  await savePdf('voice-report');
+  check('Compact PDF restores collapsed transcripts',await evaluate('!document.querySelector(".report-qa[open]")'));
+  await click('input[type="checkbox"]');
   await click('.measurement-details summary');
   await evaluate('window.dispatchEvent(new Event("beforeprint"))');
-  check('Printing opens all delivery evidence',await evaluate('document.querySelectorAll(".measurement-details").length>1 && !document.querySelector(".measurement-details:not([open])")'));
+  check('Full print opens transcripts and all measurement details',await evaluate('document.querySelectorAll(".measurement-details").length>1 && !document.querySelector(".report-qa:not([open]), .measurement-details:not([open])")'));
   await evaluate('window.dispatchEvent(new Event("afterprint"))');
-  check('Printing restores the previously open evidence panel',await evaluate('document.querySelectorAll(".measurement-details[open]").length===1 && document.querySelector(".measurement-details").open'));
-  await click('.measurement-details summary');
-  await savePdf('voice-report');
-  check('PDF export restores collapsed delivery evidence',await evaluate('!document.querySelector(".measurement-details[open]")'));
+  check('Full print restores the previously open measurement detail',await evaluate('document.querySelectorAll(".measurement-details[open]").length===1 && !document.querySelector(".report-qa[open]")'));
+  await savePdf('voice-report-full');
   await click('button','Delete this interview');await waitFor('location.pathname==="/dashboard"','deletion');
   await start();await join(true);await waitFor(hasText('Microphone unavailable'),'permission denial');
   check('Denied microphone cannot submit a typed or empty answer',await evaluate(`!document.querySelector('textarea') && Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Send spoken answer').disabled`));
+  check('Permission error explains how to recover',await evaluate(hasText('Allow microphone access')));
+  await evaluate('window.__callTest.denied=false');
+  await click('button','Start microphone');
+  await waitFor('window.__callTest.starts===1 && document.querySelector(".call-turn[data-phase=listening]")','retry microphone in place');
+  check('Microphone can be retried without leaving the interview',true);
   await evaluate('window.__callTest.restore()');await click('button','End interview');await waitFor(hasText('Your interview feedback'),'empty report');
   check('Failed microphone does not fabricate delivery measurements',await evaluate(`!${hasText('Speaking, confidence & attention cues')}`));
   await click('button','Delete this interview');await waitFor('location.pathname==="/dashboard"','failed call deletion');
