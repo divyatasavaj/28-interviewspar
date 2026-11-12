@@ -68,7 +68,7 @@ The coding editor supports JavaScript and Python. **Run samples** runs the
 examples shown with the prompt. **Submit solution** grades the samples and hidden
 tests using isolated Judge0. Set `JUDGE0_API_URL` for execution and, if required,
 `JUDGE0_API_KEY`. With execution unavailable, the app saves submitted code and
-leaves correctness unscored. Optional Groq code review gives feedback on edge
+leaves correctness unscored. See the [live runner setup](deploy/JUDGE0.md). Optional Groq code review gives feedback on edge
 cases, complexity, and improvements. Test results determine correctness.
 The editor restores code and language after a reload in the same browser tab.
 Drafts clear on submission, completion, or sign-out.
