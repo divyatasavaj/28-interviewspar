@@ -108,13 +108,13 @@ export default function StudentGuidePage() {
   const [openFaq, setOpenFaq] = useState(null)
 
   return (
-    <div className="min-h-screen bg-[#f8f5ef] font-sans">
+    <div className="min-h-screen font-sans">
       <Navbar />
 
       <main className="public-page pt-32 pb-24 px-4 sm:px-6 md:px-8 max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-primary uppercase bg-sky-50 border border-sky-100/70 px-3.5 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] text-primary uppercase bg-[var(--wash)] border border-[var(--line)] px-3.5 py-1.5 rounded-full mb-4">
             University Placement Playbook
           </span>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight leading-[1.1]">
@@ -134,7 +134,7 @@ export default function StudentGuidePage() {
             >
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b border-gray-100">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-black tracking-widest text-primary uppercase bg-sky-50 px-3 py-1 rounded-full">
+                  <span className="text-xs font-black tracking-widest text-primary uppercase bg-[var(--wash)] px-3 py-1 rounded-full">
                     {phase.phase}
                   </span>
                   <h2 className="text-2xl font-bold text-gray-900">{phase.title}</h2>
@@ -166,7 +166,7 @@ export default function StudentGuidePage() {
         {/* FAQ Section */}
         <section className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-sm mb-16">
           <div className="text-center max-w-xl mx-auto mb-8">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-sky-50 px-3 py-1 rounded-full">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-[var(--wash)] px-3 py-1 rounded-full">
               Frequently Asked Questions
             </span>
             <h3 className="text-2xl font-bold text-gray-900 mt-3">Campus Placement Queries</h3>
@@ -206,11 +206,11 @@ export default function StudentGuidePage() {
         </section>
 
         {/* Ready to practice CTA */}
-        <div className="text-center bg-gradient-to-r from-sky-700 to-sky-800 text-white rounded-3xl p-8 sm:p-12 shadow-xl">
+        <div className="text-center bg-[var(--feature-panel)] text-[var(--ink)] rounded-3xl p-8 sm:p-12 border border-[var(--line)]">
           <h2 className="text-2xl sm:text-3xl font-extrabold mb-3">
             Put Theory Into Practice
           </h2>
-          <p className="text-sky-100 text-sm max-w-lg mx-auto mb-6 leading-relaxed">
+          <p className="text-[var(--muted)] text-sm max-w-lg mx-auto mb-6 leading-relaxed">
             Reading guides builds knowledge, but simulation builds confidence. Take an AI mock round right now.
           </p>
           <Link

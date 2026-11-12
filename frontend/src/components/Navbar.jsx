@@ -1,150 +1,79 @@
-import Brand from "./Brand"
-import { Link, useLocation } from "react-router-dom"
-import { useState, useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
+import { NavLink, Link, useLocation } from "react-router-dom"
 import { getToken } from "../api/auth"
+import Brand from "./Brand"
+import UiIcon from "./UiIcon"
+
+const links = [
+  ["Features", "/features"],
+  ["Practice tracks", "/practice-tracks"],
+  ["Resources", "/resources"],
+  ["Pricing", "/pricing"],
+]
 
 export default function Navbar() {
-  const [open, setOpen] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [openFor, setOpenFor] = useState(null)
+  const [loggedIn, setLoggedIn] = useState(false)
   const location = useLocation()
+  const menuButton = useRef(null)
+  const nav = useRef(null)
+  const open = openFor === location.key
+  useEffect(() => setLoggedIn(Boolean(getToken())), [location.key])
 
   useEffect(() => {
-    setIsLoggedIn(Boolean(getToken()))
-  }, [location])
+    if (!open) return
+    function closeOnEscape(event) {
+      if (event.key === "Escape") {
+        setOpenFor(null)
+        menuButton.current?.focus()
+      }
+    }
+    function closeOutside(event) {
+      if (!nav.current?.contains(event.target)) setOpenFor(null)
+    }
+    document.addEventListener("keydown", closeOnEscape)
+    document.addEventListener("pointerdown", closeOutside)
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape)
+      document.removeEventListener("pointerdown", closeOutside)
+    }
+  }, [open])
 
-  const navLinks = [
-    { label: "Home", to: "/" },
-    { label: "Features", to: "/features" },
-    { label: "Practice Tracks", to: "/practice-tracks" },
-    { label: "Resources", to: "/resources" },
-    { label: "Pricing", to: "/pricing" },
-    { label: "Student Guide", to: "/student-guide" },
-    { label: "Contact Us", to: "/contact" },
-  ]
+  const navLinks = links.map(([label, path]) => <NavLink key={path} to={path}>{label}</NavLink>)
+  const actions = loggedIn ? (
+    <Link className="spar-button" to="/dashboard">Dashboard <UiIcon name="arrow" /></Link>
+  ) : (
+    <>
+      <Link className="public-login" to="/login">Log in</Link>
+      <Link className="spar-button" to="/signup">Start practicing <UiIcon name="arrow" /></Link>
+    </>
+  )
 
   return (
-    <nav className="public-nav fixed top-0 left-0 right-0 z-50 h-[72px] bg-white/90 backdrop-blur-md border-b border-gray-100 transition-colors">
-      <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-        {/* Brandmark with Logo Animation */}
-        <Brand to="/"/>
-
-        {/* Desktop Navigation */}
-        <div className="hidden xl:flex items-center gap-5">
-          {navLinks.map((link) => {
-            const isActive = location.pathname === link.to
-            return (
-              <Link
-                key={link.label}
-                to={link.to}
-                aria-current={isActive ? "page" : undefined}
-                className={`relative text-xs font-medium transition-all ${
-                  isActive
-                    ? "text-primary after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full font-semibold"
-                    : "text-gray-600 hover:text-gray-950 hover:-translate-y-0.5"
-                }`}
-              >
-                {link.label}
-              </Link>
-            )
-          })}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="hidden md:flex items-center gap-4">
-          {isLoggedIn ? (
-            <Link
-              to="/dashboard"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-primary hover:bg-[#075985] px-5 py-2.5 rounded-full transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5"
-            >
-              <span>Dashboard</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </Link>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className="text-sm font-semibold text-gray-700 hover:text-gray-950 px-3 py-1.5 transition-colors"
-              >
-                Log In
-              </Link>
-              <Link
-                to="/signup"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-primary hover:bg-[#075985] px-5 py-2.5 rounded-full transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5"
-              >
-                <span>Start practicing</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </Link>
-            </>
-          )}
-        </div>
-
-        {/* Mobile Toggle */}
+    <nav ref={nav} className="public-nav fixed top-0 left-0 right-0 z-50" aria-label="Main navigation">
+      <div className="public-nav-inner">
+        <Brand />
+        <div className="public-nav-links">{navLinks}</div>
+        <div className="public-nav-actions">{actions}</div>
         <button
-          onClick={() => setOpen(!open)}
-          className="xl:hidden p-2 text-gray-600 hover:text-gray-900 rounded-lg focus:outline-none"
+          ref={menuButton}
+          type="button"
+          className="public-menu-toggle"
           aria-label="Toggle menu"
           aria-expanded={open}
+          aria-controls={open ? "public-mobile-menu" : undefined}
+          onClick={() => setOpenFor(open ? null : location.key)}
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {open ? (
-              <path strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
+          {open ? "Close" : "Menu"}
         </button>
       </div>
-
-      {/* Mobile Drawer */}
       {open && (
-        <div className="public-mobile-menu xl:hidden bg-white/95 backdrop-blur-xl border-b border-gray-100 px-6 py-5 space-y-3 animate-modal-pop shadow-xl">
-          {navLinks.map((link) => {
-            const isActive = location.pathname === link.to
-            return (
-              <Link
-                key={link.label}
-                to={link.to}
-                aria-current={isActive ? "page" : undefined}
-                className={`block text-sm font-medium py-1.5 ${
-                  isActive ? "text-primary font-bold" : "text-gray-700"
-                }`}
-                onClick={() => setOpen(false)}
-              >
-                {link.label}
-              </Link>
-            )
-          })}
-          <hr className="border-gray-100 my-2" />
-          {isLoggedIn ? (
-            <Link
-              to="/dashboard"
-              className="block text-center text-sm font-bold text-white bg-primary hover:bg-[#075985] px-5 py-2.5 rounded-full transition-all"
-              onClick={() => setOpen(false)}
-            >
-              Dashboard
-            </Link>
-          ) : (
-            <div className="flex flex-col gap-2 pt-1">
-              <Link
-                to="/login"
-                className="block text-center text-sm font-semibold text-gray-800 bg-gray-50 py-2 rounded-xl"
-                onClick={() => setOpen(false)}
-              >
-                Log In
-              </Link>
-              <Link
-                to="/signup"
-                className="block text-center text-sm font-bold text-white bg-primary hover:bg-[#075985] py-2.5 rounded-xl transition-all shadow-md"
-                onClick={() => setOpen(false)}
-              >
-                Start practicing
-              </Link>
-            </div>
-          )}
+        <div className="public-mobile-menu" id="public-mobile-menu">
+          <NavLink to="/">Home</NavLink>
+          {navLinks}
+          <NavLink to="/student-guide">Student guide</NavLink>
+          <NavLink to="/contact">Contact us</NavLink>
+          <div className="public-nav-actions">{actions}</div>
         </div>
       )}
     </nav>

@@ -1,10 +1,11 @@
 import { useState } from "react"
 import AuthLayout from "../components/AuthLayout"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { signup, setToken } from "../api/auth"
 
 export default function Signup() {
   const navigate = useNavigate()
+  const { state } = useLocation()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -35,7 +36,7 @@ export default function Signup() {
     try {
       const data = await signup(name, email, password)
       setToken(data.token)
-      navigate("/dashboard")
+      navigate(state?.returnTo || "/dashboard", { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -113,7 +114,7 @@ export default function Signup() {
           <div className="flex items-center justify-between mt-8">
             <p className="text-sm text-gray-500">
               Already have an account?{" "}
-              <Link to="/login" className="font-semibold text-primary hover:text-[#075985]">
+              <Link to="/login" state={state} className="font-semibold text-primary hover:underline">
                 Log in
               </Link>
             </p>

@@ -185,7 +185,7 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
             <button
               type="submit"
               disabled={saving}
-              className="bg-primary hover:bg-[#075985] text-white font-semibold text-xs sm:text-sm px-6 py-2.5 rounded-full shadow-md shadow-primary/20 transition-all disabled:opacity-50"
+              className="bg-primary hover:bg-[var(--action-hover)] text-white font-semibold text-xs sm:text-sm px-6 py-2.5 rounded-full shadow-md shadow-primary/20 transition-all disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>
@@ -217,7 +217,7 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center text-primary">
+                <div className="w-10 h-10 rounded-xl bg-[var(--wash)] flex items-center justify-center text-primary">
                   <Icon name="shield" />
                 </div>
                 <div>
@@ -310,7 +310,7 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
                 <button
                   type="submit"
                   disabled={pwdLoading}
-                  className="bg-primary hover:bg-[#075985] text-white font-semibold text-xs px-5 py-2 rounded-xl transition-all disabled:opacity-50"
+                  className="bg-primary hover:bg-[var(--action-hover)] text-white font-semibold text-xs px-5 py-2 rounded-xl transition-all disabled:opacity-50"
                 >
                   {pwdLoading ? "Updating..." : "Update Password"}
                 </button>
@@ -373,7 +373,7 @@ function ResumeView() {
             type="file"
             accept=".pdf,.docx"
             onChange={(e) => setFile(e.target.files[0])}
-            className="block w-full max-w-sm mx-auto text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white hover:file:bg-[#075985] file:cursor-pointer cursor-pointer"
+            className="block w-full max-w-sm mx-auto text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white hover:file:bg-[var(--action-hover)] file:cursor-pointer cursor-pointer"
           />
           <label className="mt-4 flex items-start gap-2 text-left text-xs text-gray-600">
             <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />
@@ -386,7 +386,7 @@ function ResumeView() {
             <button
               onClick={handleUpload}
               disabled={uploading || !consent}
-              className="mt-5 bg-primary hover:bg-[#075985] text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-md shadow-primary/20 transition-all disabled:opacity-50"
+              className="mt-5 bg-primary hover:bg-[var(--action-hover)] text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-md shadow-primary/20 transition-all disabled:opacity-50"
             >
               {uploading ? "Analyzing Resume..." : `Parse ${file.name}`}
             </button>
@@ -408,7 +408,7 @@ function ResumeView() {
                 <h4 className="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">Skills</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {data.skills.map((s, i) => (
-                    <span key={i} className="bg-sky-50 border border-sky-100 text-primary text-xs font-medium px-3 py-1 rounded-full">
+                    <span key={i} className="bg-[var(--wash)] border border-[var(--line)] text-primary text-xs font-medium px-3 py-1 rounded-full">
                       {s}
                     </span>
                   ))}
@@ -505,14 +505,14 @@ function ReportsView() {
   if (sessions.length === 0) {
     return (
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-12 text-center">
-        <div className="w-14 h-14 mx-auto rounded-2xl bg-sky-50 text-primary flex items-center justify-center mb-4">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-[var(--wash)] text-primary flex items-center justify-center mb-4">
           <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
         </div>
         <h3 className="text-lg font-bold text-gray-900 mb-2">No interview reports yet</h3>
         <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">Complete your first mock interview to generate performance feedback reports and rubrics.</p>
-        <Link to="/interview-type" className="bg-primary hover:bg-[#075985] text-white font-semibold text-sm px-6 py-3 rounded-full shadow-md shadow-primary/20 transition-all inline-flex items-center gap-2 hover:-translate-y-0.5">
+        <Link to="/interview-type" className="bg-primary hover:bg-[var(--action-hover)] text-white font-semibold text-sm px-6 py-3 rounded-full shadow-md shadow-primary/20 transition-all inline-flex items-center gap-2 hover:-translate-y-0.5">
           <span>Start Practice Mock</span>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -529,11 +529,11 @@ function ReportsView() {
         return (
           <div
             key={s.id}
-            className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-sky-200 transition-all"
+            className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[var(--line)] transition-all"
           >
             <div className="flex items-center gap-4">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm ${
-                s.interview_type === "hr" ? "bg-sky-50 text-primary" : "bg-blue-50 text-blue-600"
+                s.interview_type === "hr" ? "bg-[var(--wash)] text-primary" : "bg-blue-50 text-blue-600"
               }`}>
                 {s.interview_type === "hr" ? "HR" : "DEV"}
               </div>
@@ -651,7 +651,7 @@ function PreferencesView() {
                 onClick={() => setVoice(v.id)}
                 className={`text-left p-3.5 rounded-2xl border transition-all ${
                   voice === v.id
-                    ? "bg-sky-50/80 border-primary shadow-sm"
+                    ? "bg-[var(--wash)] border-primary shadow-sm"
                     : "bg-gray-50 border-gray-100 hover:bg-gray-100"
                 }`}
               >
@@ -723,7 +723,7 @@ function PreferencesView() {
           <button
             type="button"
             onClick={handleTestAudio}
-            className="text-xs font-semibold text-primary bg-sky-50 hover:bg-sky-100 border border-sky-200 px-5 py-2.5 rounded-full transition-all flex items-center gap-2"
+            className="text-xs font-semibold text-primary bg-[var(--wash)] hover:bg-[var(--wash)] border border-[var(--line)] px-5 py-2.5 rounded-full transition-all flex items-center gap-2"
           >
             {testing ? (
               <>
@@ -743,7 +743,7 @@ function PreferencesView() {
           <button
             type="button"
             onClick={handleSavePreferences}
-            className="bg-primary hover:bg-[#075985] text-white text-xs font-bold px-6 py-2.5 rounded-full shadow-md transition-all"
+            className="bg-primary hover:bg-[var(--action-hover)] text-white text-xs font-bold px-6 py-2.5 rounded-full shadow-md transition-all"
           >
             Save Preferences
           </button>
@@ -780,7 +780,7 @@ export default function AccountManagement() {
 
   const titles={profile:'Personal profile',resume:'Resume & projects',reports:'Interview reports',preferences:'Voice & preferences'};
   const descriptions={profile:'Keep your details and target role up to date.',resume:'Manage your resume and the evidence used in your interviews.',reports:'Return to an interview or review your saved feedback.',preferences:'Choose how your interviewer sounds and save your voice settings.'};
-  return <div className="min-h-screen bg-[#f8f5ef]">
+  return <div className="min-h-screen">
     <DashboardNavbar name={user.name}/>
     <main className="workspace-page account-page page-enter">
       <header className="page-heading"><div><p className="section-kicker">Your account</p><h1>{titles[view]}</h1><p>{descriptions[view]}</p></div><div className="account-identity"><strong>{user.name}</strong><span>{user.email}</span></div></header>

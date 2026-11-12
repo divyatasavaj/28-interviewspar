@@ -70,7 +70,7 @@ export default function StartInterviewPage() {
     catch(e){setError(e.message);} finally{setBusy(false);}
   }
   const field='mt-2 w-full rounded-xl border border-gray-200 bg-white p-3 text-gray-900';
-  return <div className="min-h-screen bg-[#f8f5ef] text-gray-900">
+  return <div className="min-h-screen text-gray-900">
     <DashboardNavbar name={settings.name}/>
     <main className="workspace-page setup-page page-enter">
       <Link to="/dashboard" className="text-sm text-primary">← Dashboard</Link>

@@ -145,7 +145,7 @@ async function checkWorkspaceOrganization() {
   await viewport(1440);await screenshot('setup-desktop');
 }
 async function checkCodingRound() {
-  await click('#practice a', 'Practice coding');
+  await click('#practice-options a', 'Practice coding');
   await waitFor('document.querySelector("#interview-track")?.value==="coding" && document.querySelectorAll("#interview-domain option").length>4', 'coding-only setup');
   await select('#interview-domain', 'Frontend');
   await select('#interview-experience', 'junior');
@@ -344,15 +344,25 @@ try {
   }
   check('All public pages load with a primary heading', true);
   await goto('/');
-  await click('button', 'HR & behavioral');
-  check('Homepage question preview switches tracks', await evaluate(hasText('project that changed direction')));
-  await click('button', 'Technical thinking');
+  await click('.window-tabs button', 'Behavioral');
+  await waitFor(hasText('project changed direction'), 'behavioral preview question');
+  check('Homepage question preview switches tracks',true);
+  await click('.window-tabs button', 'Coding');
+  check('Coding preview shows a test case and links to coding setup', await evaluate(`
+    document.querySelector('.window-question code').textContent.includes('swiss') &&
+    document.querySelector('.window-footer a').getAttribute('href') === '/interview/start?track=coding' &&
+    document.querySelector('.window-tabs button[aria-pressed="true"]').textContent.trim() === 'Coding'
+  `));
+  await click('.window-tabs button', 'Technical');
   await command('Emulation.setEmulatedMedia', {features:[{name:'prefers-reduced-motion',value:'reduce'}]});
   check('Reduced motion stops decorative movement and button transitions', await evaluate(`
-    getComputedStyle(document.querySelector('.practice-window')).animationName === 'none' &&
-    getComputedStyle(document.querySelector('.hero-sky')).animationName === 'none' &&
+    getComputedStyle(document.querySelector('.window-question')).animationName === 'none' &&
+    getComputedStyle(document.querySelector('.hero-scene')).animationName === 'none' &&
     getComputedStyle(document.querySelector('.spar-button')).transitionDuration === '0s'
   `));
+  await command('Emulation.setEmulatedMedia', {features:[]});
+  await command('Emulation.setEmulatedMedia', {features:[{name:'prefers-color-scheme',value:'dark'}]});
+  check('Fresh visits use the light palette', await evaluate('document.documentElement.dataset.theme==="light"'));
   await command('Emulation.setEmulatedMedia', {features:[]});
   await screenshot('home-desktop');
   await viewport(1024,768);
@@ -371,7 +381,12 @@ try {
   for (const path of publicPages) { await goto(path); await layout(`mobile ${path}`); }
   await goto('/'); await screenshot('home-mobile');
   await click('button[aria-label="Toggle menu"]');
-  await click('a', 'Contact Us');
+  await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  check('Escape closes the mobile public menu and returns focus', await evaluate(`
+    !document.querySelector('#public-mobile-menu') && document.activeElement.matches('.public-menu-toggle')
+  `));
+  await click('button[aria-label="Toggle menu"]');
+  await click('#public-mobile-menu a', 'Contact us');
   await waitFor('location.pathname==="/contact"', 'mobile navigation');
   check('Mobile navigation opens and follows a link', true);
   await viewport(1440);
@@ -397,6 +412,11 @@ try {
     await checkWorkspaceOrganization();
     await checkInterviewCall({goto,click,fill,select,waitFor,evaluate,check,command,screenshot,savePdf,viewport,layout,hasText});
   } else {
+  await goto('/interview-type',hasText('Choose a practice track'));
+  await click('a.feature-tile[href="/interview/start?track=coding"]');
+  await waitFor('document.querySelector("#interview-track")?.value==="coding"', 'coding track from chooser');
+  check('Track chooser links directly to coding setup',true);
+  await goto('/dashboard',hasText('Practice tracks'));
   check('Dashboard puts practice before resume matching',await evaluate(`document.querySelector('#practice').compareDocumentPosition(document.querySelector('#resume-tools')) & Node.DOCUMENT_POSITION_FOLLOWING`));
   await layout('desktop dashboard'); await screenshot('dashboard-desktop');
   await viewport(768,1024); await layout('tablet dashboard'); await screenshot('dashboard-tablet'); await viewport(1440);
@@ -530,11 +550,15 @@ try {
   await click('button[aria-label="Account menu"]');
   await click('button','Logout');
   await waitFor('location.pathname==="/login"','logout');
+  await goto('/');
+  await click('.window-tabs button','Coding');
+  await click('.window-footer a','Try this track');
+  await waitFor('location.pathname==="/login"','preview sign-in');
   await fill('#login-email','browser@example.com');await fill('#login-password','wrong-password');
   await click('button[type="submit"]'); await waitFor('document.querySelector("[role=alert]")','invalid-login error');
   await fill('#login-password','Changed-browser-password-826');await click('button[type="submit"]');
-  await waitFor('location.pathname==="/dashboard" && document.querySelector("h1")','valid login');
-  check('Logout, invalid login and subsequent valid login',true);
+  await waitFor('location.pathname==="/interview/start" && document.querySelector("#interview-track")?.value==="coding"','selected track after login');
+  check('Login keeps the selected homepage track after an invalid password retry',true);
   }
   check('No uncaught browser exceptions',exceptions.length===0);
   check('No unexpected HTTP 5xx responses',serverErrors.length===0);

@@ -12,11 +12,12 @@ export default function DashboardNavbar({name}) {
   const location=useLocation(),navigate=useNavigate(),root=useRef(null),accountButton=useRef(null),menuButton=useRef(null);
   useEffect(()=>{setMenuOpen(false);setProfileOpen(false);},[location.key]);
   useEffect(()=>{
+    if (!menuOpen && !profileOpen) return;
     const close=e=>{if(e.key==='Escape'){setMenuOpen(false);setProfileOpen(false);(profileOpen?accountButton:menuButton).current?.focus();}};
     const outside=e=>{if(!root.current?.contains(e.target)){setMenuOpen(false);setProfileOpen(false);}};
     document.addEventListener('keydown',close);document.addEventListener('pointerdown',outside);
     return()=>{document.removeEventListener('keydown',close);document.removeEventListener('pointerdown',outside);};
-  },[profileOpen]);
+  },[menuOpen,profileOpen]);
   async function signOut(){try{await logout();}catch{/* Local token is cleared even offline. */}finally{navigate('/login');}}
   const active=to=>location.pathname+location.search===to || (to==='/account?tab=profile' && location.pathname==='/account' && !location.search);
   const link=([label,to])=><Link key={to} to={to} aria-current={active(to)?'page':undefined} onClick={()=>{setMenuOpen(false);setProfileOpen(false);}}>{label}</Link>;

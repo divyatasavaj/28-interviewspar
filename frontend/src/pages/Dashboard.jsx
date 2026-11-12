@@ -2,8 +2,15 @@ import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { getMe, listSessions, getLatestResumeAnalysis, getLatestMatch } from "../api/auth"
 import DashboardNavbar from "../components/DashboardNavbar"
+import UiIcon from "../components/UiIcon"
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" })
+
+const practiceOptions = [
+  { title: "Practice coding", detail: "Solve two or three exercises with test cases.", icon: "code", to: "/interview/start?track=coding" },
+  { title: "Technical practice", detail: "Explain your approach or add a coding round.", icon: "mic", to: "/interview/start" },
+  { title: "HR practice", detail: "Rehearse behavioral interview questions.", icon: "chat", to: "/interview/start?persona=hr" },
+]
 
 function interviewName(session) {
   if (session.coding_only) return `${session.domain} coding practice`
@@ -63,35 +70,68 @@ export default function Dashboard() {
   const coverage = match?.assessment_mode === "job_description" && Number.isFinite(match.score)
 
   return (
-    <div className="min-h-screen bg-[#f8f5ef]">
+    <div className="min-h-screen">
       <DashboardNavbar name={user.name} />
       <main className="workspace-page dashboard-page page-enter">
-        <section id="practice" className="dashboard-welcome">
-          <h1 className="text-3xl font-bold tracking-tight">Welcome, {user.name.split(" ")[0]}</h1>
-          <p className="mt-2 text-sm text-gray-600">Practice an interview and review your feedback.</p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            {active ? <Link className="spar-button" to={`/interview/${active.id}`}>Resume interview</Link>
-              : <Link className="spar-button" to="/interview/start">Start practice</Link>}
-            {latestReport && <Link className="self-center text-sm font-semibold text-primary underline" to={`/interview/${latestReport.id}/report`}>View latest report</Link>}
-          </div>
-          {active && <p className="mt-3 text-sm text-gray-600">
-            {interviewName(active)} · Question {active.progress.current} of {active.progress.total}
-          </p>}
-          <div id="practice-options" className="practice-options mt-5" aria-label="Practice options">
-            <Link to="/interview/start?track=coding"><strong>Practice coding</strong><span>Two or three exercises</span></Link>
-            <Link to="/interview/start"><strong>Technical practice</strong><span>Spoken questions or a combined interview</span></Link>
-            <Link to="/interview/start?persona=hr"><strong>HR practice</strong><span>Behavioral interview questions</span></Link>
+        <header className="dashboard-heading">
+          <h1>Welcome, {user.name.split(" ")[0]}</h1>
+        </header>
+
+        <div className="dashboard-overview">
+          <section id="practice" className="dashboard-welcome" aria-labelledby="next-practice-title">
+            <span className="tile-icon"><UiIcon name={active ? "mic" : "arrow"} /></span>
+            <h2 id="next-practice-title">{active ? "Pick up where you left off" : "Start a practice round"}</h2>
+            <p>{active ? `${interviewName(active)} · Question ${active.progress.current} of ${active.progress.total}`
+              : "Choose a track and set up your next interview."}</p>
+            <div className="dashboard-hero-actions">
+              <Link className="spar-button" to={active ? `/interview/${active.id}` : "/interview/start"}>
+                {active ? "Resume interview" : "Start practice"} <UiIcon name="arrow" />
+              </Link>
+              {latestReport && <Link className="text-action" to={`/interview/${latestReport.id}/report`}>View latest report</Link>}
+            </div>
+          </section>
+
+          <section id="resume-tools" className="dashboard-resume-tools" aria-labelledby="dashboard-resume-title">
+            <span className="tile-icon"><UiIcon name="file" /></span>
+            <h2 id="dashboard-resume-title">Resume Intelligence</h2>
+            {resumeError && <p className="text-red-700" role="alert">{resumeError}</p>}
+            <p>{hasResume ? "Compare your skills and projects with a role or job description."
+              : "Upload a PDF or DOCX to review your skills and projects."}</p>
+            {hasResume && match && <p className="dashboard-match">
+              {coverage ? `Latest job description coverage · ${match.score}%`
+                : match.target_role_title ? `Latest role review · ${match.target_role_title}`
+                  : "Latest job description review available"}
+            </p>}
+            <div className="dashboard-resume-actions">
+              <Link className="text-action" to={hasResume ? "/resume-intelligence" : "/account?tab=resume"}>
+                {hasResume ? "Open Resume Intelligence" : "Upload resume"} <UiIcon name="arrow" />
+              </Link>
+              {hasResume && <Link className="text-action" to="/account?tab=resume">Manage resume</Link>}
+            </div>
+          </section>
+        </div>
+
+        <section id="practice-options" className="dashboard-tracks" aria-labelledby="practice-options-title">
+          <h2 id="practice-options-title">Practice tracks</h2>
+          <div className="practice-options">
+            {practiceOptions.map(option => (
+              <Link to={option.to} key={option.to}>
+                <span className="tile-icon"><UiIcon name={option.icon} /></span>
+                <div><strong>{option.title}</strong><p>{option.detail}</p></div>
+                <UiIcon name="arrow" className="track-arrow" />
+              </Link>
+            ))}
           </div>
         </section>
 
-        <section id="recent-interviews" className="dashboard-history rounded-2xl border border-gray-200 bg-white p-5 sm:p-7">
+        <section id="recent-interviews" className="dashboard-history" aria-labelledby="recent-interviews-title">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-bold">Recent interviews</h2>
-            <Link className="text-sm font-semibold text-primary underline" to="/account?tab=reports">All interviews</Link>
+            <h2 id="recent-interviews-title">Recent interviews</h2>
+            <Link className="text-action" to="/account?tab=reports">All interviews <UiIcon name="arrow" /></Link>
           </div>
           {historyError && <p className="mt-4 text-sm text-red-700" role="alert">{historyError}</p>}
           {loading && !historyError && <p className="mt-4 text-sm text-gray-600" role="status">Loading interviews…</p>}
-          {!loading && !historyError && sessions.length === 0 && <p className="mt-4 text-sm text-gray-600">Your interviews and reports will appear here.</p>}
+          {!loading && !historyError && sessions.length === 0 && <p className="history-empty"><UiIcon name="chart" /> Your interviews and reports will appear here.</p>}
           <ul className="mt-2 divide-y divide-gray-100">
             {sessions.slice(0, 5).map(session => {
               const inProgress = session.status === "active"
@@ -113,25 +153,6 @@ export default function Dashboard() {
           </ul>
         </section>
 
-        <section id="resume-tools" className="dashboard-resume-tools p-5 sm:p-7" aria-labelledby="dashboard-resume-title">
-          <h2 id="dashboard-resume-title" className="text-xl font-bold">Resume Intelligence</h2>
-          {resumeError && <p className="mt-3 text-sm text-red-700" role="alert">{resumeError}</p>}
-          <p className="mt-2 text-sm text-gray-600">
-            {hasResume ? "Review your resume evidence and compare it with a role or job description."
-              : "Upload a PDF or DOCX to review your skills and project evidence."}
-          </p>
-          {hasResume && match && <p className="mt-3 text-sm font-medium">
-            {coverage ? `Latest job description coverage · ${match.score}%`
-              : match.target_role_title ? `Latest role review · ${match.target_role_title}`
-                : "Latest job description review available"}
-          </p>}
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Link className="spar-button secondary" to={hasResume ? "/resume-intelligence" : "/account?tab=resume"}>
-              {hasResume ? "Open Resume Intelligence" : "Upload resume"}
-            </Link>
-            {hasResume && <Link className="spar-button secondary" to="/account?tab=resume">Manage resume</Link>}
-          </div>
-        </section>
       </main>
     </div>
   )

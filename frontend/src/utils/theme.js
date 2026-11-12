@@ -4,9 +4,9 @@ const options = ['system', 'light', 'dark'];
 export function readTheme() {
   try {
     const preference = localStorage.getItem(storageKey);
-    return options.includes(preference) ? preference : 'system';
+    return options.includes(preference) ? preference : 'light';
   } catch {
-    return 'system';
+    return 'light';
   }
 }
 

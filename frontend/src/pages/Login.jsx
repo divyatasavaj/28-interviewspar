@@ -1,10 +1,11 @@
 import { useState } from "react"
 import AuthLayout from "../components/AuthLayout"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { login, setToken } from "../api/auth"
 
 export default function Login() {
   const navigate = useNavigate()
+  const { state } = useLocation()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -26,7 +27,7 @@ export default function Login() {
     try {
       const data = await login(email, password)
       setToken(data.token)
-      navigate("/dashboard")
+      navigate(state?.returnTo || "/dashboard", { replace: true })
     } catch (err) {
       if (err.message === "No user found with this email") {
         setError("no_user")
@@ -46,7 +47,7 @@ export default function Login() {
           {error === "no_user" ? (
             <div role="alert" className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-xl px-4 py-3 mb-6">
               No user found with this email.{" "}
-              <Link to="/signup" className="font-semibold underline hover:text-amber-800">
+              <Link to="/signup" state={state} className="font-semibold underline hover:text-amber-800">
                 Sign up
               </Link>{" "}
               to create an account.
@@ -98,7 +99,7 @@ export default function Login() {
           <div className="flex items-center justify-between mt-8">
             <p className="text-sm text-gray-500">
               No account?{" "}
-              <Link to="/signup" className="font-semibold text-primary hover:text-[#075985]">
+              <Link to="/signup" state={state} className="font-semibold text-primary hover:underline">
                 Sign up
               </Link>
             </p>
