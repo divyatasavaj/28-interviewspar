@@ -57,6 +57,7 @@ export default function ResumeIntelligence() {
   const [showLimitations, setShowLimitations] = useState(false)
   const [roleFit, setRoleFit] = useState(null)
   const [roleFitError, setRoleFitError] = useState("")
+  const [jumpToFindings, setJumpToFindings] = useState(false)
 
   // Load user
   useEffect(() => {
@@ -132,7 +133,15 @@ export default function ResumeIntelligence() {
   }, [user])
 
   // Submit Role Assessment
-  async function handleAnalyzeRole(roleId = selectedRoleId) {
+  useEffect(() => {
+    if (!jumpToFindings) return
+    const findings = document.getElementById("skill-evidence")
+    findings?.focus({preventScroll:true})
+    findings?.scrollIntoView({block:"start"})
+    setJumpToFindings(false)
+  }, [jumpToFindings])
+
+  async function handleAnalyzeRole(roleId = selectedRoleId, showFindings = false) {
     if (submitting || !resumeState.hasResume || resumeState.isOcrRequired) return
     setSubmitting(true)
     setAssessmentError(null)
@@ -144,6 +153,7 @@ export default function ResumeIntelligence() {
       const result = await createRoleMatch(roleId)
       setAssessment(result)
       setPreviousAssessment(result)
+      if (showFindings) setJumpToFindings(true)
     } catch (err) {
       if (err.status === 401) {
         clearToken()
@@ -222,7 +232,10 @@ export default function ResumeIntelligence() {
 
   const unknownRequirements = assessment?.unknown_requirements || []
 
-  const filteredFindings = allFindings.filter((finding) => {
+  const isGap = finding => ["mentioned_only", "weak_evidence", "not_evidenced"].includes(finding.match_status)
+  const requiredGaps = allFindings.filter(finding => finding.requirement_type === "required" && isGap(finding))
+  const orderedFindings = [...requiredGaps, ...allFindings.filter(finding => !requiredGaps.includes(finding))]
+  const filteredFindings = orderedFindings.filter((finding) => {
     if (activeFilter === "all") return true
     return finding.match_status === activeFilter
   })
@@ -419,10 +432,7 @@ export default function ResumeIntelligence() {
               {role.demonstrated.length > 0 && <p className="text-xs text-gray-600">Demonstrated · {role.demonstrated.slice(0, 3).join(", ")}</p>}
               <p className="text-xs text-gray-600">{role.limited_evidence.length} with limited evidence · {role.missing.length} missing from resume{role.unreviewed_count > 0 && ` · ${role.unreviewed_count} unreviewed`}</p>
               <button type="button" className="mt-auto self-start text-sm font-semibold text-primary underline" disabled={submitting}
-                onClick={() => {
-                  void handleAnalyzeRole(role.role_id)
-                  document.getElementById("assessment-controls")?.scrollIntoView({block:"start"})
-                }}>Review {role.title}</button>
+                onClick={() => handleAnalyzeRole(role.role_id, true)}>Review {role.title}</button>
             </article>)}
           </div>
         </section>}
@@ -732,7 +742,7 @@ export default function ResumeIntelligence() {
             </section>
 
             {/* Area 5: Skill Gap Analysis Section */}
-            <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm" id="skill-evidence" aria-label="Skill Gap Analysis">
+            <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm scroll-mt-28" id="skill-evidence" aria-label="Skill Gap Analysis" tabIndex={-1}>
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100 mb-6">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">Your evidence, at a glance</h2>
@@ -777,6 +787,18 @@ export default function ResumeIntelligence() {
                 </div>
               </div>
 
+              {requiredGaps.length > 0 && activeFilter === "all" && <div className="mb-5 rounded-xl border border-gray-200 p-4">
+                <h3 className="text-sm font-semibold">Required gaps to address first</h3>
+                <ul className="mt-2 space-y-2">
+                  {requiredGaps.slice(0, 3).map(finding => {
+                    const targetedPractice = practiceLink(finding)
+                    return <li key={finding.requirement_id} className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+                      <a className="font-medium text-primary underline" href={`#finding-${finding.requirement_id}`}>{finding.display_name}</a>
+                      {targetedPractice && <Link className="text-xs font-semibold text-primary underline" to={targetedPractice}>Practice this gap</Link>}
+                    </li>
+                  })}
+                </ul>
+              </div>}
               {/* Findings List */}
               {filteredFindings.length === 0 ? (
                 <div className="py-12 text-center text-gray-400 text-xs">
@@ -787,13 +809,13 @@ export default function ResumeIntelligence() {
                   {filteredFindings.map((finding) => {
                     const statusConfig = FINDING_STATUS_CONFIG[finding.match_status] || FINDING_STATUS_CONFIG.not_evaluated
                     const isExpanded = expandedSnippetId === finding.requirement_id
-                    const isGap = ["mentioned_only", "weak_evidence", "not_evidenced"].includes(finding.match_status)
-                    const targetedPractice = isGap ? practiceLink(finding) : null
+                    const gap = isGap(finding)
+                    const targetedPractice = gap ? practiceLink(finding) : null
 
                     return (
                       <div
-                        key={finding.requirement_id}
-                        className="bg-[#f8fbfd] border border-gray-100 rounded-2xl p-5 hover:border-gray-200 transition-colors"
+                        key={finding.requirement_id} id={`finding-${finding.requirement_id}`}
+                        className="bg-[#f8fbfd] border border-gray-100 rounded-2xl p-5 hover:border-gray-200 transition-colors scroll-mt-28"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2.5">
@@ -866,7 +888,7 @@ export default function ResumeIntelligence() {
                             <span>{finding.suggested_next_action}</span>
                           </div>
                         )}
-                        {isGap && <div className="mt-3 flex flex-wrap gap-3">
+                        {gap && <div className="mt-3 flex flex-wrap gap-3">
                           <Link className="text-xs font-semibold text-primary underline" to="/account?tab=resume">Improve resume evidence</Link>
                           {targetedPractice && <Link className="text-xs font-semibold text-primary underline" to={targetedPractice}>Practice this gap</Link>}
                         </div>}
