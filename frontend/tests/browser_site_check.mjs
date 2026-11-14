@@ -162,6 +162,48 @@ async function checkPreparationPlan() {
   await viewport(1440); await screenshot('preparation-desktop');
   await goto('/dashboard',hasText('Practice tracks'));
 }
+async function checkJobPreparation() {
+  await goto('/preparation', 'document.querySelector(".job-preparation")');
+  await click('.job-preparation button', 'Paste a job description');
+  await fill('.job-preparation input[placeholder]', 'Frontend engineer');
+  await select('.job-preparation select', 'Frontend');
+  const date = await evaluate(`(()=>{const d=new Date();d.setDate(d.getDate()+14);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')})()`);
+  await evaluate(`(()=>{const input=document.querySelector('.job-preparation input[type="date"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(date)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+  await fill('.job-preparation textarea', 'We offer a friendly workplace and a supportive working environment.');
+  await click('.job-preparation button', 'Suggest topics and plan');
+  await waitFor('document.querySelector(".job-preparation [role=alert]")', 'unsupported description feedback');
+  check('Unsupported descriptions give an actionable error', await evaluate('!document.querySelector(".job-schedule-editor")'));
+  await fill('.job-preparation textarea', 'Required: React, JavaScript, HTML and CSS. Build accessible interfaces with unit testing. Preferred: Docker.');
+  await click('.job-preparation button', 'Suggest topics and plan');
+  await waitFor('document.querySelector(".job-schedule-editor fieldset")', 'job preparation draft');
+  check('Description produces topics and a schedule before saving', await evaluate('document.querySelectorAll(".job-topic input:checked").length >= 3 && !document.querySelector(".plan-schedule")'));
+  await click('.job-topic details summary');
+  check('Suggested topics include relevant example questions', await evaluate('document.querySelector(".job-topic details[open] li")?.textContent.length > 30'));
+  await screenshot('job-preparation-desktop');
+  await viewport(390,844); await layout('mobile job draft'); await screenshot('job-preparation-mobile'); await viewport(1440);
+  while (await evaluate('!!document.querySelector(".job-topic input:checked")')) await click('.job-topic input:checked');
+  check('Removing every topic keeps the selection controls available', await evaluate('document.querySelectorAll(".job-topic input").length > 5 && document.querySelector(".job-schedule-editor button[type=submit], .job-schedule-editor button:not([type])").disabled'));
+  await click('.job-topic label', 'React and UI state');
+  await fill('.job-task-list input:not([type])', 'Review React form state');
+  await fill('.job-task-list input[type=number]', '35');
+  await click('.job-schedule-editor button', 'Add session');
+  check('User can add a practice session', await evaluate('document.querySelectorAll(".job-task-list fieldset").length===2'));
+  await click('.job-task-list button', 'Remove session 2');
+  await click('.job-schedule-editor button', 'Save job preparation plan');
+  await waitFor(hasText('Job preparation plan saved.'), 'saved job plan');
+  await evaluate('window.__beforeReload=true'); await command('Page.reload');
+  await waitFor('!window.__beforeReload && document.querySelector(".plan-schedule li")', 'reloaded job plan');
+  check('Edited session title and duration persist after reload', await evaluate('document.querySelectorAll(".plan-schedule li").length===1 && document.querySelector(".plan-schedule").textContent.includes("Review React form state") && document.querySelector(".plan-schedule").textContent.includes("35 min")'));
+  await click('.job-preparation button', 'Edit job plan');
+  check('Saved job plans reopen in the editor without stored source text', await evaluate('document.querySelector(".job-preparation textarea").value==="" && document.querySelector(".job-task-list input").value==="Review React form state"'));
+  await fill('.job-task-list input:not([type])', 'Unsaved change');
+  await click('.job-preparation button', 'Cancel changes');
+  check('Cancel leaves the saved schedule unchanged', await evaluate('document.querySelector(".plan-schedule").textContent.includes("Review React form state")'));
+  await click('.plan-schedule a', 'Open session');
+  await waitFor('document.querySelector("#practice-topic")?.value==="react"', 'job-specific practice setup');
+  check('Saved session opens the selected practice topic', await evaluate('document.querySelector("#interview-domain").value==="Frontend"'));
+}
+
 async function checkCodingRound() {
   await waitFor('!!document.querySelector(".progress-overview") && !document.querySelector(".dashboard-page .loading-cards")', 'loaded dashboard progress');
   await command('Runtime.evaluate', {
@@ -225,6 +267,14 @@ async function checkCodingRound() {
   check('Report overview links to the submitted exercise', await evaluate('document.querySelector("#report-overview a")?.hash==="#answer-1"'));
   await click('#answer-1 summary');
   check('Report retains code, grading, and coding observations', await evaluate(`${hasText('JavaScript solution')} && ${hasText('Face present in camera samples')} && ${hasText(mock ? 'Hidden tests 1/3' : 'Code execution is not configured')}`));
+  await click('#answer-1 .answer-guidance summary', 'Worked solution');
+  check('Submitted exercise shows an approach, edge cases, and complexity', await evaluate('document.querySelector("#answer-1 .answer-guidance[open] dl").textContent.includes("Complexity")'));
+  await click('#answer-1 button', 'Report an issue');
+  await select('#answer-1 .question-flag select', 'incorrect-test');
+  await fill('#answer-1 .question-flag textarea', 'Please review boundary cases.');
+  await click('#answer-1 .question-flag button', 'Send report');
+  await waitFor(hasText('Report saved for review.'), 'submitted question flag');
+  check('Coding report accepts a test case flag', true);
   if (liveReview) check('Opted-in coding report includes live Groq review', await evaluate('!!document.querySelector(".coding-report strong")'));
   check('Practice this again retains the coding skill', await evaluate('Array.from(document.querySelectorAll("#report-overview a")).some(link=>{const params=new URL(link.href).searchParams;return params.get("track")==="coding" && params.get("skill")==="javascript"})'));
   await screenshot('coding-report');
@@ -233,6 +283,10 @@ async function checkCodingRound() {
   await waitFor(hasText('Question saved.'),'bookmark saved');
   await goto('/preparation', 'document.querySelector(".bookmark-list li")');
   check('Saved question appears in preparation',await evaluate(hasText('Class list builder')) || await evaluate('document.querySelectorAll(".bookmark-list li").length===1'));
+  if (mock) {
+    await waitFor(hasText('Test pass rate · Frontend'), 'coding skill progress');
+    check('Preparation links coding skill results to focused practice', await evaluate('document.querySelector(".skill-progress-list a")?.href.includes("skill=javascript")'));
+  }
   await click('.bookmark-list a','Review answer');
   await waitFor('document.querySelector("#answer-1")?.open','bookmarked answer expanded');
   check('Bookmark opens its answer and feedback',true);
@@ -386,7 +440,7 @@ try {
   await command('Page.enable'); await command('Runtime.enable'); await command('Network.enable');
   await command('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: artifacts });
   await viewport(1440);
-  if (process.env.CALL_ONLY !== '1' && process.env.CODING_ONLY !== '1') {
+  if (process.env.JD_ONLY !== '1' && process.env.CALL_ONLY !== '1' && process.env.CODING_ONLY !== '1') {
   const publicPages = ['/', '/features', '/practice-tracks', '/student-guide', '/pricing', '/subscription', '/resources', '/contact', '/login', '/signup'];
   for (const path of publicPages) {
     await goto(path);
@@ -454,7 +508,9 @@ try {
   await click('button[type="submit"]');
   await waitFor('location.pathname==="/dashboard" && document.querySelector("h1")','signed-in dashboard');
   check('Signup validation and successful registration', true);
-  if (process.env.CODING_ONLY === '1') {
+  if (process.env.JD_ONLY === '1') {
+    await checkJobPreparation();
+  } else if (process.env.CODING_ONLY === '1') {
     await checkPreparationPlan();
     await checkCodingRound();
     await checkRolePractice();

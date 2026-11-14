@@ -95,6 +95,7 @@ export default function Login() {
               {busy ? "Signing in…" : "Log In"}
             </button>
           </form>
+          <Link className="text-action block mt-4" to="/forgot-password">Forgot your password?</Link>
 
           <div className="flex items-center justify-between mt-8">
             <p className="text-sm text-gray-500">

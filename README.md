@@ -110,6 +110,29 @@ Camera frames and raw microphone audio are never stored or uploaded by Interview
 The face model loads locally only when the camera is enabled. See
 [the delivery feature guide](docs/VOICE_VIDEO_INTERVIEW.md) for definitions and limits.
 
+## Preparation and email delivery
+
+Open **Preparation** to paste a job description, choose practice topics, preview
+questions, and save an editable schedule. The pasted description is processed
+in memory. The saved schedule stores the selected topics and sessions.
+Reports show answer guidance and accept question, test case, or feedback flags.
+Review pending flags in the MongoDB `question_flags` collection using
+`status: "new"` and the saved session and question IDs.
+
+Configure `PUBLIC_APP_URL` and the `SMTP_*` settings in
+[backend/.env.example](backend/.env.example) for password reset, verification,
+and opt-in practice reminders. Use the public frontend origin so email links
+reach the correct deployment. SMTP uses STARTTLS by default. Set
+`SMTP_IMPLICIT_TLS=true` for implicit TLS. The backend checks reminders every
+minute while running. Verified users choose days and a local time. Reminders
+are attempted once per scheduled day through the interview date.
+
+Run `python tests/feedback_benchmark.py` from `backend` to compare curated
+spoken answers and execute trusted Python solutions against the exercise
+tests. Add `--ai` to check configured AI grading or `--judge0` to compare
+the deployed runner against the local results. These small fixtures check
+regressions in feedback and grading.
+
 ## Checks
 
 ```sh

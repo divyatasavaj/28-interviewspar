@@ -1,3 +1,4 @@
+import EmailVerification from "../components/EmailVerification"
 import ThemePreference from "../components/ThemePreference"
 import { useState, useEffect } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
@@ -152,6 +153,7 @@ function ProfileView({ user, onUserUpdate, completedCount }) {
                 disabled
                 className="w-full rounded-xl bg-gray-100 border border-gray-200 px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed"
               />
+              <EmailVerification verified={user.email_verified}/>
             </div>
             <div>
               <label htmlFor="profile-role" className="block text-xs font-semibold text-gray-700 mb-1.5">Target Job Role</label>

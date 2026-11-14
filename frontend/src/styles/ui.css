@@ -591,3 +591,44 @@ input:not([type=checkbox]):not([type=radio]), select, textarea { max-width: 100%
 @media(max-width:767px) {
   .dashboard-page > .loading-cards, .progress-overview { min-height:240px; }
 }
+
+/* Job preparation uses the same quiet surfaces as the rest of the workspace. */
+.job-preparation h3 { font-size:17px; font-weight:600; margin:24px 0 8px; }
+.job-preparation textarea { width:100%; resize:vertical; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); }
+.job-description-field { grid-column:1/-1; }
+.job-topics > p, .job-schedule-editor > p { color:var(--muted); font-size:14px; line-height:1.6; margin-bottom:16px; }
+.job-topic-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.job-topic { border:1px solid var(--line); border-radius:10px; padding:16px; min-width:0; }
+.job-topic[data-selected="true"] { background:var(--wash); }
+.job-topic label { display:flex; align-items:center; gap:10px; min-height:28px; }
+.job-topic :is(h4,strong) { font-size:14px; font-weight:600; }
+.job-topic p { font-size:13px; color:var(--muted); margin:8px 0; }
+.job-topic summary { padding:10px 0; cursor:pointer; font-size:13px; }
+.job-topic ol { list-style:decimal; padding-left:20px; font-size:14px; line-height:1.6; }
+.job-topic li { margin-bottom:10px; }
+.job-task-list { max-height:620px; overflow:auto; margin:16px 0; padding:2px; }
+.job-task-list fieldset { border:1px solid var(--line); border-radius:10px; padding:16px; margin:0 0 16px; display:grid; grid-template-columns:2fr 1fr; gap:12px; }
+.job-task-list legend { font-size:13px; padding:0 6px; color:var(--muted); }
+.job-task-list label { display:grid; gap:6px; font-size:13px; min-width:0; }
+.job-task-list :is(input,select) { width:100%; min-height:44px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); padding:8px 10px; }
+.job-task-list button { justify-self:start; min-height:44px; font-size:13px; color:var(--theme-link); }
+@media (max-width:640px) {
+  .job-topic-grid, .job-task-list fieldset { grid-template-columns:1fr; }
+}
+
+.answer-guidance, .question-flag { margin-top:16px; }
+.answer-guidance { padding:12px 16px; border:1px solid var(--line); border-radius:10px; background:var(--wash); }
+.answer-guidance summary { cursor:pointer; font-size:14px; font-weight:600; }
+.answer-guidance dl { font-size:14px; line-height:1.6; }
+.answer-guidance dt { margin-top:10px; font-weight:600; }
+.answer-guidance dd { margin:0; }
+.question-flag textarea { border:1px solid var(--line); border-radius:8px; padding:10px; resize:vertical; }
+.reminder-form { display:grid; gap:14px; margin-top:16px; justify-items:start; font-size:14px; }
+.reminder-form fieldset { display:grid; gap:10px; border:1px solid var(--line); border-radius:10px; padding:12px; }
+.reminder-form legend { padding:0 4px; }
+.reminder-days { display:flex; flex-wrap:wrap; gap:10px; }
+.reminder-days label, .reminder-option, .reminder-time { display:flex; align-items:center; gap:8px; min-height:44px; }
+.reminder-time input { padding:7px; border:1px solid var(--line); border-radius:8px; }
+.skill-progress-list { margin-top:14px; }
+.skill-progress-list li { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px 18px; padding:14px 0; border-top:1px solid var(--line); font-size:14px; }
+.skill-progress-list small { display:block; color:var(--muted); }

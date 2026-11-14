@@ -7,6 +7,7 @@ from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from app.database import get_db
+from app.skill_progress import summarize_skills
 from app.routes.auth import require_user
 from app.interview_flow import (
     DOMAINS,
@@ -339,6 +340,38 @@ def answer(body: AnswerRequest, db=Depends(get_db), user=Depends(require_user)):
             409, "Another answer was saved first. Reload the interview."
         )
     return public_session(session)
+
+
+@router.get("/skill-progress")
+def skill_progress(db=Depends(get_db), user=Depends(require_user)):
+    sessions = db.interview_sessions.find({
+        "user_id": str(user["_id"]), "engine_version": 2, "status": "completed",
+    }, {"questions": 1, "answers": 1, "domain": 1, "experience_level": 1}).sort("_id", -1).limit(100)
+    return {"skills": summarize_skills(sessions)}
+
+
+class QuestionFlag(BaseModel):
+    question_id: str = Field(min_length=1, max_length=200)
+    reason: Literal["unclear-question", "incorrect-test", "questionable-feedback"]
+    note: str = Field(default="", max_length=1000)
+
+
+@router.post("/{session_id}/question-flags", status_code=201)
+def flag_question(session_id: str, body: QuestionFlag, db=Depends(get_db), user=Depends(require_user)):
+    session = owned_session(db, session_id, user)
+    row = next((item for item in session.get("answers", []) if item["question_id"] == body.question_id), None)
+    if row is None:
+        raise HTTPException(404, "Question not found in this report.")
+    if body.reason == "incorrect-test" and not (row.get("hands_on") or row.get("code")):
+        raise HTTPException(422, "Choose a coding question to report a test case.")
+    if body.reason == "questionable-feedback" and row.get("skipped"):
+        raise HTTPException(422, "Choose an answered question to report feedback.")
+    identity = {"session_id": str(session["_id"]), "question_id": body.question_id, "reason": body.reason}
+    db.question_flags.update_one(identity, {
+        "$set": {"note": body.note.strip(), "updated_at": now()},
+        "$setOnInsert": {"domain": session["domain"], "question": row["question"], "status": "new"},
+    }, upsert=True)
+    return {"message": "Report saved for review."}
 
 
 @router.get("/{session_id}/feedback")

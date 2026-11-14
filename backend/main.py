@@ -1,5 +1,6 @@
 """Supported API: one authentication system, resume pipeline, and interview lifecycle."""
 
+import asyncio
 import os
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
@@ -8,8 +9,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pymongo.errors import PyMongoError
-from app.database import init_db, client
+from app.database import init_db, client, db
+from app.reminders import reminder_loop
 from app.body_limit import BodyLimitMiddleware
+from app.routes.account_email import router as account_email
 from app.routes.auth import router as auth
 from app.routes.resume import router as resume
 from app.routes.resume_assessment import router as assessments
@@ -22,9 +25,12 @@ from app.routes.preparation import router as preparation
 @asynccontextmanager
 async def lifespan(app):
     init_db()
+    reminders = asyncio.create_task(reminder_loop(db))
     try:
         yield
     finally:
+        reminders.cancel()
+        await asyncio.gather(reminders, return_exceptions=True)
         client.close()
 
 
@@ -39,7 +45,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Data-Consent"],
 )
-for router in [auth, resume, assessments, interview, code, tts, preparation]:
+for router in [auth, account_email, resume, assessments, interview, code, tts, preparation]:
     app.include_router(router, prefix="/api")
 
 # Bounded process-local protection; production ingress should also enforce limits.
@@ -70,7 +76,9 @@ async def protect_requests(request: Request, call_next):
             "auth"
             if request.method == "POST"
             and request.url.path
-            in {"/api/auth/signup", "/api/auth/login", "/api/auth/change-password"}
+            in {"/api/auth/signup", "/api/auth/login", "/api/auth/change-password",
+                "/api/auth/forgot-password", "/api/auth/reset-password",
+                "/api/auth/verify-email", "/api/auth/verification-email"}
             else "api"
         ),
     )

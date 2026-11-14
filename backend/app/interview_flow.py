@@ -265,8 +265,11 @@ def evaluate_answer(question, answer, latency_ms=0, allow_ai=False, code_result=
             100 * code_result["passed"] / code_result["total"]
         )
         evaluation["source"] = "isolated-code-tests"
+    if len(words) < 8 and not (code_result and code_result.get("status") == "evaluated"):
+        evaluation.update(communication_score=None, feedback="Too little transcript evidence to assess answer structure.")
     if (
-        allow_ai
+        len(words) >= 8
+        and allow_ai
         and os.getenv("GROQ_API_KEY")
         and question["round"] != "screening"
         and (question["round"] != "coding" or question.get("type") == "spoken")
@@ -363,9 +366,35 @@ def public_session(session):
     }
 
 
+def report_answer(answer, question, index):
+    from app.answer_guidance import answer_guidance
+
+    row = {"question_number": index, **answer}
+    if answer.get("skipped"):
+        return row
+    evaluation = answer.get("evaluation", {})
+    row["guidance"] = answer_guidance(question)
+    code = evaluation.get("code_result") or {}
+    if answer.get("hands_on") or question.get("type") == "coding":
+        row["evidence_note"] = (
+            "Correctness reflects the tests that ran." if code.get("status") == "evaluated"
+            else "Insufficient evidence to grade correctness. Test results are unavailable."
+        )
+    elif evaluation.get("evidence", {}).get("word_count", 0) < 8:
+        row["evidence_note"] = "Insufficient transcript evidence for useful scoring. Try a fuller response."
+        row["evaluation"] = {**evaluation, "communication_score": None, "correctness_score": None}
+    elif evaluation.get("correctness_score") is None:
+        row["evidence_note"] = "The structure indicator uses transcript cues. Technical correctness was not assessed."
+    else:
+        row["evidence_note"] = "The optional AI review estimates correctness from the transcript. Check the reasoning against trusted material."
+    return row
+
+
 def compile_report(session):
     from app.delivery import summarize_delivery
-    answers = session.get("answers", [])
+    questions = {question["id"]: question for question in session["questions"]}
+    answers = [report_answer(answer, questions.get(answer["question_id"], {}), index)
+               for index, answer in enumerate(session.get("answers", []), start=1)]
     scored = [
         a["evaluation"]["communication_score"] for a in answers
         if not a.get("skipped") and a["evaluation"].get("communication_score") is not None
@@ -421,7 +450,7 @@ def compile_report(session):
         "score_note": "A keyword and length heuristic, not verified understanding, spoken fluency, or a hiring score. It can miss valid wording or reward irrelevant keywords. Technical correctness is separate and shown only when evaluated; AI judgments can be wrong.",
         "round_scores": rounds,
         "delivery_summary": summarize_delivery(answers),
-        "qa_pairs": [{"question_number": i + 1, **a} for i, a in enumerate(answers)],
+        "qa_pairs": answers,
         "strengths": strengths,
         "weaknesses": improvements,
         "suggested_improvements": improvements,

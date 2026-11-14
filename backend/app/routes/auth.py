@@ -39,6 +39,7 @@ def user_response(user):
         id=str(user["_id"]),
         name=user["name"],
         email=user["email"],
+        email_verified=user.get("email_verified", False),
         resume_status=(
             "present"
             if resume.get("latest_resume_id") or resume.get("raw_text")

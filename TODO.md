@@ -200,3 +200,23 @@ Commands, coverage, evidence and service limitations are recorded in
 - [x] Verify the complete flow and commit to b3.
 
 Verified with 178 backend tests, 49 frontend tests, 148 standard browser checks, and 39 preparation/coding browser checks. Production build passed. Coding tests used a simulated runner and synthetic camera input. Dependency audit reported zero vulnerabilities.
+
+## Job-description preparation
+
+- [x] Match pasted requirements to supported topics and curated questions.
+- [x] Generate an editable schedule with selectable topics and focused practice links.
+- [x] Save the plan to the signed-in account without storing the pasted description.
+- [x] Verify generation, editing, persistence, validation, and practice navigation.
+
+## Feedback, accounts, and repeat practice
+
+- [x] Add worked coding approaches and spoken answer guidance after submission.
+- [x] Add password reset and email verification.
+- [x] Mark insufficient scoring evidence and add a reproducible quality benchmark.
+- [x] Show comparable results by skill with practice links.
+- [x] Add opt-in email reminders with local days and times.
+- [x] Save question, test case, and feedback flags from reports.
+- [x] Verify 182 backend tests, 50 frontend tests, production build, and 56 targeted Chrome checks.
+- [x] Verify recovery, reminders, reports, and skill comparisons on disposable MongoDB with captured mail.
+- [x] Run the feedback benchmark on eight trusted Python submissions and four spoken fixtures, including live AI grading.
+- [ ] Verify production email delivery and hosted Judge0 grading once service settings are available.

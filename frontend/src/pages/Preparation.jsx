@@ -1,7 +1,10 @@
+import PracticeReminders from "../components/PracticeReminders";
+import SkillProgress from "../components/SkillProgress";
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest, savePreparationPlan } from '../api/auth';
 import DashboardNavbar from '../components/DashboardNavbar';
+import JobDescriptionPreparation from '../components/JobDescriptionPreparation';
 import LoadingCards from '../components/LoadingCards';
 import usePreparation from '../hooks/usePreparation';
 import { localDate, questionPracticeLink, formatPlanDate } from '../utils/practice';
@@ -10,7 +13,7 @@ function taskLink(task, plan) {
   if (task.track === 'resume') return '/resume-intelligence';
   if (task.track === 'review') return '/account?tab=reports';
   return '/interview/start?' + new URLSearchParams({
-    domain: plan.domain, ...(task.track === 'hr' ? {persona: 'hr'} : {}),
+    domain: plan.domain, ...(task.topic ? {topic: task.topic} : {}), ...(task.track === 'hr' ? {persona: 'hr'} : {}),
     ...(task.track === 'coding' ? {track: 'coding'} : {}),
   });
 }
@@ -73,9 +76,12 @@ export default function Preparation() {
       {preparation.status && <p role="status" className="save-confirmation">{preparation.status}</p>}
       {preparation.error && <div role="alert" className="inline-error">{preparation.error} <button onClick={preparation.reload}>Retry loading</button></div>}
       {!preparation.data ? !preparation.error && <LoadingCards label="Loading your preparation"/> : <>
+        <JobDescriptionPreparation plan={plan} domains={domains} onSaved={result => {
+          preparation.setData(current => ({...current, plan:result})); setEditing(false); setMessage('');
+        }}/>
         <section className="preparation-card" aria-labelledby="plan-title">
           <div className="section-actions"><h2 id="plan-title">Interview preparation plan</h2>
-            {plan && <button className="spar-button secondary" onClick={() => setEditing(value => !value)}>{editing ? 'Cancel editing' : 'Edit plan'}</button>}
+            {plan && !plan.topic_ids?.length && <button className="spar-button secondary" onClick={() => setEditing(value => !value)}>{editing ? 'Cancel editing' : 'Edit plan'}</button>}
           </div>
           {message && <p role="status" className="save-confirmation">{message}</p>}
           {(!plan || editing) && <form onSubmit={save} className="plan-form">
@@ -107,6 +113,8 @@ export default function Preparation() {
             </details>
           </>}
         </section>
+        <SkillProgress />
+        <PracticeReminders hasPlan={Boolean(plan)}/>
         <section id="saved-questions" className="preparation-card" aria-labelledby="saved-title">
           <h2 id="saved-title">Saved questions</h2>
           <p>Save questions from your feedback report to review or retry them here.</p>

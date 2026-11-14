@@ -1,3 +1,4 @@
+import QuestionFlag from "../components/QuestionFlag";
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { apiRequest, getInterviewFeedback } from '../api/auth';
@@ -64,11 +65,23 @@ function AnswerReview({ row, index, report, preparation }) {
           <p className="mt-2 text-xs text-gray-600">Evaluation method · {row.hands_on
             ? (evaluation.code_result?.status === 'evaluated' ? 'Isolated test runner' : 'Solution saved for review')
             : evaluation.source}{!row.hands_on && evaluation.code_result?.message && ` · ${evaluation.code_result.message}`}</p>
+          {row.evidence_note && <p className="mt-2 text-sm">{row.evidence_note}</p>}
           {row.hands_on && <CodingResult evaluation={evaluation}/>}
           {evaluation.mistake_tag?.label && <p className="report-answer-detail mt-2 text-xs text-gray-600">Experimental coaching signal · {evaluation.mistake_tag.label} ({evaluation.mistake_tag.source})</p>}
         </div>
+        {row.guidance && <details className="answer-guidance">
+          <summary>{row.guidance.complexity ? 'Worked solution' : 'Answer guidance'}</summary>
+          <dl>
+            <dt>Approach</dt><dd>{row.guidance.approach}</dd>
+            <dt>Common mistake</dt><dd>{row.guidance.mistake}</dd>
+            {row.guidance.edge_cases && <><dt>Edge cases</dt><dd>{row.guidance.edge_cases}</dd></>}
+            {row.guidance.complexity && <><dt>Complexity</dt><dd>{row.guidance.complexity}</dd></>}
+            {row.guidance.example && <><dt>{row.guidance.example_label}</dt><dd>{row.guidance.example}</dd></>}
+          </dl>
+        </details>}
         {evaluation.delivery && <div className="report-answer-detail"><InterviewAnalytics delivery={evaluation.delivery}/></div>}
       </>}
+      <QuestionFlag sessionId={report.session_id} row={row}/>
     </div>
   </details>;
 }

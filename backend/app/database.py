@@ -30,11 +30,17 @@ def init_db():
         print("MongoDB connected successfully")
 
         db.users.create_index("email", unique=True)
+        for purpose in ("reset", "verify"):
+            db.users.create_index(f"email_links.{purpose}.hash", sparse=True)
+        db.users.create_index("preparation.reminder.enabled", sparse=True)
         db.resumes.create_index([("user_id", 1), ("_id", -1)])
         db.interview_sessions.create_index(
             [("user_id", 1), ("engine_version", 1), ("_id", -1)]
         )
 
+        db.question_flags.create_index(
+            [("session_id", 1), ("question_id", 1), ("reason", 1)], unique=True
+        )
         db.questions.create_index([("domain", 1), ("difficulty", 1)])
 
         db.sessions.create_index("user_id")

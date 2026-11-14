@@ -42,6 +42,7 @@ class UserResponse(BaseModel):
     id: str
     name: str
     email: str
+    email_verified: bool = False
     resume_status: str = "none"
     target_role: Optional[str] = "Software Engineer"
     experience_level: Optional[str] = "mid"

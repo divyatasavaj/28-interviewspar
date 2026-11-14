@@ -7,6 +7,7 @@ import StudentGuidePage from "./pages/StudentGuidePage"
 import SubscriptionPage from "./pages/SubscriptionPage"
 import ResourcesPage from "./pages/ResourcesPage"
 import ContactPage from "./pages/ContactPage"
+import AccountEmail from "./pages/AccountEmail"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import Dashboard from "./pages/Dashboard"
@@ -32,6 +33,9 @@ export default function App() {
         <Route path="/pricing" element={<SubscriptionPage />} />
         <Route path="/resources" element={<ResourcesPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/forgot-password" element={<AccountEmail key="forgot-password" />} />
+        <Route path="/reset-password" element={<AccountEmail key="reset-password" />} />
+        <Route path="/verify-email" element={<AccountEmail key="verify-email" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route
